@@ -1,0 +1,305 @@
+---
+title: "BobRossPainting_vizPCA"
+author: "Sung InKyung"
+date: '2019 8 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### sources:[data screencast by david robinson](https://youtu.be/sD993H5FBIY),
+
+### [Articles - Principal Component Methods in R: Practical Guide PCA - Principal Component Analysis Essentials] (http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/)
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(scales)
+library(FactoMineR)
+library(factoextra)
+theme_set(theme_minimal())
+
+bob_ross <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-06/bob-ross.csv")
+```
+
+```{r}
+bob_ross_gathered <- bob_ross %>% 
+  janitor::clean_names() %>%
+  gather(element, present, -episode, -title) %>% 
+  filter(present == 1) %>% 
+  mutate(title = str_to_title(str_remove_all(title, '"')),
+         element = str_to_title(str_replace(element, "_", " "))) %>% 
+  select(-present) %>% 
+  extract(episode, c("season", "episode_number"), "S(.*)E(.*)", convert = TRUE, remove = FALSE) %>% 
+  arrange(season, episode_number)
+```
+## Exploring the paintings
+```{r}
+bob_ross_gathered %>% 
+  count(element, sort = TRUE) %>% 
+  head(30) %>% 
+  mutate(element = fct_reorder(element, n)) %>% 
+  ggplot(aes(element, n)) +
+  geom_col() +
+  coord_flip()
+```
+### How have Ross's paintings been changing over sereies?
+```{r}
+by_season_element <- bob_ross_gathered %>% 
+  filter(!element %in% c("Tree", "Mountain")) %>% 
+  group_by(season) %>% 
+  mutate(number_episodes = n_distinct(episode)) %>%  
+  count(season, element, number_episodes, sort = TRUE) %>% 
+  mutate(prc_included = n / number_episodes) %>% 
+  group_by(element) %>% 
+  mutate(element_total = sum(n)) %>% 
+  ungroup()
+```
+
+```{r}
+by_season_element %>% 
+  filter(element_total >=50) %>% 
+  ggplot(aes(season, prc_included, color = element)) +
+  geom_line() +
+  geom_smooth(show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  expand_limits(y=0) +
+  facet_wrap(~element, ncol = 6) +
+  theme(legend.position = "none")
+```
+
+```{r}
+season_element <-  by_season_element %>%
+  filter(n >=5) %>% 
+  select(season, element, n) %>% 
+  arrange(season)
+
+season_element 
+```
+
+```{r}
+season_element_spread <- season_element %>% 
+  spread(element, n) %>% 
+  mutate_all(~replace(., is.na(.), 0))
+  
+season_element_spread
+```
+
+```{r PCA}
+element_active <- season_element_spread[, 2:16]
+element_season <- season_element_spread[, 1]
+
+head(element_active[, 2:15], 4)
+
+
+element_pca <- PCA(element_active, 
+                   ncp = 4,
+                   graph = FALSE)
+```
+
+```{r}
+class(element_pca)
+
+names(element_pca)
+```
+
+```{r Eigenvalues / Variances}
+eig_val <- get_eigenvalue(element_pca)
+
+eig_val
+
+```
+
+```{r}
+fviz_eig(element_pca, 
+         addlabels = TRUE, 
+         ylim = c(0,20))
+```
+
+```{r Graph of variables}
+var <- get_pca_var(element_pca)
+var
+```
+
+```{r}
+# Coordinates
+head(var$coord)
+# Cos2: quality on the factore map
+head(var$cos2)
+# Contributions to the principal components
+head(var$contrib)
+```
+
+```{r Correlation circle}
+head(var$coord, 4)
+```
+
+```{r}
+fviz_pca_var(element_pca, 
+             col.var = "black",
+             repel = TRUE)
+
+```
+
+```{r Quality of representation}
+head(var$cos2, 4)
+```
+
+```{r}
+library(corrplot)
+
+
+p1 <- corrplot(var$cor, is.corr = FALSE)
+
+p2 <- corrplot(var$cos2, is.corr = FALSE)
+
+p3 <- corrplot(var$contrib, is.corr = FALSE)
+
+
+# head(var$contrib, 4)
+```
+
+```{r}
+# Total cos2 of variables on Dim.1 and Dim.2
+fviz_cos2(element_pca, choice = "var",)
+```
+
+```{r}
+fviz_pca_var(element_pca,
+             col.var = "cos2",
+             gradient.cols = c("#1b5b83", "#edc951", "#b30000"),
+             repel = TRUE) +
+    theme(plot.background = element_rect(fill = "cornsilk"))
+
+ggsave("C:/Users/inkyscope/Documents/projectR/datavizRscope/figures/Bob_ross_paintings_elements_vizPCA.png")
+```
+
+```{r}
+# Change the transparency by cos2 values
+fviz_pca_var(element_pca, alpha.var = "cos2")
+```
+
+```{r Contributions of variables to PCs}
+# Contributions of variables to PC1
+fviz_contrib(element_pca,
+             choice = "var",
+             axes =1,
+             top = 10)
+
+# contributions of variables to PC2
+fviz_contrib(element_pca,
+             choice = "var",
+             axes = 2,
+             top = 10)
+
+# contributions of variables to PC1:PC2
+fviz_contrib(element_pca, 
+             choice = "var", 
+             axes = 1:2, 
+             top = 10)
+```
+
+```{r}
+fviz_pca_var(element_pca, 
+             col.var = "contrib",
+             gradient.cols = c("#1b5b83", "#edc951", "#b30000"))
+```
+
+```{r Color by groups}
+# Create a grouping variable using kmeans
+# Create 3 groups of variables (centers = 3)
+
+set.seed(123)
+res.km <- kmeans(var$coord, 
+                 centers = 3, 
+                 nstart = 31)
+grp <- as.factor
+
+# Color variables by groups
+fviz_pca_var(element_pca, 
+             col.var = grp, 
+             palette = c("#0073C2FF", "#EFC000FF", "#868686FF"),
+             legend.title = "Cluster")
+```
+
+```{r Dimension description}
+res.desc <- dimdesc(element_pca, axes = c(1,2), 
+                    proba = 0.05)
+
+# Description of dimension 1
+res.desc$Dim.1
+
+# Description of dimension 2
+res.desc$Dim.2
+```
+
+```{r Graph of individuals}
+ind <- get_pca_ind(element_pca)
+ind
+```
+
+```{r}
+# Coordinates of individuals
+head(ind$coord)
+
+# Quality of individuals
+head(ind$cos2)
+
+# Contributions of individuals
+head(ind$contrib)
+```
+
+```{r Plots: quality and contribution}
+fviz_pca_ind(element_pca)
+```
+
+```{r}
+fviz_pca_ind(element_pca, 
+             col.ind = "cos2",
+             geom = "point",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE )
+```
+
+```{r}
+fviz_pca_ind(element_pca, 
+             pointsize = "cos2", 
+             pointshape = 21, 
+             fill = "#56B4E9",
+             repel = TRUE )
+
+```
+
+```{r}
+fviz_pca_ind(element_pca, 
+             col.ind = "cos2", 
+             pointsize = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE )
+```
+
+```{r}
+fviz_cos2(element_pca, 
+          choice = "ind")
+
+# Total contribution on PC1 and PC2
+fviz_contrib(element_pca, 
+             choice = "ind", 
+             axes = 1:2)
+```
+
+```{r}
+# Create a random continuous variable of length 23,
+# Same length as the number of active individuals in the PCA
+
+set.seed(123)
+my.cont.var <- rnorm(31)
+
+# Color individuals by the continuous variable
+fviz_pca_ind(element_pca, 
+             col.ind = my.cont.var,
+             gradient.cols = c("blue", "yellow", "red"),
+             legend.title = "Cont.Var")
+```
+
