@@ -1,0 +1,354 @@
+---
+title: "TidytuesdayTweets"
+author: "sung inkyung"
+date: '2019 7 12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(lubridate)
+library(cowplot)
+```
+
+```{r}
+tidytuesday_tweets <- read_rds(url("https://github.com/rfordatascience/tidytuesday/blob/master/data/2019/2019-01-01/tidytuesday_tweets.rds?raw=true")) %>%
+  mutate(week = as.Date(floor_date(created_at, "week", week_start = 1)))
+```
+
+```{r}
+tidytuesday_tweets %>%
+  count(date = floor_date(created_at, "week", week_start = 1)) %>% 
+  arrange(desc(date))
+```
+
+```{r}
+tidytuesday_tweets %>% 
+  count(screen_name, sort = TRUE) %>% 
+  head(12) %>% 
+  mutate(screen_name = reorder(screen_name, n)) %>% 
+  ggplot(aes(screen_name, n)) +
+  geom_col() +
+  coord_flip() +
+  theme_minimal_vgrid()
+```
+
+```{r}
+tidytuesday_tweets %>% 
+  arrange(desc(retweet_count)) %>% 
+  select(screen_name, text, retweet_count)
+
+tidytuesday_tweets %>% 
+  group_by(screen_name) %>% 
+  summarise(tweets = n(),
+            retweets = sum(retweet_count)) %>% 
+  arrange(desc(tweets)) %>% 
+  arrange(desc(retweets))
+
+tidytuesday_tweets %>% 
+  ggplot(aes(retweet_count + 1)) +
+  geom_histogram() +
+  scale_x_log10() +
+  theme_minimal_hgrid()
+```
+
+```{r}
+tidytuesday_tweets %>% 
+  select(screen_name, text, retweet_count, favorite_count) %>% 
+  mutate(ratio = (favorite_count + 1) / (retweet_count + 1),
+         ratio = round(ratio, 2)) %>% 
+  arrange(desc(ratio))
+```
+
+```{r}
+tweet_words <- tidytuesday_tweets %>%
+  select(screen_name, text, retweet_count, favorite_count, created_at, week) %>% 
+  unnest_tokens(word, text, token = "tweets") %>% 
+  anti_join(stop_words, by = "word") %>% 
+  filter(!word %in% c("#tidytuesday", "#rstats", "#r4ds", "#tidyverse", "de", "|", 
+                      "#dataviz", "@r4dscommunity", "@thomasmock", "#ggplot2", "im"),
+         str_detect(word, "[a-z]"))
+
+tweet_words
+```
+
+```{r}
+tweet_words %>% 
+  count(word, sort = TRUE) %>% 
+  head(16) %>% 
+  mutate(word = reorder(word, n)) %>% 
+  ggplot(aes(word, n)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Most common words in # tidytuesday tweets",
+       y = "Frequency of words") +
+  theme_minimal_vgrid()
+```
+
+```{r}
+tweet_words %>%
+  filter(!word == "https://t.co/selb4fcv3u") %>%
+  group_by(word, screen_name) %>%
+  summarize(n = n(),
+            avg_retweets = exp(mean(log(retweet_count + 1))) - 1,
+            avg_favorites = exp(mean(log(favorite_count + 1))) - 1,
+            avg_retweets = round(avg_retweets, 2),
+            avg_favorites = round(avg_favorites, 2)) %>%
+  filter(n >= 30) %>% 
+  arrange(desc(avg_retweets)) 
+```
+
+```{r}
+tweet_words %>% 
+  filter(word == "welcomes")  # exploring
+```
+
+```{r}
+library(widyr)
+
+tidytuesday_tweets_word_pairs <- tweet_words %>% 
+  pairwise_count(word, screen_name, sort = TRUE) %>% 
+  filter(n>20)
+```
+
+```{r}
+library(igraph)
+library(ggraph)
+
+set.seed(2019)
+
+tidytuesday_tweets_word_pairs %>%
+  filter(n >= 20) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n, 
+                     edge_width = n), 
+                 edge_colour = "#decade") +
+  geom_node_point(size = 5, color = "#780303") +
+  geom_node_text(aes(label = name), repel = TRUE, 
+                 point.padding = unit(0.2, "lines")) +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+```{r}
+tidytuesday_tweets_word_cors <- tweet_words %>% 
+  group_by(word) %>% 
+  filter(n() >= 50) %>% 
+  pairwise_cor(word, week, sort = TRUE)
+```
+
+```{r}
+set.seed(2019)
+
+tidytuesday_tweets_word_cors %>%
+  filter(correlation > .06) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "graphopt") +
+  geom_edge_link(aes(edge_alpha = correlation, 
+                     edge_width = correlation), 
+                 edge_colour = "#fff68f") +
+  geom_node_point(size = 5, color = "#780303") +
+  geom_node_text(aes(label = name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()+
+  theme(legend.position = "none")
+```
+### source: http://www.sthda.com/english/articles/33-social-network-analysis/135-network-visualization-essentials-in-r/
+```{r}
+# node list
+item1 <- tidytuesday_tweets_word_cors  %>% 
+  distinct(item1) %>% 
+  rename(label = item1)
+
+item2 <- tidytuesday_tweets_word_cors  %>% 
+  distinct(item2) %>% 
+  rename(label = item2)
+
+tweets_nodes <- full_join(item1, item2, by = "label")
+tweets_nodes
+
+tweets_nodes <- tweets_nodes %>%  
+  rowid_to_column("id") 
+tweets_nodes
+```
+
+```{r}
+# edge list
+tweets_route <- tidytuesday_tweets_word_cors %>% 
+  group_by(item1, item2) %>% 
+  summarise(weight = round(correlation, 2)) %>% 
+  ungroup() %>% 
+  filter(!is.na(weight)) %>% 
+  top_n(100)
+
+tweets_route
+```
+
+```{r}
+tweets_edges <- tweets_route %>% 
+  left_join(tweets_nodes, by = c("item1" = "label")) %>% 
+  rename(from = id)
+
+tweets_edges <- tweets_edges %>% 
+  left_join(tweets_nodes, by = c("item2" = "label")) %>% 
+  rename(to = id) %>% 
+  filter(!is.na(from),
+         !is.na(to))
+```
+
+```{r}
+tweets_edges  <- select(tweets_edges, from, to, weight)
+
+tweets_edges
+```
+
+```{r}
+# creating network objects
+library(network)
+
+tweets_network <- network(tweets_edges, 
+                          vertex.attr = tweets_nodes,
+                          matrix.type = "edgelist",
+                          ignore.eval = FALSE)
+
+class(tweets_network)
+
+tweets_network
+
+plot(tweets_network, vertex.cex = 3)
+
+plot(tweets_network, vertex.cex = 3, mode = "circle")
+```
+
+```{r}
+detach(package:network)
+rm(tweets_network)
+library(igraph)
+```
+
+```{r}
+library(ggraph)
+
+set.seed(2019)
+
+tweets_igraph <- graph_from_data_frame(d=tweets_edges, 
+                                     vertices = tweets_nodes)
+
+plot(tweets_igraph, 
+     layout=layout_with_fr, 
+     vertex.size = 12,
+     vertex.label.dist = 15, 
+     vertex.color="#ce0000", 
+     edge.arrow.size=.2, 
+     edge.label.family = "Arial")
+```
+
+```{r}
+library(tidygraph)
+library(ggraph)
+```
+
+```{r}
+tweets_tidy <- tbl_graph(nodes = tweets_nodes, 
+                         edges = tweets_edges, 
+                         directed = TRUE)
+
+tweets_igraph_tidy <- as_tbl_graph(tweets_igraph)
+
+
+class(tweets_tidy)
+class(tweets_igraph_tidy)
+class(tweets_igraph)
+
+tweets_tidy
+```
+
+```{r}
+tweets_tidy %>% 
+  activate(edges) %>% 
+  arrange(desc(weight))
+```
+
+```{r}
+set.seed(2019)
+
+ggraph(tweets_tidy, 
+       layout = "fr") + 
+  geom_node_point() +
+  geom_edge_link(aes(width = weight), alpha = 0.5) + 
+  scale_edge_width(range = c(0.5, 3)) +
+  geom_node_text(aes(label = label), repel = TRUE) +
+  labs(edge_width = "correlation") +
+  theme_graph()+
+  theme(legend.position = "none")
+```
+
+```{r}
+# for practice
+
+ggraph(tweets_tidy, layout = "linear") + 
+  geom_edge_arc(aes(width = weight), alpha = 0.8) + 
+  scale_edge_width(range = c(0.2, 2)) +
+  geom_node_text(aes(label = label), 
+                 hjust = 'outward', 
+                 size = 4,
+                 check_overlap = TRUE) +
+  labs(edge_width = "correlation") +
+  theme_graph()+
+  theme(legend.position = "top")
+```
+
+```{r Coord diagram, circular}
+ggraph(tweets_tidy, layout = "linear", circular = TRUE) + 
+  geom_edge_arc(aes(width = weight), color = "#b4eeb4", alpha = 0.8) + 
+  scale_edge_width(range = c(0.2, 2)) +
+  geom_node_text(aes(label = label), color = "#780303", repel = TRUE) +
+  labs(edge_width = "Number of calls") +
+  theme_graph()+
+  theme(legend.position = "top")
+```
+
+```{r Interactive network graphs}
+library(visNetwork)
+library(networkD3)
+```
+
+```{r}
+set.seed(2019)
+
+visNetwork(tweets_nodes, tweets_edges)
+```
+
+```{r}
+set.seed(2019)
+tweets_edges <- mutate(tweets_edges, width = weight/5 + 1)
+
+visNetwork(tweets_nodes, tweets_edges) %>% 
+  visIgraphLayout(layout = "layout_with_fr") %>% 
+  visEdges(arrows = "middle")
+```
+
+```{r}
+tweets_nodes_d3 <- mutate(tweets_nodes, id = id - 1)
+tweets_edges_d3 <- mutate(tweets_edges, from = from - 1, to = to - 1)
+```
+
+```{r}
+set.seed(2019)
+forceNetwork(Links = tweets_edges_d3, 
+             Nodes = tweets_nodes_d3, 
+             Source = "from", 
+             Target = "to", 
+             NodeID = "label", 
+             Group = "id", 
+             Value = "weight", 
+             opacity = 1, 
+             fontSize = 16, 
+             zoom = TRUE)
+```

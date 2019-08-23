@@ -1,0 +1,443 @@
+---
+title: "thanksgiving survey"
+author: "sung inkyung"
+date: '2019 7 8 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+### source: [datascreencast](https://github.com/dgrtwo/data-screencasts/blob/master/thanksgiving.Rmd)
+[Tidy Tuesday](https://www.youtube.com/watch?v=rxJZT0duwfU)
+
+```{r}
+thanksgiving_survey <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-11-20/thanksgiving_meals.csv") %>% 
+  mutate(family_income = fct_reorder(family_income, 
+                                     parse_number(family_income)))
+```
+
+```{r}
+food_gathered <- thanksgiving_survey %>%
+  select(id, 
+         starts_with("side"),
+         starts_with("pie"),
+         starts_with("dessert")) %>%
+  gather(type, value, -id) %>%
+  filter(!is.na(value),
+         !value %in% c("None", "Other (please specify)")) %>%
+  mutate(type = str_remove(type, "\\d+"))
+
+food_gathered %>% 
+  count(type, value, sort = TRUE) %>% 
+  View()
+```
+
+```{r}
+food_gathered <- thanksgiving_survey %>%
+  select(id, starts_with("side"),
+         starts_with("pie"),
+         starts_with("dessert")) %>% 
+  View()
+```
+
+```{r}
+food_gathered <- thanksgiving_survey %>%
+  select(id, 
+         starts_with("side"),
+         starts_with("pie"),
+         starts_with("dessert")) %>%
+  select(-side15, -pie13, -dessert12) %>%
+  gather(type, value, -id) %>%
+  filter(!is.na(value),
+         !value %in% c("None", "Other (please specify)")) %>%
+  mutate(type = str_remove(type, "\\d+"))
+
+n_respondents <- n_distinct(food_gathered$id)
+```
+
+```{r}
+food_gathered %>% 
+  count(type, value, sort = TRUE) %>% 
+  mutate(value = fct_reorder(value, n)) %>% 
+  ggplot(aes(value, n / n_respondents, fill = type)) +
+  geom_col(show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_fill_manual(values = c("#f15e75", "#cc9500", "#27c96d")) +
+  coord_flip() +
+  labs(x = " ",
+       y = "% of respondents") +
+  theme_minimal()
+```
+
+
+```{r}
+food_gathered %>% 
+  count(type, value, sort = TRUE) %>% 
+  mutate(value = fct_reorder(value, n)) %>% 
+  ggplot(aes(value, n/n_respondents, fill = type)) +
+  geom_col(show.legend = FALSE)+
+  coord_flip() +
+  scale_y_continuous(labels =scales::percent_format()) +
+  scale_fill_manual(values = c("#f15e75", "#cc9500", "#27c96d"))+
+  facet_wrap(~type, scales = "free_y", ncol = 1) +
+  theme_light() +
+  labs(x =" ",
+       y = " % of respondents") +
+  theme_minimal()
+```
+
+```{r Counting and correlating pairs of words from food types}
+library(widyr)
+library(ggraph)
+library(igraph)
+```
+
+```{r}
+food_pairs_count <- food_gathered %>% 
+  pairwise_count(value, id, sort = TRUE)
+
+food_graph <- food_pairs_count %>% 
+  filter(n > 150) %>% 
+  graph_from_data_frame()
+
+food_graph
+```
+
+```{r}
+set.seed(2019)
+
+ggraph(food_graph, layout = "graphopt")+
+  geom_edge_link() +
+  geom_node_point()+
+  geom_node_text(aes(label = name), 
+                 vjust = 1, 
+                 hjust = 1) +
+  theme_void()
+```
+
+```{r}
+set.seed(2019)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(food_graph, layout = "graphopt") +
+  geom_edge_link(aes(edge_alpha = n), 
+                 show.legend = FALSE,
+                 arrow = a, 
+                 end_cap = circle(.03, 'inches')) +
+  geom_node_point(color = "#ce0000", size = 5) +
+  geom_node_text(aes(label = name), 
+                 vjust = 1, 
+                 hjust = 1) +
+  theme_void()
+```
+
+```{r}
+food_pair_cor <- food_gathered %>% 
+  pairwise_cor(value, id, sort = TRUE)
+
+food_pair_cor %>% 
+  count(correlation) %>% 
+  arrange(desc(correlation))
+```
+
+```{r}
+food_pair_cor %>% 
+  filter(item1 == "Cookies")
+
+food_pair_cor %>% 
+  filter(item1 == "Pumpkin")
+
+food_pair_cor %>% 
+  filter(item1 == "Cornbread")
+
+food_pair_cor %>% 
+  filter(item1 == "Ice cream")
+```
+
+```{r}
+food_pair_cor %>%
+  filter(item1 %in% c("Cookies", "Pumpkin", "Cornbread", "Ice cream"), 
+         !is.na(item1),
+         !is.na(item2)) %>%
+  group_by(item1) %>%
+  top_n(6) %>%
+  ungroup() %>%
+  mutate(item2 = reorder(item2, correlation)) %>% 
+  ggplot(aes(item2, correlation)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(limits = c(0.0, 0.4),
+                     breaks = seq(0.0, 0.4, 0.1),
+                     labels = c(seq(0.0, 0.4, 0.1)),
+                     expand = c(0, 0),
+                     name = "Correlation")+
+  facet_wrap(~ item1, scales = "free") +
+  coord_flip()+
+  theme(axis.title.y = element_blank()) +
+  theme_minimal()
+```
+
+```{r}
+set.seed(2019)
+
+food_pair_cor %>% 
+  filter(correlation > .15) %>% 
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+  geom_node_point(color = "#53c4da", size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  theme_void()
+```
+
+```{r}
+set.seed(2019)
+
+food_pair_cor %>% 
+  filter(correlation > .15) %>% 
+  graph_from_data_frame() %>%
+  ggraph(layout = "graphopt") +
+  geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+  geom_node_point(color = "#53c4da", size = 5) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  theme_void()
+```
+
+```{r}
+set.seed(2018)
+food_types <- food_gathered %>%
+  count(value, type, sort = TRUE)
+
+food_pair_cor %>%
+  head(75) %>%
+  graph_from_data_frame(vertices = food_types) %>%
+  ggraph() +
+  geom_edge_link() +
+  geom_node_point(aes(color = type, 
+                      size = n / n_respondents)) +
+  geom_node_text(aes(label = name), vjust = 1, 
+                 hjust = 1, 
+                 repel = TRUE) +
+  scale_size_continuous(labels = scales::percent_format()) +
+  scale_color_manual(values = c("#f15e75", "#cc9500", "#27c96d"))+
+  theme_void() +
+  labs(title = "What sides, disserts and pies go together at Thanksgiving?",
+       color = " ",
+       size = "% of respondents")
+```
+### source: https://www.jessesadler.com/post/network-analysis-with-r/,                                     http://www.sthda.com/english/articles/33-social-network-analysis/135-network-visualization-essentials-in-r/
+```{r Creating static and interactive network graphs}
+library(network)
+library(tidygraph)
+library(visNetwork)
+library(networkD3)
+```
+
+```{r}
+# node list
+item1 <- food_pair_cor  %>% 
+  distinct(item1) %>% 
+  rename(label = item1)
+
+item2 <- food_pair_cor  %>% 
+  distinct(item2) %>% 
+  rename(label = item2)
+
+food_nodes <- full_join(item1, item2, by = "label")
+food_nodes
+
+food_nodes <- food_nodes %>%  
+  rowid_to_column("id") 
+food_nodes
+```
+
+```{r}
+# edge list
+food_route <- food_pair_cor %>% 
+  group_by(item1, item2) %>% 
+  summarise(weight = round(correlation, 2)) %>% 
+  ungroup()
+
+food_route
+```
+
+```{r}
+food_edges <- food_route %>% 
+  left_join(food_nodes, by = c("item1" = "label")) %>% 
+  rename(from = id)
+
+food_edges <- food_edges %>% 
+  left_join(food_nodes, by = c("item2" = "label")) %>% 
+  rename(to = id) %>% 
+  filter(!is.na(from),
+         !is.na(to))
+```
+
+```{r}
+food_edges  <- select(food_edges, from, to, weight) %>% 
+  top_n(75)
+
+food_edges  
+```
+
+```{r}
+library(network)
+
+set.seed(2019)
+
+# Creating network object
+food_network <- network(food_edges, 
+                        vertex.attr = food_nodes, 
+                        matrix.type = "edgelist", 
+                        ignore.eval = FALSE) 
+class(food_network)
+
+food_network
+
+plot(food_network, vertex.cex = 3)
+
+plot(food_network, vertex.cex = 3, mode = "circle")
+```
+
+```{r}
+detach(package:network)
+rm(food_network)
+library(igraph)
+```
+
+```{r}
+library(ggraph)
+
+set.seed(2019)
+
+food_igraph <- graph_from_data_frame(food_edges, 
+                                     vertices = food_nodes)
+
+plot(food_igraph, 
+     layout=layout_with_fr, 
+     vertex.size = 12,
+     vertex.label.dist = 15, 
+     vertex.color="#ce0000", 
+     edge.arrow.size=.2, 
+     edge.label.family = "Arial")
+```
+
+```{r}
+library(tidygraph)
+library(ggraph)
+```
+
+```{r}
+food_tidy <- tbl_graph(nodes = food_nodes, 
+                       edges = food_edges, 
+                       directed = FALSE)
+
+food_igraph_tidy <- as_tbl_graph(food_igraph)
+
+
+class(food_tidy)
+class(food_igraph_tidy)
+class(food_igraph)
+
+food_tidy
+```
+```{r}
+food_tidy %>% 
+  activate(edges) %>% 
+  arrange(desc(weight))
+```
+
+```{r}
+set.seed(2019)
+
+ggraph(food_tidy, 
+       layout = "fr") + 
+  geom_node_point() +
+  geom_edge_link(aes(width = weight), alpha = 0.5) + 
+  scale_edge_width(range = c(0.5, 3)) +
+  geom_node_text(aes(label = label), repel = TRUE) +
+  labs(edge_width = "food") +
+  theme_graph()+
+  theme(legend.position = "none")
+```
+
+```{r}
+set.seed(2019)
+
+# Arc diagram
+ggraph(food_tidy, layout = "linear") + 
+  geom_edge_arc(aes(width = weight), 
+                color = "#8d1673",
+                alpha = 0.8) + 
+  scale_edge_width(range = c(0.2, 2)) +
+  geom_node_text(aes(label = label),
+                 color = "#004000",
+                 hjust = 'outward',
+                 size = 4,
+                 check_overlap = TRUE) +
+  labs(edge_width = "food") +
+  theme_graph()+
+  theme(legend.position = "none")
+```
+
+```{r Coord diagram, circular}
+
+ggraph(food_tidy, layout = "linear", circular = TRUE) + 
+  geom_edge_arc(aes(width = weight), 
+                color = "#8d1673",
+                alpha = 0.8) + 
+  scale_edge_width(range = c(0.2, 2)) +
+  geom_node_text(aes(label = label),
+                 color = "#004000",
+                 hjust = 'outward',
+                 size = 4,
+                 check_overlap = TRUE) +
+  labs(edge_width = "food") +
+  theme_graph()+
+  theme(legend.position = "none")
+
+```
+
+```{r Interactive network graphs}
+library(visNetwork)
+library(networkD3)
+```
+
+```{r}
+set.seed(2019)
+
+visNetwork(food_nodes, food_edges)
+```
+
+```{r}
+set.seed(2019)
+food_edges <- mutate(food_edges, width = weight/5 + 1)
+
+visNetwork(food_nodes, food_edges) %>% 
+  visIgraphLayout(layout = "layout_with_fr") %>% 
+  visEdges(arrows = "middle")
+```
+
+```{r}
+food_nodes_d3 <- mutate(food_nodes, id = id - 1)
+food_edges_d3 <- mutate(food_edges, from = from - 1, to = to - 1)
+```
+
+```{r}
+set.seed(2019)
+forceNetwork(Links = food_edges_d3, 
+             Nodes = food_nodes_d3, 
+             Source = "from", 
+             Target = "to", 
+             NodeID = "label", 
+             Group = "id", 
+             Value = "weight", 
+             opacity = 1, 
+             fontSize = 16, 
+             zoom = TRUE)
+```

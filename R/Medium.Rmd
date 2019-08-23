@@ -1,0 +1,271 @@
+---
+title: "medium_datascience"
+author: "sung inkyung"
+date: '2019 6 17 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source: https://github.com/dgrtwo/data-screencasts/blob/master/medium-datasci.Rmd
+```{r}
+library(tidyverse)
+medium_datasci <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-12-04/medium_datasci.csv")
+
+View(medium_datasci)
+```
+
+```{r}
+medium_gathered <- medium_datasci %>% 
+  select(-x1) %>% 
+  mutate(post_id = row_number()) %>% 
+  gather(tag, value, starts_with("tag")) %>% 
+  mutate(tag = str_remove(tag, "tag_")) %>% 
+  filter(value == 1)
+
+medium_gathered %>% 
+  count(tag, sort = TRUE)
+```
+
+```{r}
+library(GGally)
+variables <- c("year", "tag", "reading_time", "claps")
+
+medium_gathered %>% 
+  select(variables) %>% 
+  mutate(above_median = claps > median(claps)) %>% 
+  sample_n(100) %>% 
+  ggparcoord(
+    groupColumn = "above_median",
+    showPoints = TRUE, 
+    alphaLine = 1,
+    scale = "center",
+    title = "Medium_features")+
+  theme_minimal()+
+  theme(plot.title = element_text(size = 10))
+```
+
+```{r}
+# highlighting
+
+variables <- c("year", "tag", "reading_time", "claps")
+
+medium_gathered %>% 
+  select(variables) %>% 
+  mutate(above_median = claps >median(claps)) %>% 
+  sample_n(100) %>% 
+  ggparcoord(
+    groupColumn = "above_median",
+    showPoints = TRUE, 
+    alphaLine = 1,
+    scale = "std",
+    title = "Medium features") +
+  scale_color_manual(values=c("#b8b8b8", "#8d1673")) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 10))
+```
+
+```{r}
+library(ggrepel)
+
+medium_gathered %>% 
+  group_by(tag) %>% 
+  summarise(median_claps = median(claps),
+            reading_time = mean(reading_time)) %>% 
+  ggplot(aes(reading_time, median_claps)) +
+  geom_point(size = 3, color = "#8d1673") +
+  geom_text_repel(aes(label = tag)) +
+  expand_limits(y= 0) +
+  theme_minimal()
+```
+### source: https://www.tidytextmining.com/ngrams.html
+```{r}
+library(tidytext)
+
+medium_processed <- medium_datasci %>% 
+  select(-x1) %>% 
+  mutate(post_id = row_number())
+
+medium_bigrams <- medium_processed %>% 
+  filter(!is.na(title)) %>% 
+  select(post_id,
+         title, 
+         subtitle, 
+         year, 
+         reading_time, 
+         claps) %>% 
+  unnest_tokens(bigram, title, token = "ngrams", n = 2)
+
+medium_bigrams
+```
+
+```{r}
+medium_bigrams %>% 
+  count(bigram, sort = TRUE) %>% 
+  filter(!is.na(bigram))
+```
+
+```{r}
+bigrams_separated <- medium_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams_separated %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+# new bigram counts:
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE) %>% 
+  filter(!is.na(word1),
+         !is.na(word2))
+
+bigram_counts
+```
+
+```{r}
+bigrams_united <- bigrams_filtered %>%
+  unite(bigram, word1, word2, sep = " ")
+
+bigrams_united
+```
+
+```{r}
+bigrams_filtered %>%
+  filter(word2 == "ai") %>%
+  count(word2, word1, sort = TRUE)
+```
+
+```{r}
+#sentiment analysis
+
+bigrams_separated %>%
+  filter(word1 == "not") %>%
+  count(word1, word2, sort = TRUE)
+```
+
+
+```{r}
+AFINN <- get_sentiments("afinn")
+
+AFINN
+```
+
+```{r}
+negation_words <- c("not", "no", "never", "without")
+
+negated_words <- bigrams_separated %>%
+  filter(word1 %in% negation_words) %>%
+  inner_join(AFINN, by = c(word2 = "word")) %>%
+  count(word1, word2, score, sort = TRUE)
+```
+
+```{r}
+library(cowplot)
+
+p1 <- negated_words %>%
+  filter(word1 == "not") %>%
+  count(word2, score, sort = TRUE) %>% 
+  mutate(contribution = n * score) %>%
+  arrange(desc(abs(contribution))) %>%
+  head(10) %>%
+  mutate(word2 = reorder(word2, contribution)) %>%
+  ggplot(aes(word2, n * score, fill = n * score > 0)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c("#f15e75", "#27c96d"))+
+  xlab("Words preceded by \"not\"") +
+  ylab("Sentiment score * number of occurrences") +
+  coord_flip()+
+  theme_minimal()
+
+p2 <- negated_words %>%
+  filter(word1 == "no") %>%
+  count(word2, score, sort = TRUE) %>% 
+  mutate(contribution = n * score) %>%
+  arrange(desc(abs(contribution))) %>%
+  head(10) %>%
+  mutate(word2 = reorder(word2, contribution)) %>%
+  ggplot(aes(word2, n * score, fill = n * score > 0)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c("#f15e75", "#27c96d"))+
+  xlab("Words preceded by \"no\"") +
+  ylab("Sentiment score * number of occurrences") +
+  coord_flip()+
+  theme_minimal() 
+
+p3 <- negated_words %>%
+  filter(word1 == "never") %>%
+  count(word2, score, sort = TRUE) %>% 
+  mutate(contribution = n * score) %>%
+  arrange(desc(abs(contribution))) %>%
+  head(10) %>%
+  mutate(word2 = reorder(word2, contribution)) %>%
+  ggplot(aes(word2, n * score, fill = n * score > 0)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c("#f15e75", "#27c96d"))+
+  xlab("Words preceded by \"never\"") +
+  ylab("Sentiment score * number of occurrences") +
+  coord_flip()+
+  theme_minimal()
+
+p4 <- negated_words %>%
+  filter(word1 == "without") %>%
+  count(word2, score, sort = TRUE) %>% 
+  mutate(contribution = n * score) %>%
+  arrange(desc(abs(contribution))) %>%
+  head(10) %>%
+  mutate(word2 = reorder(word2, contribution)) %>%
+  ggplot(aes(word2, n * score, fill = n * score > 0)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = c("#f15e75", "#27c96d"))+
+  xlab("Words preceded by \"without\"") +
+  ylab("Sentiment score * number of occurrences") +
+  coord_flip() +
+  theme_minimal()
+
+plot_grid(p1, p2, p3, p4, ncol = 2)
+
+```
+## #Visualizing a network of bigrams with ggraph
+```{r}
+library(igraph)
+library(ggraph)
+```
+
+```{r}
+set.seed(2019)
+
+bigram_graph <- bigram_counts %>%
+  filter(n > 100) %>%
+  graph_from_data_frame() %>% 
+  ggraph(layout = "fr") +
+  geom_edge_link() +
+  geom_node_point(color = "#8d1673", 
+                  size = 3) +
+  geom_node_text(aes(label = name), 
+                 repel = TRUE)+
+  theme_void()
+
+bigram_graph
+```
+
+```{r}
+set.seed(2019)
+
+a <- grid::arrow(type = "closed", 
+                 length = unit(.09, "inches"))
+
+bigram_graph <- bigram_counts %>%
+  filter(n > 100) %>%
+  graph_from_data_frame() %>% 
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), 
+                 show.legend = FALSE,
+                 arrow = a, 
+                 end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "#8d1673", 
+                  size = 3) +
+  geom_node_text(aes(label = name), 
+                 repel = TRUE)+
+  theme_void()
+```

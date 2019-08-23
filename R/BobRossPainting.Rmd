@@ -1,0 +1,366 @@
+---
+title: "BobRoss_Painting"
+author: "Sung In Kyung"
+date: '2019 8 13 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### sources:[data screencast by david robinson](https://youtu.be/sD993H5FBIY),                              [Understanding PCA by Julia Silge](https://juliasilge.com/blog/stack-overflow-pca/) 
+```{r}
+library(tidyverse)
+library(scales)
+library(cowplot)
+
+theme_set(theme_minimal())
+
+bob_ross <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-06/bob-ross.csv")
+```
+
+```{r}
+bob_ross_gathered <- bob_ross %>% 
+  janitor::clean_names() %>%
+  gather(element, present, -episode, -title) %>% 
+  filter(present == 1) %>% 
+  mutate(title = str_to_title(str_remove_all(title, '"')),
+         element = str_to_title(str_replace(element, "_", " "))) %>% 
+  select(-present) %>% 
+  extract(episode, c("season", "episode_number"), "S(.*)E(.*)", convert = TRUE, remove = FALSE) %>% 
+  arrange(season, episode_number)
+```
+
+```{r Exploring the paintings}
+bob_ross_gathered %>% 
+  count(element, sort = TRUE) %>% 
+  head(25) %>% 
+  mutate(element = fct_reorder(element, n)) %>% 
+  ggplot(aes(element, n)) +
+  geom_col() +
+  coord_flip()
+```
+
+```{r}
+bob_ross_gathered %>% 
+  filter(!element %in% c("Tree", "Trees")) %>% 
+  add_count(season, name = "total_elements") %>% 
+  count(season, element, total_elements, sort = TRUE) %>% 
+  mutate(prc_elements = n / total_elements) %>% 
+  filter(element == "Deciduous") %>% 
+  ggplot(aes(season, prc_elements)) +
+  geom_line() +
+  expand_limits(y = 0)
+```
+
+How have Ross's paintings been changing over series?
+
+```{r}
+by_season_element <- bob_ross_gathered %>% 
+  filter(!element %in% c("TRee", "Trees")) %>% 
+  group_by(season) %>% 
+  mutate(number_episodes = n_distinct(episode)) %>% 
+  count(season, element, number_episodes, sort = TRUE) %>% 
+  mutate(prc_included = n / number_episodes) %>% 
+  group_by(element) %>% 
+  mutate(element_total = sum(n)) %>% 
+  ungroup()
+```
+
+```{r}
+by_season_element %>% 
+  filter(element_total >=50) %>% 
+  ggplot(aes(season, prc_included, color = element))+
+  geom_line()+
+  geom_smooth(show.legend = FALSE)+
+  scale_y_continuous(labels = scales::percent_format())+
+  expand_limits(y=0)+
+  facet_wrap(~element, ncol = 6)+
+  theme(legend.position = "none")
+```
+
+```{r}
+season_element <-  by_season_element %>% 
+  select(season, element, prc_included) %>% 
+  rename(value = prc_included) %>% 
+  arrange(season)
+
+season_element 
+```
+
+```{r}
+season_element %>% 
+  group_by(element) %>% 
+  summarise(value = mean(value)) %>% 
+  arrange(desc(value)) %>% 
+  top_n(8) %>% 
+  mutate(element=reorder(element, value)) %>% 
+  ggplot(aes(element, value, label = element, fill = element)) +
+  geom_col(alpha = .7,
+           show.legend = FALSE) +
+  geom_text(aes(element, 0.001),
+            hjust = 0,
+            color = "white", size = 4) +
+  coord_flip()+
+  labs(x = NULL,
+       y = "Average % of a season's element") +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_y_continuous(labels = scales:: percent_format(),
+                     expand = c(0.015, 0)) +
+  theme(axis.text.y = element_blank()) +
+  theme_minimal_vgrid()
+
+```
+
+```{r PCA}
+sparse_element_matrix <- season_element %>% 
+  tidytext::cast_sparse(season, element, value)
+
+dim(sparse_element_matrix)
+
+element_scale <- scale(sparse_element_matrix)
+
+element_pca <- irlba::prcomp_irlba(element_scale,
+                                   n= 4, scale. = TRUE)
+```
+
+```{r}
+class(element_pca)
+
+names(element_pca)
+```
+
+```{r Analyzing the PCA output}
+library(broom)
+
+element <- colnames(element_scale)
+  
+tidied_pca <- bind_cols(element = colnames(element_scale),
+                        tibble::as_tibble(element_pca$rotation)) %>%
+  gather(PC, Contribution, PC1:PC4)
+
+tidied_pca
+```
+
+```{r}
+tidied_pca %>% 
+    filter(PC %in% paste0("PC", 1:4)) %>%
+    ggplot(aes(element, Contribution, fill = element)) +
+    geom_col(show.legend = FALSE, 
+             alpha = 0.8) +
+    theme(axis.text.x = element_blank(), 
+          axis.ticks.x = element_blank(),
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank()) + 
+    labs(x = "Bob Ross painting-elements",
+         y = "Relative importance in each principal component") +
+    facet_wrap(~ PC, ncol = 2)
+```
+
+```{r}
+
+tidied_pca %>% 
+  filter(PC == "PC1") %>% 
+  top_n(40, abs(Contribution)) %>% 
+  mutate(element = reorder(element, Contribution)) %>% 
+  ggplot(aes(element, Contribution, fill = element)) +
+  geom_col(alpha = .7,
+           show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 65,
+                                   hjust = 1,
+                                   vjust = 1),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "cornsilk")) +
+  facet_wrap(~ PC,
+             nrow = 4)+
+  labs(x = "Bob Ross' painting-elements",
+       y = "Relative importance in Principle component")
+```
+
+```{r}
+tidied_pca %>% 
+  filter(PC == "PC2") %>% 
+  top_n(40, abs(Contribution)) %>% 
+  mutate(element = reorder(element, Contribution)) %>% 
+  ggplot(aes(element, Contribution, fill = element)) +
+  geom_col(alpha = .7,
+           show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 65,
+                                   hjust = 1,
+                                   vjust = 1),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "cornsilk")) +
+  facet_wrap(~ PC,
+             nrow = 4)+
+  labs(x = "Bob Ross's painting-elements",
+       y = "Relative importance in Principle component")
+```
+
+```{r}
+tidied_pca %>% 
+  filter(PC %in% c("PC1", "PC2", "PC3", "PC4")) %>% 
+  top_n(40, abs(Contribution)) %>% 
+  mutate(element = reorder(element, Contribution)) %>% 
+  ggplot(aes(element, Contribution, fill = element)) +
+  geom_col(alpha = .7,
+           show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle = 65,
+                                   hjust = 1,
+                                   vjust = 1),
+        axis.ticks.x = element_blank(),
+        strip.background = element_rect(fill = "cornsilk")) +
+  facet_wrap(~ PC,
+             nrow = 4)+
+  labs(x = "Bob Ross's elements",
+       y = "Relative importance in Principle component")
+```
+
+```{r}
+tidied_pca %>% 
+  filter(PC %in% c("PC1", "PC2", "PC3", "PC4")) %>% 
+  group_by(PC) %>% 
+  top_n(16, abs(Contribution)) %>% 
+  ungroup() %>% 
+  mutate(element = drlib::reorder_within(element, Contribution, PC)) %>% 
+  ggplot(aes(element, Contribution, fill = factor(PC))) +
+  geom_col(alpha = .7,
+           show.legend = FALSE) +
+  facet_wrap(~ PC,
+             scales = "free") +
+  coord_flip() +
+  labs(title = "First four principle components in Bob Ross' paintings")
+
+# need to clean up the axis_x_title
+```
+
+```{r}
+percent_variation <- element_pca$sdev^2 / sum(element_pca$sdev^2)
+
+augmented_pca <- bind_cols(Season = rownames(element_scale),
+                           tidy(element_pca$x))
+
+augmented_pca
+```
+
+```{r}
+augmented_pca %>%
+    mutate(Season = as.integer(Season)) %>%
+    filter(Season %% 2 == 0) %>%
+    ggplot(aes(PC1, PC2)) +
+    geom_point(size = 5, 
+               color = "darkgreen", 
+               alpha = 0.7) +
+    labs(x = paste0("Principal component 1 (",  percent(percent_variation[1]), ")"), 
+         y = paste0("Principal component 2 (",  percent(percent_variation[2]),")"),
+         title = "Projection of Bob Ross' painting elements on to the first two principal components",
+         subtitle = "The very high dimensional space can be projected down onto components we have explored")
+```
+
+```{r}
+augmented_pca %>%
+    mutate(Season = as.integer(Season)) %>%
+    filter(Season %% 2 == 0) %>%
+    ggplot(aes(PC3, PC4)) +
+    geom_point(size = 5, 
+               color = "firebrick4", 
+               alpha = 0.7) +
+    labs(x = paste0("Principal component 1 (",  percent(percent_variation[1]), ")"), 
+         y = paste0("Principal component 2 (",  percent(percent_variation[2]),")"),
+         title = "Projection of Bob Ross' painting elements on to the first two principal components",
+         subtitle = "The very high dimensional space can be projected down onto components we have explored")
+```
+### source:[data screencast by david robinson] (https://youtu.be/sD993H5FBIY)
+
+### Clustering
+What tends to appear together?
+correlated relation between elements based on whether they appear in the same episode
+
+```{r}
+library(widyr)
+br_cors <- bob_ross_gathered %>% 
+  add_count(element) %>% 
+  filter(n >= 5) %>% 
+  pairwise_cor(element, episode, sort = TRUE)
+
+
+bob_ross %>% 
+  filter(PERSON == 1) %>% 
+  pull(TITLE)
+```
+
+```{r}
+br_cors %>% 
+  filter(item1 == "River") %>% 
+  mutate(item2 = fct_reorder(item2, correlation)) %>% 
+  ggplot(aes(item2, correlation)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "What tends to appear with a river?",
+       subtitle = "Among elements that appeared in at least 10 paintings") +
+  theme_minimal_grid(12)
+```
+
+```{r}
+br_cors %>% 
+  filter(item1 == "Snow") %>% 
+  mutate(item2 = fct_reorder(item2, correlation)) %>% 
+  ggplot(aes(item2, correlation))+
+  geom_col() +
+  coord_flip() +
+   labs(title = "What tends to appear with snow?",
+       subtitle = "Among elements that appeared in at least 10 paintings") +
+  theme_minimal_grid(12)
+```
+
+```{r Qualitative approach}
+library(ggraph)
+library(igraph)
+```
+
+```{r}
+set.seed(2019)
+
+br_cors %>% 
+  head(150) %>% 
+  graph_from_data_frame() %>% 
+  ggraph()+
+  geom_edge_link(aes(edge_alpha = correlation,
+                     edge_width = correlation),
+                 edge_color = "#05a334")+
+  geom_node_point(size = 3)+
+  geom_node_text(aes(label= name), repel = TRUE,
+                 point.padding = unit(0.2, "lines")) +
+  theme_void()
+```
+### source: https://www.data-to-viz.com/graph/arc.html
+```{r}
+br_cors %>% 
+  head(100) %>% 
+  graph_from_data_frame() %>% 
+  ggraph(layout = "linear") +
+  geom_edge_arc(aes(edge_colour="black", 
+                edge_alpha = correlation,
+                edge_width = correlation),
+                edge_color = "#05a334", 
+                fold = TRUE)+
+  geom_node_point(aes(color = "#05a334",
+                      size = 2), 
+                  alpha = 0.5) +
+  scale_edge_width(range = c(0.9, 0))+
+  geom_node_text(aes(label = name), 
+                 angle = 65, 
+                 hjust = 1, 
+                 nudge_y = -0.5) +
+  labs(edge_width = "Correlation") +
+  theme_void() +
+  theme(
+    legend.position="none",
+    plot.margin=unit(c(0,0,0.4,0), "null"),
+    panel.spacing=unit(c(0,0,3.4,0), "null")
+  ) +
+  expand_limits(x = c(-1.2, 1.2), y = c(-5.6, 1.2))
+
+ggsave("C:/Users/inkyscope/Documents/projectR/dvscope/figures/Arc diagram of Bob ross' painting-elements.png")
+
+```
+

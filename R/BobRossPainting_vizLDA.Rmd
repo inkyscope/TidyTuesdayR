@@ -1,0 +1,194 @@
+---
+title: "BobRoss_Painting"
+author: "Sung inkyung"
+date: '2019 8 15'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### sources:[data screencast by david robinson](https://youtu.be/sD993H5FBIY),
+            [vizLDA](https://rpubs.com/cosmopolitanvan/topicmodeling)
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(scales)
+library(topicmodels)
+library(LDAvis)
+
+theme_set(theme_minimal())
+
+
+bob_ross <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-06/bob-ross.csv")
+```
+
+```{r}
+bob_ross_gathered <- bob_ross %>% 
+  janitor::clean_names() %>%
+  gather(element, present, -episode, -title) %>% 
+  filter(present == 1) %>% 
+  mutate(title = str_to_title(str_remove_all(title, '"')),
+         element = str_to_title(str_replace(element, "_", " "))) %>% 
+  select(-present) %>% 
+  extract(episode, c("season", "episode_number"), "S(.*)E(.*)", convert = TRUE, remove = FALSE) %>% 
+  arrange(season, episode_number)
+```
+## Exploring the paintings
+```{r}
+bob_ross_gathered %>% 
+  count(element, sort = TRUE) %>% 
+  head(25) %>% 
+  mutate(element = fct_reorder(element, n)) %>% 
+  ggplot(aes(element, n))+
+  geom_col()+
+  coord_flip()
+```
+
+```{r}
+bob_ross_gathered %>%
+  add_count(episode) %>%
+  arrange(desc(n))
+
+```
+## How have Ross's paintings been changing over sereies?
+```{r}
+by_season_element <- bob_ross_gathered %>% 
+  filter(!element %in% c("TRee", "Trees")) %>% 
+  group_by(season) %>% 
+  mutate(number_episodes = n_distinct(episode)) %>% 
+  count(season, element, number_episodes, sort = TRUE) %>% 
+  mutate(prc_included = n / number_episodes) %>% 
+  group_by(element) %>% 
+  mutate(element_total = sum(n)) %>% 
+  ungroup()
+```
+
+```{r}
+by_season_element %>% 
+  filter(element_total >=50) %>% 
+  ggplot(aes(season, prc_included, color = element)) +
+  geom_line() +
+  geom_smooth(method = "loess",
+              show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  expand_limits(y=0)+
+  facet_wrap(~element, ncol = 6) +
+  theme(legend.position = "none")
+```
+
+```{r Topic Modeling}
+season_element <- by_season_element %>% 
+  select(season, element, element_total) %>% 
+  rename(n = element_total) %>% 
+  arrange(season)
+
+season_element 
+```
+
+```{r}
+element_dtm <- season_element %>% 
+  cast_dtm(season, element, n)
+
+element_dtm
+```
+
+```{r}
+# burnin <- 4000
+# iter <- 2000
+# thin <- 500
+# seed <-list(2003,5,63,100001,765)
+# nstart <- 5
+# best <- TRUE
+
+element_lda <- LDA(element_dtm, 
+                   method = "Gibbs",
+                   k = 4, 
+                   control = list(seed = 1234))
+
+element_lda
+```
+
+```{r}
+tidy_lda <- tidy(element_lda)
+
+tidy_lda
+```
+
+```{r}
+top_terms <- tidy_lda %>% 
+  group_by(topic) %>% 
+  top_n(10) %>% 
+  ungroup() %>% 
+  arrange(topic, -beta)
+
+top_terms
+```
+
+```{r}
+library(ggsci)
+
+top_terms %>% 
+  mutate(term = reorder(term, beta)) %>% 
+  group_by(topic, term) %>% 
+  arrange(desc(beta)) %>% 
+  ungroup() %>% 
+  mutate(term = factor(paste(term, topic, sep = "_"),
+                       levels = rev(paste(term, topic, sep = "_")))) %>% 
+  ggplot(aes(term, beta,
+             fill = as.factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  scale_x_discrete(labels = function(x) gsub("__.+$", "", x)) +
+  scale_fill_jco()+
+  facet_wrap(~topic, ncol = 2,
+             scales = "free") +
+  labs(title = "Top 10 terms in each topic",
+       x = NULL,
+       y = expression(beta))
+
+```
+## Which topics are associated with which season?
+```{r}
+lda_gamma <- tidy(element_lda, matrix = "gamma")
+
+lda_gamma
+```
+
+```{r}
+lda_gamma %>% 
+  ggplot(aes(gamma, na.rm = T)) +
+  geom_histogram() +
+  scale_y_log10() +
+  labs(title = "Distribution of probabilities for all topics",
+       y = "Number of seasons")
+```
+
+```{r}
+ggplot(lda_gamma, aes(gamma, fill = as.factor(topic))) +
+  geom_histogram(show.legend = FALSE) +
+  facet_wrap(~ topic, ncol = 2) +
+  scale_y_log10() +
+  scale_fill_jco() +
+  labs(title = "Distribution of probability for each topic",
+       y = "Number of documents", 
+       x = expression(gamma))
+```
+
+```{r}
+topicmodels2LDAvis <- function(x, ...){
+  post <- topicmodels::posterior(x)
+  if (ncol(post[["topics"]]) < 3) stop("The model must contain > 2 topics")
+  mat <- x@wordassignments
+  LDAvis::createJSON(
+    phi = post[["terms"]], 
+    theta = post[["topics"]],
+    vocab = colnames(post[["terms"]]),
+    doc.length = slam::row_sums(mat, na.rm = TRUE),
+    term.frequency = slam::col_sums(mat, na.rm = TRUE)
+  )
+}
+
+serVis(topicmodels2LDAvis(element_lda))
+```
