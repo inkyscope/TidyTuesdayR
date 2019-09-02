@@ -1,0 +1,174 @@
+---
+title: "BobRossPainting"
+author: "Sung Inkyung"
+date: '2019 9 2 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+source:[Tidy Tuesday by Alyssa Goldberg](https://twitter.com/WireMonkey)
+```{r}
+library(tidyverse)
+library(Hmisc)
+library(tidytext)
+library(dendextend)
+library(circlize)
+library(corrplot)
+```
+
+
+```{r}
+bob_ross <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-06/bob-ross.csv") %>% 
+  janitor::clean_names()
+```
+
+```{r}
+var_frame <- names(bob_ross)[which(str_detect(names(bob_ross), "frame"))]
+```
+
+```{r}
+bob_ross_elements <- bob_ross %>% 
+  select_if(!names(.) %in% var_frame)
+```
+
+```{r}
+bob_ross_elements %>% 
+  select(3:53) %>% 
+  select_if(., colSums(.) > quantile(colSums(.)[3])) %>% 
+  cor() %>% 
+  corrplot::corrplot(., "circle", "lower",
+                     order = "hclust", diag = FALSE,
+                     tl.srt = 45,
+                     tl.cex = .75)
+
+```
+```{r}
+bob_text <- bob_ross_elements %>% 
+  select(-episode) %>% 
+  mutate(title = gsub('"\"', " ", title, fixed = TRUE)) %>% 
+  tidytext::unnest_tokens(input = title, token = "words", output = "word") %>% 
+  anti_join(stop_words, by = "word") %>% 
+  select(word, 1:(ncol(.)-1)) %>% 
+  group_by(word) %>% 
+  summarise_all(., sum, na.rm = TRUE) %>% 
+  ungroup() %>% 
+  column_to_rownames("word")
+```
+
+```{r}
+bob_filtered <- bob_text[rowSums(bob_text) > 21, ]
+```
+
+```{r dendrogram}
+as.dendrogram(hclust(dist(bob_filtered))) %>% 
+  color_branches(k = 7) %>% 
+  color_labels(k = 7) %>% 
+  circlize_dendrogram(.)  
+
+# labels_track_height = NA
+# dend_track_height = .9
+
+```
+
+
+```{r create the dend}
+d <- as.dendrogram(hclust(dist(bob_filtered))) %>% 
+  color_branches(k = 7) %>% 
+  color_labels(k = 7) 
+
+# horiz normal version
+  par(mar = c(3, 1, 1, 7))
+  plot(d, horiz = TRUE)
+  
+# horiz mirror version
+  par(mar = c(3, 7, 1, 7))
+  plot_horiz.dendrogram(d, side = TRUE)
+  
+```
+```{r}
+# default plot
+plot(d, type = "rectangle", ylab = "Height")
+
+# triangle plot
+plot(d, type = "triangle", ylab = "Height")
+
+# zoom n to the first dendrogram
+plot(d, xlim = c(1, 20), ylim = c(1, 40))
+
+```
+
+```{r phylogenetic trees}
+# phylon = tribe clan, race, genetikos = origin, sorce, birth; the study of the evolutionary history and relationships among individuals or groups of organisms(e.g. species, or populations)
+
+library(ape)
+# ape: Analyses of Phylogenetics and Evolution
+```
+```{r}
+# cut the dendrogram into 7 clusters
+colors <-  c("#008744", "#db885c", "#ff6f61", "#5c4963",
+           "#4c6a87", "#ad3ace", "#9d103a")
+clus7 <- cutree(d, 7)
+
+# unrooted
+plot(as.phylo(d), 
+     type = "unrooted",
+     cex=0.7,
+     use.edge.length=FALSE,
+     no.margin = TRUE, 
+     tip.color = colors[clus7],
+     lab4ut="axial",
+     edge.width = .7,
+     label.offset = .3)
+
+ggsave()
+```
+
+```{r}
+
+# default tplot
+plot(as.phylo(d), 
+     label.offset = 0.5,
+      tip.color = colors[clus7])
+
+# cladogram
+plot(as.phylo(d), type = "cladogram",
+     label.offset = 0.5,
+      tip.color = colors[clus7])
+
+
+# unrooted
+plot(as.phylo(d), 
+     type = "unrooted",
+     cex=0.7,
+     use.edge.length=FALSE,
+     no.margin = TRUE, 
+     tip.color = colors[clus7],
+     lab4ut="axial",
+     edge.width = .7,
+     label.offset = .3)
+
+# fan
+plot(as.phylo(d), 
+     type = "fan",
+     fsize = 0.7,
+     label.offset = 0.5,
+    tip.color = colors[clus7])
+
+# radial
+plot(as.phylo(d), type = "radial",
+     label.offset = 0.5,
+      tip.color = colors[clus7])
+```
+
+```{r}
+# cut the dendrogram into 7 clusters
+colors <-  c("#008744", "#db885c", "#ff6f61", "#5c4963",
+           "#4c6a87", "#ad3ace", "#9d103a")
+clus7 <- cutree(d, 7)
+plot(as.phylo(d),
+     type = "fan",
+     tip.color = colors[clus7],
+     label.offset = 1, cex = 0.7)
+```
