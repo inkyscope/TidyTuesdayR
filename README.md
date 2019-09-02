@@ -10,9 +10,11 @@ personal repo for data integrity by repeating, reinforcing, continuing, and refi
 ### Wine ratings (Parallel Coordinates Plots) by [Kaggle](https://www.kaggle.com/zynicide/wine-reviews)
 ![Wine reviews](https://github.com/inkyscope/datavizRscope/blob/master/figures/wine_rating_features.png)
 
-
 ### Bob Ross painting(PCA analysis) by [538 R package](https://github.com/rudeboybert/fivethirtyeight)
 ![Bob ross painting](https://github.com/inkyscope/datavizRscope/blob/master/figures/Bob_ross_paintings_elements_vizPCA.png)
+
+### Bob Ross painting(PCA analysis) by [538 R package](https://github.com/rudeboybert/fivethirtyeight)
+![Bob ross painting](https://github.com/inkyscope/datavizRscope/blob/master/figures/unrootedPlot.png)
 
 ### Bob Ross painting (Arc diagram) by [538 R package](https://github.com/rudeboybert/fivethirtyeight)
 ![Bob ross painting](https://github.com/inkyscope/datavizRscope/blob/master/figures/Arc%20diagram%20of%20Bob%20ross'%20painting-elements.png)
