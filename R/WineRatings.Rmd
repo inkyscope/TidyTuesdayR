@@ -116,7 +116,8 @@ title <- ggdraw() +
 
 plot_grid(title, plot_row,
           ncol = 1,
-          rel_heights = c(0.1, 1))
+          rel_heights = c(0.1, 1),
+          rel_widths = c(1.5, 1))
 
 ggsave("C:/Users/inkyscope/Documents/projectR/datavizRscope/figures/wine_rating_features.png")
 
