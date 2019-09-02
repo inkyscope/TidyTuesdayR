@@ -141,7 +141,7 @@ wine_ratings %>%
                       scale = 1.5)+
   geom_vline(xintercept = median(wine_ratings$points), 
              lty = "dashed", 
-             color = "#aaa9a9", 
+             color = "#f9ebde", 
              size = .9)+
   scale_y_discrete(expand = c(0.01, 0)) +
   scale_x_continuous(expand = c(0.01, 0)) +
