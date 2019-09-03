@@ -1,0 +1,137 @@
+---
+title: "SeattleBikes"
+author: "Sung Inkyung"
+date: '2019 6 25 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(patchwork)
+library(cowplot)
+
+```
+
+```{r}
+bike_traffic <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-02/bike_traffic.csv")
+```
+### source[color palette](https://www.r-bloggers.com/the-paul-tol-21-color-salute/)
+```{r}
+library(scales)
+tol7qualitative=c("#332288", "#88CCEE", "#44AA99", "#117733", "#DDCC77", "#CC6677","#AA4499")
+
+clean_bikes <- bike_traffic %>% 
+  mutate(date = mdy_hms(date),
+         month = month(date),
+         year = year(date),
+         season = case_when(
+      month %in% 3:5 ~ 1,
+      month %in% 6:8 ~ 2,
+      month %in% 9:11 ~ 3,
+      month %in% c(12, 1, 2) ~ 4
+    ),
+         crossing = case_when(
+      crossing == "Broadway Cycle Track North Of E Union St" ~ "Broadway Cycle Track",
+      crossing == "39th Ave NE Greenway at NE 62nd St" ~ "39th Ave NE Greenway",
+      crossing == "NW 58th St Greenway at 22nd Ave" ~ "NW 58th St Greenway",
+      crossing == "Burke Gilman Trail" ~ "Burke Gilman Trail",
+      crossing == "Elliot Bay Trail" ~ "Elliot Bay Trail",
+      crossing == "Sealth Trail" ~ "Sealth Trail",
+      crossing == "MTS Trail" ~ "MTS Trail"
+    )) %>% 
+  filter(between(year, 2014, 2018)) 
+
+yearly_bike_traffic <- clean_bikes %>% 
+  group_by(year, month, crossing) %>% 
+  summarize(total_bikes = sum(bike_count, na.rm = TRUE)) %>% 
+ggplot(aes(crossing, total_bikes,
+           group = year)) +
+  geom_path() +
+  geom_point(size = 1, 
+             aes(color = crossing),
+             show.legend = FALSE) +
+  facet_grid(month~year, 
+             labeller = labeller(.rows = set_names(month.abb, 1:12)),
+             switch = "y") +
+  scale_y_continuous("total_bikes", position =  "right",
+                     breaks=seq(0, 60000, 20000), labels = function(x){paste0(x/1000, 'K')})+
+  scale_color_manual(values = tol7qualitative) +
+  labs(x = NULL, 
+       y = NULL) +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.text.x = element_text(color = "steelblue"),
+        strip.text.y = element_text(angle=180, color="steelblue"))
+```
+
+
+```{r}
+guide <- clean_bikes %>% 
+  group_by(year, month, crossing) %>% 
+  summarize(total_bikes = sum(bike_count, na.rm = TRUE)) %>% 
+  filter(year == 2015, month == 1) %>% 
+  ggplot(aes(crossing, total_bikes, group = year)) +
+  geom_path() +
+  geom_point(size = 3, aes(color = crossing)) +
+  scale_color_manual("Crossing", values = tol7qualitative) +
+  labs(x = NULL, 
+       y = NULL) +
+  theme(axis.text = element_blank())
+
+
+plot <- wrap_plots(list(guide, yearly_bike_traffic ), widths = c(0.25, 0.75)) +
+  plot_annotation(title = "Annual Patterns in Seatle Bicycle Traffic")
+```
+
+```{r}
+season_bikes <- clean_bikes %>% 
+  group_by(crossing, season, year) %>% 
+  mutate(crossing_avg = mean(bike_count, na.rm = T),
+         crossing_avg = round(crossing_avg, 2),
+         crossing_avg = unique(crossing_avg)) %>% 
+  ungroup() 
+
+```
+
+```{r}
+season_bike_traffic <- season_bikes %>% 
+  mutate(season = factor(season, levels = 1:4, 
+                         labels = c("Spring\n(Mar-May)", 
+                                    "Summer\n(Jun-Aug)", 
+                                    "Autumn\n(Sep-Nov)", 
+                                    "Winter\n(Dec-Jan)"))) %>%
+  group_by(crossing, season, year) %>% 
+  summarize(crossing_avg = unique(crossing_avg)) %>% 
+  ggplot(aes(crossing, crossing_avg,
+           group = year)) +
+  geom_path() +
+  geom_point(size = 1, 
+             aes(color = crossing),
+             na.rm = TRUE) +
+  facet_grid(season~year,
+             switch = "y") +
+  scale_y_continuous("crossing_avg", position =  "right",
+                     limits = c(0, 50),
+                     breaks = seq(0, 50, by = 10)) +
+  scale_color_manual(values = tol7qualitative) +
+  labs(x = NULL, 
+       y = NULL,
+       title = "Seasonal Patterns between 2014 and 2018 in Seatle Bicycle Traffic") +
+  theme(
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        strip.text.x = element_text(color = "steelblue"),
+        strip.text.y = element_text(angle=90, color="steelblue"))
+
+season_bike_traffic
+
+ggsave("C:/Users/inkyscope/Documents/projectR/datavizRscope/figures/Seasonal-bike-traffic-in-Seastle.png")
+```
