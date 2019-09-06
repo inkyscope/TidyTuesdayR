@@ -1,6 +1,9 @@
 # datavizRscope
 personal repo for data integrity by repeating, reinforcing, continuing, and refining constantly
 
+### Wildlife strike time zone) by [FAA](https://wildlife.faa.gov/home)
+![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
+
 ### Wine reviews (LDA analysis) by [Kaggle](https://www.kaggle.com/zynicide/wine-reviews)
 ![Wine reviews](https://github.com/inkyscope/datavizRscope/blob/master/figures/wine_reviews_6topics_vizLDA.JPG)
 
