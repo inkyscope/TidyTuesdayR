@@ -4,14 +4,14 @@ personal repo for data integrity by repeating, reinforcing, continuing, and refi
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
 
+### Nobel prize winners by [Kaggle](https://www.kaggle.com/nobelfoundation/nobel-laureates#archive.csv)
+![Nobel prize laureates](https://github.com/inkyscope/datavizRscope/blob/master/figures/category_gender%20distribution.png)
+
 ### Wine reviews (LDA analysis) by [Kaggle](https://www.kaggle.com/zynicide/wine-reviews)
 ![Wine reviews](https://github.com/inkyscope/datavizRscope/blob/master/figures/wine_reviews_6topics_vizLDA.JPG)
 
 ### Wine reviews (Network analysis) by [Kaggle](https://www.kaggle.com/zynicide/wine-reviews)
 ![Wine reviews](https://github.com/inkyscope/datavizRscope/blob/master/figures/wine_bigrams_network.png)
-
-### Wine ratings (Parallel Coordinates Plots) by [Kaggle](https://www.kaggle.com/zynicide/wine-reviews)
-![Wine reviews](https://github.com/inkyscope/datavizRscope/blob/master/figures/wine_rating_features.png)
 
 ### Bob Ross painting(PCA analysis) by [538 R package](https://github.com/rudeboybert/fivethirtyeight)
 ![Bob ross painting](https://github.com/inkyscope/datavizRscope/blob/master/figures/Bob_ross_paintings_elements_vizPCA.png)
