@@ -135,7 +135,7 @@ p1 <- nobel_winners %>%
   scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete")) +
   gghighlight() +
   facet_wrap(~category) +
-  labs(title = "Category distribution\nin Nobel prize since 1901",
+  labs(title = "Category distribution in Nobel prize since 1901",
        x = " ",
        y = " ") +
   theme(line = element_blank(),
@@ -168,7 +168,7 @@ p2 <- nobel_winners %>%
                                    color = "gray40"),
         axis.text.y = element_text(size = 7,
                                    color = "gray40")) +
-      labs(title = "Gender distribution\nin nobel prize since 1901",
+      labs(title = "Gender distribution in nobel prize since 1901",
        x = " ",
        y = " ") +
   theme_half_open()
