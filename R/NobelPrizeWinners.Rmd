@@ -175,7 +175,7 @@ p2 <- nobel_winners %>%
 
 
 caption <- 
-  ggplot(data.frame(x = 1:1.5, y = 1:10)) +
+  ggplot(data.frame(x = 1:2, y = 1:10)) +
   labs(x = "",
        y = "",     
        caption = "Source: Kaggle") +
@@ -190,10 +190,10 @@ caption <-
   
 
 p1 + p2 + caption +
-  plot_layout(widths = c(1, 1, .25), nrow = 1)
+  plot_layout(widths = c(1, 1, 0), nrow = 1)
 
 
-ggsave(here("figures", "category_gender distribution.png"), width = 10, height = 6)
+ggsave(here("figures", "category_gender distribution.png"), width = 16, height = 5.7)
 
 ```
 ### sources:[DATA VISUALIZATION BY KIERAN HEALY](https://socviz.co/refineplots.html#use-theme-elements-in-a-substantive-way),                [UC Business Analytics R Programming Guide](http://uc-r.github.io/gda)
