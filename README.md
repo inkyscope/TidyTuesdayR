@@ -4,7 +4,7 @@ personal repo for data integrity by repeating, reinforcing, continuing, and refi
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
 
-### Nobel prize winners by [Kaggle]https://www.kaggle.com/nobelfoundation/nobel-laureates#archive.csv)
+### Nobel prize winners by [Kaggle] (https://www.kaggle.com/nobelfoundation/nobel-laureates#archive.csv)
 ![Nobel prize laureates](https://github.com/inkyscope/datavizRscope/blob/master/figures/category_gender%20distribution.png)
 
 ### Wine reviews (LDA analysis) by [Kaggle](https://www.kaggle.com/zynicide/wine-reviews)
