@@ -8,15 +8,15 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+### source: datascreencast by david robinson:https://github.com/dgrtwo/data-screencasts/blob/master/nobel-prize.Rmd         
 ```{r}
 library(tidyverse)
 library(lubridate)
-library(ggalluvial)
 library(LaCroixColoR)
-library(cowplot)
+library(patchwork)
+library(here)
 ```
-### source: datascreencast by david robinson:https://github.com/dgrtwo/data-screencasts/blob/master/nobel-prize.Rmd,                         Tidy Tuesday Screencast: Analyzing Thanksgiving dinners in R:https://www.youtube.com/watch?v=yWSpLfmES7w&t=2871s
+
 ```{r}
 nobel_winners <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-14/nobel_winners.csv") %>% 
   distinct(full_name, prize_year, category, .keep_all = TRUE) %>% 
@@ -29,82 +29,11 @@ nobel_winner_all_pubs <- readr::read_csv("https://raw.githubusercontent.com/rfor
 
 ```{r}
 glimpse(nobel_winners)
-
 glimpse(nobel_winner_all_pubs)
-```
-
-```{r}
 skimr::skim(nobel_winners)
-
 skimr::skim(nobel_winner_all_pubs)
-```
-
-```{r}
 nobel_winners %>% 
   count(category, sort = TRUE)
-```
-
-```{r}
-plot.category <- nobel_winners %>% 
-  count(category,
-        decade = 10 * (prize_year %/% 10), sort = TRUE) %>% 
-  ggplot(aes(decade, n, fill = category)) +
-  geom_col()+
-  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete"))+
-  theme_half_open()
-
-plot.category
-
-plot.gender <- nobel_winners %>%
-  count(decade,
-        category,
-        gender = coalesce(gender, laureate_type)) %>%
-  group_by(decade, category) %>%
-  mutate(percent = n / sum(n)) %>%
-    ggplot(aes(decade, percent)) +
-  geom_point(aes(color = gender))+
-  theme_half_open()
-
-plot.gender
-```
-
-```{r}
-plot_grid(plot.category, plot.gender, 
-          labels = c("A", "B"),
-          nrow = 2, align = "v")
-```
-
-```{r}
-# alluvial diagram application (to be done: simplify decade division like seq(1900, 2010, by=50))
-p <- nobel_winners %>% 
-  group_by(category, decade, gender, birth_country) %>% 
-  filter(gender != "NA") %>% 
-  summarise(winners = n(),
-            winners_per_year = winners / n_distinct(prize_year)) %>% 
-  ungroup() %>% 
-  ggplot(aes(axis1 = category, axis2 = gender, axis3 = decade, y = winners))+
-  geom_alluvium(aes(fill = category)) +
-  geom_stratum(fill = "gray70", size = 0.1, width = 0.4) +
-  geom_text(stat = "stratum", color = "grey20", size = 3, label.strata = T)+
-  scale_x_discrete(limits = c("Category", "Gender", "Decade"), 
-                   expand = c(0, 0), 
-                   position = "top")+
-  scale_y_discrete()+
-  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete"))+
-  theme(axis.title.x = element_text(size = 11),
-          axis.title.y = element_text(size = 11),
-          axis.text.x = element_text(size = 10, color = "black", face = "bold"),
-          axis.text.y = element_text(size = 10),
-          legend.position = "bottom",
-          legend.key.width = unit(6, "lines"),
-          legend.key.height = unit(0.75, "lines"),
-          legend.spacing.x = unit(0.5, 'cm'),
-          legend.title = element_text(size = 10, face = "bold"),
-          legend.text = element_text(size = 9)) +
-    guides(fill = guide_legend(title.position = "top", 
-                               title.hjust = .5, 
-                               label.position = "bottom")) +
-    labs(x = NULL, y = "Nobel Prize Gender Proportion")
 ```
 
 ```{r}
@@ -113,56 +42,68 @@ nobel_winners %>%
   ggplot(aes(category, age)) +
   geom_boxplot() +
   geom_jitter(size = .7, alpha =.5) +
-  geom_hline(yintercept =  59.5, color = "#8d1673", linetype = "dashed", size = .9)+
+  geom_hline(yintercept =  59.5, color = "#8d1673", linetype = "dashed", size = .9) +
   coord_flip()
 
 nobel_winners %>% 
   mutate(category = fct_reorder(category, age, median, na.rm = TRUE)) %>% 
-  ggplot(aes(category, age, fill = category, alpha = .7)) +
-  geom_violin() +
-  geom_jitter(size = .7, alpha =.5) +
-  geom_hline(yintercept =  59.5, color = "#8d1673", lty = "dashed", size = .9)+
-  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete"))+
+  ggplot(aes(x = fct_rev(category), age, fill = category, alpha = .7)) +
+  geom_violin(show.legend = FALSE) +
+  geom_jitter(size = .7, alpha =.5,
+              show.legend = FALSE) +
+  geom_hline(yintercept =  59.5, color = "#8d1673", lty = "dashed", size = .9) +
+  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete")) +
   coord_flip()+
   theme_half_open()
-```
 
-```{r}
-p <- nobel_winners %>% 
-    distinct(full_name, prize_year, category, .keep_all = TRUE) %>% 
-    mutate(decade = 10 * (prize_year %/% 10),
-           age = prize_year - year(birth_date),
-           year = prize_year) %>% 
+nobel_winners %>% 
+  distinct(full_name, prize_year, category, .keep_all = TRUE) %>% 
+  mutate(decade = 10 * (prize_year %/% 10),
+         age = prize_year - year(birth_date),
+         year = prize_year) %>% 
   ggplot(aes(year, age))+ 
-  geom_point(size = 3, alpha = .5, color = "black")+
-  geom_smooth(aes(fill = "#8d1673")) +
+  geom_point(size = 3, alpha = .5, color = "black",
+             na.rm = TRUE)+
+  geom_smooth(aes(fill = "#8d1673"),
+              method = "loess",
+              na.rm = TRUE) +
   scale_x_continuous() +
   scale_y_continuous() +
   theme(legend.position = "none") +
   labs(title = "Nobel Prize age distribution over time")
+
 ```
 ### source: plotly package by Carson Sievert (https://plotly-r.com/overview.html)
 ```{r}
 library(plotly)
 
 p <- nobel_winners %>% 
-    distinct(full_name, prize_year, category, .keep_all = TRUE) %>% 
-    mutate(decade = 10 * (prize_year %/% 10),
-           age = prize_year - year(birth_date),
-           year = prize_year) %>% 
-  ggplot(aes(year, age))+ 
-  geom_point(alpha = .7)+
-  geom_smooth(aes(color = category, 
-                  fill = category)) +
+  distinct(full_name, prize_year, category, .keep_all = TRUE) %>% 
+  mutate(decade = 10 * (prize_year %/% 10),
+         age = prize_year - year(birth_date),
+         year = prize_year) %>% 
+  ggplot(aes(year, age)) + 
+  geom_point(alpha = .7,
+             na.rm = TRUE,
+             show.legend = FALSE) +
+  geom_smooth(aes(color = category),
+              method = "loess",
+              na.rm = TRUE) +
   geom_hline(yintercept = 59.45, 
              lty = "dotted", 
              size = .7, 
              color = "#8d1673") +
-  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete"))+
-  facet_wrap(~category)+
-  theme_half_open()
+  scale_x_continuous(limits = c(1900, 2016),
+                     breaks = seq(1900, 2016, 20)) +
+  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, 
+                                             type = "discrete")) +
+  facet_wrap(~category) +
+  theme(legend.position = "none") +
+  theme_minimal()
 
-ggplotly(p)
+p
+
+# ggplotly(p)
 ```
 ### source: gghighlight (https://yutani.rbind.io/post/2017-10-06-gghighlight/)
 ```{r}
@@ -176,13 +117,14 @@ p <- nobel_winners %>%
   ungroup() %>% 
   ggplot(aes(decade, n)) +
   geom_col() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   gghighlight(category == "Economics") +
   theme_half_open()
+p
 ```
 
 ```{r}
-p <- nobel_winners %>% 
+p1 <- nobel_winners %>% 
   group_by(decade, category) %>% 
   count(decade,
         category) %>% 
@@ -190,16 +132,23 @@ p <- nobel_winners %>%
   ungroup() %>% 
   ggplot(aes(decade, n, fill = category)) +
   geom_col() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete"))+
+  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete")) +
   gghighlight() +
-  theme_half_open() +
   facet_wrap(~category) +
-  labs(title = "Nobel Prize category distribution over time")
-```
+  labs(title = "Category distribution\nin Nobel prize since 1901",
+       x = " ",
+       y = " ") +
+  theme(line = element_blank(),
+        panel.border = element_rect(colour = "transparent"),
+        plot.background = element_blank(),
+        axis.text = element_blank(),
+        axis.text.x = element_text(size = 7,
+                                   color = "gray40"),
+        axis.text.y = element_text(size = 7,
+                                   color = "gray40")) +
+   theme_half_open() 
 
-```{r}
-p <- nobel_winners %>% 
+p2 <- nobel_winners %>% 
   group_by(decade, category) %>% 
   count(decade,
         category,
@@ -208,14 +157,46 @@ p <- nobel_winners %>%
   ungroup() %>% 
   ggplot(aes(decade, n, fill = gender)) +
   geom_col() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  scale_fill_manual(values = c("#ff73c1", "#0096b7", "#f7c56e"))+
+  scale_fill_manual(values = c("#ff73c1", "#0096b7", "#f7c56e")) +
   gghighlight() +
-  theme_half_open()+
-  facet_wrap(~category)+
-  labs(title = "Nobel Prize gender distribution over time")
+  facet_wrap(~category) +
+  theme(line = element_blank(),
+        panel.border = element_rect(colour = "transparent"),
+        plot.background = element_blank(),
+        axis.text = element_blank(),
+        axis.text.x = element_text(size = 7,
+                                   color = "gray40"),
+        axis.text.y = element_text(size = 7,
+                                   color = "gray40")) +
+      labs(title = "Gender distribution\nin nobel prize since 1901",
+       x = " ",
+       y = " ") +
+  theme_half_open()
+
+
+caption <- 
+  ggplot(data.frame(x = 1:1.5, y = 1:10)) +
+  labs(x = "",
+       y = "",     
+       caption = "Source: Kaggle") +
+  theme(plot.caption = element_text(size = 9, 
+                                    color = "grey45"),
+        line = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent", 
+                                       color = "transparent"),
+        panel.border = element_rect(colour = "transparent"),
+        axis.text = element_blank())
+  
+
+p1 + p2 + caption +
+  plot_layout(widths = c(1, 1, .25), nrow = 1)
+
+
+ggsave(here("figures", "category_gender distribution.png"), width = 10, height = 6)
+
 ```
-### sources: DATA VISUALIZATION BY KIERAN HEALY (https://socviz.co/refineplots.html#use-theme-elements-in-a-substantive-way),                 UC Business Analytics R Programming Guide (http://uc-r.github.io/gda)
+### sources:[DATA VISUALIZATION BY KIERAN HEALY](https://socviz.co/refineplots.html#use-theme-elements-in-a-substantive-way),                [UC Business Analytics R Programming Guide](http://uc-r.github.io/gda)
 ```{r}
 library(ggridges)
 
@@ -231,7 +212,7 @@ nobel_winners %>%
              alpha = .7)) +
   ggridges::geom_density_ridges(scale = .95, 
                                 rel_min_height = 0.01, 
-                                gradient_lwd = 1.) +
+                                gradient_lwd = 1) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_discrete(expand = c(0.01, 0)) +
   scale_fill_manual(values = c("#ff73c1", "#0096b7", "#f7c56e"), 
@@ -267,49 +248,6 @@ nobel_winners %>%
 ```
 
 ```{r}
-nobel_winners%>% filter(category == "Economics", gender == "Female")
-
-nobel_winners %>% 
-  filter(category%in% c("Economics", "Physics"), gender == "Female")
-```
-
-```{r}
-nobel_winners %>% 
-  count(birth_country = fct_lump(birth_country, 15), sort = TRUE)
-
-nobel_winners %>% 
-  count(birth_country = fct_lump(birth_country, 9), sort = TRUE)
-
-nobel_winners %>% 
-  count(prize_share)
-
-nobel_winners %>% 
-  count(full_name, sort = TRUE)
-```
-
-```{r}
-nobel_winners %>% 
-  add_count(full_name) %>% 
-  arrange(desc(n)) %>% 
-  select(prize_year, category, full_name) 
-
-nobel_winners %>% 
-  filter(category == "Medicine", full_name == "Jack W.Szostak") %>% 
-  View()
-```
-
-```{r}
-nobel_winners %>% 
-  distinct(full_name, prize_year, category) %>% 
-  group_by(full_name) %>% 
-  mutate(prizes = n(),
-         distinct_prizes = n_distinct(category)) %>% 
-  arrange(desc(prizes), full_name) %>%
-  View()
-```
-
-
-```{r}
 nobel_winners %>% 
   filter(!is.na(birth_country)) %>% 
   count(birth_country = fct_lump(birth_country, 9), 
@@ -330,70 +268,12 @@ nobel_winners %>%
         category, sort = TRUE) %>% 
   mutate(birth_country = fct_reorder(birth_country, n)) %>% 
   ggplot(aes(birth_country, n, fill = category)) +
-  geom_col() +
+  geom_col(show.legend = FALSE) +
   facet_wrap(~category) +
   coord_flip() +
   scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete")) +
   theme_half_open() +
-  labs(title = "Nobel prize category distribution per country")
-```
-
-```{r}
-# radar chart application
-
-nobel_winners %>% 
-  count(category,
-        decade = 10 * (prize_year %/% 10), 
-        birth_country = fct_lump(birth_country, 11), 
-        category, sort = TRUE) %>% 
-  filter(!is.na(birth_country)) %>% 
-  mutate(birth_country = fct_reorder(birth_country, n)) %>% 
-  ggplot(aes(decade, n, fill = category))+
-  geom_bar(stat = "identity")+
-  coord_polar()+
-  scale_fill_brewer(palette = "Greens") +
-  facet_wrap(~birth_country)
-
-```
-### sources: UC Business Analytics R Programming Guide-Parallel coordinate plots(http://uc-r.github.io/gda),                                  Graphical Data Analysis with R by Antony Unwin (http://www.gradaanwr.net/content/ch06/)
-```{r}
-library(GGally)
-
-winners_summarized <- nobel_winner_all_pubs %>%
-  filter(pub_year <= prize_year) %>%
-  group_by(laureate_id,
-           laureate_name,
-           category,
-           prize_year,
-           prize_decade) %>%
-  summarize(papers_before_prize = n(),
-            papers_before_prize_5_years = sum(pub_year >= prize_year - 5),
-            average_paper_age = mean(prize_year - pub_year),
-            winning_paper_age = mean((prize_year - pub_year)[is_prize_winning_paper == "YES"])) %>% 
-  ungroup()
-```
-
-
-```{r}
-variables <- c("winning_paper_age", "papers_before_prize", "average_paper_age")
-
-winners_summarized %>% 
-  select(variables) %>% 
-  ggparcoord(alpha = .05, scale = "center")
-
-winners_summarized %>% 
-  select(variables) %>% 
-  mutate(Above_Avg = winning_paper_age >
-           mean(winning_paper_age))%>% 
-  ggparcoord(
-    alpha = .05,
-    scale = "center",
-    columns = 1:4,
-    groupColumn = "Above_Avg"
-    )
-
-#  mutate(pbp = abbreviate(papers_before_prize),
-         #pbp5 =abbreviate(papers_before_prize_5_years),
-         #apa = abbreviate(average_paper_age),
-         #wpa = abbreviate(winning_paper_age))
+  labs(title = "Category distribution in Nobel prize per country",
+       x = " ",
+       y =" ")
 ```
