@@ -1,0 +1,136 @@
+---
+title: "RamenRatings"
+author: "Sung Inkyung"
+date: '2019 6 5 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggridges)
+library(skimr)
+library(broom)
+library(cowplot)
+```
+### source[tidy tuesday by david robinson](https://github.com/dgrtwo/data-screencasts/blob/master/ramen-ratings.Rmd)
+### source[tidy tuesday by carsten stann](https://github.com/carstenstann/TidyTuesday/blob/master/2019/2019_23_RamenRatings.Rmd)
+```{r}
+ramen_ratings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-04/ramen_ratings.csv")
+```
+
+```{r}
+library(drlib)
+
+ramen_ratings_gathered <- ramen_ratings %>%  
+  mutate(style = fct_lump(style, 4),
+         country = fct_lump(country, 12),
+         brand = fct_lump(brand, 20)) %>% 
+  replace_na(list(style = "Other")) %>% 
+  mutate(brand = fct_relevel(brand,"Other"),
+         country = fct_relevel(country, "Other"),
+         style = fct_relevel(style, "Pack"))%>% 
+   drop_na()
+
+skim(ramen_ratings_gathered) 
+
+
+ramen_ratings_gathered %>% 
+  gather(category, value, -review_number, -stars) %>% 
+  count(category, value) %>% 
+  group_by(category) %>% 
+  top_n(20, n) %>%
+  ungroup() %>% 
+  mutate(value = drlib::reorder_within(value, n, category)) %>% #package (drlib) 
+  ggplot(aes(value, n, fill = category))+
+  geom_col(show.legend = FALSE)+
+  facet_wrap(~category, scales = "free_y")+
+  scale_x_reordered()+ # package(drlib)
+  coord_flip()+
+  labs(title = "Categories relating to ramen rating",
+  x = "category",
+  y = " ")+
+  theme_minimal()
+```
+
+```{r plot}
+plot_theme <- 
+  theme(title = element_text(size = 10),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 11, 
+                                     face = "plain"),
+        axis.text = element_text(size = 9),
+        legend.text = element_text(size = 9),
+        legend.position = "none",
+        legend.margin = margin(0,0,0,0, "cm"),
+        plot.caption = element_text(hjust = 1)) +
+  theme_minimal()
+```
+
+```{r joint plots}
+p1 <- lm(stars ~brand + country + style, ramen_ratings_gathered) %>%   
+  tidy(conf.int = TRUE) %>% # for coefficient plot
+  filter(term != "(Inercept)") %>%
+  arrange(desc(estimate)) %>% 
+  extract(term, c("category", "term"), "^([a-z]+)([A-Z].*)") %>% 
+  mutate(term = fct_reorder(term, estimate)) %>% 
+  drop_na() %>% 
+  ggplot(aes(estimate, term, color = category)) +
+  geom_point(na.rm = TRUE,
+             show.legend = FALSE) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_vline(lty =2, 
+             xintercept = 0) +
+  facet_wrap(~ category, ncol = 1, 
+             scales = "free_y") +
+  labs(x = "Coefficient",
+       y =" ",
+       title = "Categories relating to ramen ratings") +
+  plot_theme 
+
+
+tol11qualitative=c("#332288", "#6699CC", "#88CCEE", "#44AA99", "#117733", 
+                   "#999933", "#DDCC77", "#661100", "#CC6677", "#882255",
+                   "#AA4499")
+ 
+p2 <- ramen_ratings_gathered  %>% 
+  mutate(country = fct_lump(country, 10),
+         country = fct_relevel(country, "Other")) %>% 
+  ggplot(aes(stars, country)) +
+  geom_density_ridges(scale = 2, 
+                      aes(fill = country), 
+                      alpha = 0.5,
+                      color = "#0000001A",
+                      na.rm = TRUE,
+                      show.legend = FALSE) +
+  geom_vline(lty =2, 
+             xintercept = 3.69,
+             alpha = 0.8) +
+  scale_fill_manual(values = tol11qualitative) +
+  labs(title = "Top ten countries in ramen rating in ramen ratings",
+       caption = "Source: The Ramen Rater",
+       x = "rating",
+       y = " ") +
+    plot_theme + 
+  theme(plot.margin = margin(0, .1, .1, .5, "cm"))
+
+
+p3 <- ramen_ratings_gathered  %>% 
+  ggplot(aes(stars)) +
+  geom_density(fill = "#FAECA5",
+               na.rm = TRUE) + 
+  labs(title = "Distribution of Ratings",
+       caption = "Source: TheRamenRater.com") + 
+  plot_theme + 
+  theme(plot.margin = margin(0, .5, .1, .1, "cm"))
+```
+
+```{r Layout plots in grid}
+plot_grid(p1, plot_grid(p2, p3), 
+          ncol = 1, rel_heights = c(1.7, 1))
+```
+
+
