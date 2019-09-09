@@ -11,6 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(janitor)
+library(skimr)
+library(countrycode)
 library(plotly)
 library(scales)
 library(sf)
@@ -18,9 +21,11 @@ library(maptools)
 library(cartogram)
 library(ggthemes)
 library(cowplot)
+library(patchwork)
+library(here)
 ```
-### sources:[Plastic pollution] (https://ourworldindata.org/plastic-pollution)
-            [Tidy Tuesday Screencast](https://youtu.be/BRdLOYtJk9o)
+### sources:[Tidy Tuesday by David Robinson_ Screencast](https://youtu.be/BRdLOYtJk9o)
+### source;[tidy tuesday by carsten stann](https://github.com/carstenstann/TidyTuesday/blob/master/2019/2019_21_PlasticWaste.R)
 ```{r}
 plastic_coast <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-21/coastal-population-vs-mismanaged-plastic.csv") 
 
@@ -30,7 +35,26 @@ waste_gdp <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/
 ```
 
 ```{r}
-library(janitor)
+plastic_coast <-  
+  clean_names(plastic_coast)
+mismanaged_gdp <- 
+  clean_names(mismanaged_gdp)
+waste_gdp <- 
+  clean_names(waste_gdp)
+
+
+plastic_coast %>% 
+  filter(!is.na(coastal_population)) %>% 
+  skim()
+
+mismanaged_gdp %>% 
+  filter(!is.na(per_capita_mismanaged_plastic_waste_kilograms_per_person_per_day)) %>% 
+   skim()
+
+waste_gdp %>% 
+  filter(!is.na(per_capita_plastic_waste_kilograms_per_person_per_day)) %>% 
+  skim()
+
 
 plastic_coast %>% 
   clean_names() %>% 
@@ -46,6 +70,7 @@ plastic_coast_2010 <- plastic_coast %>%
    filter(!is.na(coastal_population)) %>% 
    select(-year)
  
+
 mismanaged_gdp %>% 
    clean_names() %>% 
    colnames()
@@ -55,8 +80,7 @@ waste_gdp %>%
   colnames()
 ```
 
-```{r Data Cleaning}
-library(janitor)
+```{r join data}
 
 clean_dataset <-  function(tbl) {
   tbl %>%
@@ -66,7 +90,6 @@ clean_dataset <-  function(tbl) {
            year = year) %>% 
     filter(year == 2010) %>% 
     select(-year)
-  
 }
 
 plastic_waste <- plastic_coast %>% 
@@ -79,29 +102,48 @@ plastic_waste <- plastic_coast %>%
              by = c("country", "code")) %>%   
   select(country,
          code,
-         mismanaged_waste = mismanaged_plastic_waste_tonnes, 
-         coastal_population,
-         population = total_population_gapminder,
+         mismanaged_waste = mismanaged_plastic_waste_tonnes,
+         coastal_pop = coastal_population,
+         total_pop = total_population_gapminder,
          mismanaged_pc = per_capita_mismanaged_plastic_waste_kilograms_per_person_per_day,
          gdp_pc = gdp_per_capita_ppp_constant_2011_international_rate,
          waste_pc = per_capita_plastic_waste_kilograms_per_person_per_day) %>% 
-  filter(!is.na(mismanaged_waste),
-         !is.na(gdp_pc),
-         !is.na(coastal_population),
-         !is.na(population))
+  drop_na()
 ```
 
 ```{r}
 View(plastic_waste)
 ```
 
+```{r add continent}
+waste <- plastic_waste %>%
+   mutate(
+      gdp = gdp_pc * total_pop,
+      continent1 = countrycode(country, 
+                               origin = "country.name", 
+                               destination = "continent", 
+                               warn = FALSE),
+      continent2 = countrycode(code, 
+                               origin = "iso3c", 
+                               destination = "continent", 
+                               warn = FALSE),
+      Continent = coalesce(continent1, continent2),
+      continent1 = NULL,
+      continent2 = NULL,
+      total_plastic_waste = waste_pc  * total_pop, # kg/per day
+      total_mismanaged_plastic = mismanaged_pc * total_pop # kg/per day
+      )
+
+glimpse(waste)
+```
+
 ```{r}
 p <- plastic_waste %>% 
-     filter(population >= 1e6) %>% 
-     arrange(-population) %>% 
+     filter(total_pop >= 1e6) %>% 
+     arrange(-total_pop) %>% 
      ggplot(aes(gdp_pc, mismanaged_pc)) +
-     geom_point(aes(size = population,
-                    color = population),
+     geom_point(aes(size = total_pop,
+                    color = total_pop),
                 show.legend = FALSE,
                 na.rm = TRUE) +
      geom_text(aes(label = country), 
@@ -111,26 +153,26 @@ p <- plastic_waste %>%
      scale_x_log10(labels = dollar_format()) +
      scale_y_log10() +
      labs(x = "GDP per capita",
-          y = "Mismanaged plastic waste (kg per person per day")
+          y = "Mismanaged plastic waste\nkg per person per day")
 
-p <- ggplotly(p)
+# p <- ggplotly(p)
 
 p
 ```
 
-```{r joint bar chart}
+```{r bar plots}
 
 p1 <- plastic_waste %>% 
    top_n(20, mismanaged_pc) %>% 
    ggplot(aes(fct_reorder(country, mismanaged_pc), mismanaged_pc)) + 
    geom_col(color = "white",
-            fill = "#5b0136",
+            fill = "#413413",
             width = 1) + 
    geom_text(aes(label = round(mismanaged_pc, 2)), 
              nudge_y = -.01, 
              nudge_x = .09,
              color = "white",
-             size = 3,
+             size = 2.5,
              na.rm = TRUE) +
    coord_flip() +
    scale_y_continuous(expand = c(0, 0), 
@@ -147,34 +189,34 @@ p1 <- plastic_waste %>%
         y = "Mismanaged plastic waste per capita (kg)")
 
 p2 <-  plastic_waste %>% 
-   top_n(20, waste_pc) %>% 
-   ggplot(aes(fct_reorder(country, waste_pc), waste_pc)) + 
-   geom_col(color = "white",
-            fill = "#5b0136",
-            width = 1) +
-    geom_text(aes(label = round(waste_pc, 2)), 
+  top_n(20, waste_pc) %>% 
+  ggplot(aes(fct_reorder(country, waste_pc), waste_pc)) + 
+  geom_col(color = "white",
+           fill = "#413413",
+           width = 1) +
+  geom_text(aes(label = round(waste_pc, 2)), 
              nudge_y = .15, 
-             size = 3,
+             size = 2.5,
              color = "#0f4d6f",
              na.rm = TRUE) +
-   coord_flip() +
-   scale_y_continuous(expand = c(0, 0), 
-                      limits = c(0, 4), 
-                      breaks = seq(0, 4, by = 1)) +
-   theme(axis.ticks = element_blank(),
-         axis.text.x = element_text(size = 7),
-         axis.text.y = element_text(size = 7),
-         axis.title.x = element_text(size = 7),
-         plot.background = element_rect(fill = NA),
-         plot.margin = margin(12, 12, 12, 12)) +
-   theme_half_open(12) +
-   labs(x = NULL, 
-        y = "Plastic waste per capita (kg)")
+  coord_flip() +
+  scale_y_continuous(expand = c(0, 0), 
+                     limits = c(0, 4), 
+                     breaks = seq(0, 4, by = 1)) +
+  theme(axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 7),
+        axis.text.y = element_text(size = 7),
+        axis.title.x = element_text(size = 7),
+        plot.background = element_rect(fill = NA),
+        plot.margin = margin(12, 12, 12, 12)) +
+  theme_half_open(12) +
+  labs(x = NULL, 
+       y = "Plastic waste per capita (kg)")
 
 cowplot::plot_grid(p1, p2, nrow = 1)
 ```
 
-```{r lollipop chart}
+```{r lollipop plot}
 
 p <- plastic_waste %>% 
    top_n(20, mismanaged_pc) %>% 
@@ -186,8 +228,8 @@ p <- plastic_waste %>%
                     yend = country),
                 color = "grey50") + 
    geom_point(size = 7,
-              color = "#5b0136")+
-   geom_text(size = 3,
+              color = "#413413")+
+   geom_text(size = 2.5,
              color = "white",
              na.rm = TRUE) +
    scale_x_continuous(expand = c(0, 0), 
@@ -198,37 +240,161 @@ p <- plastic_waste %>%
          axis.text.y = element_text(size = 7),
          axis.title.x = element_text(size = 7)) +
    theme_minimal_vgrid() +
-   labs(x = "Mismanaged plastic waste per capita in kg", 
+   labs(x = "Mismanaged plastic waste per capita(kg/day)", 
         y = NULL)
 p
+
+```
+```{r}
+waste %>% 
+  colnames()
+
+view(waste)
 ```
 
 ```{r}
-p1 <- plastic_waste %>% 
-  arrange(-population) %>% 
-  ggplot(aes(gdp_pc, waste_pc)) +
-  geom_point(aes(size = population),
-             show.legend = FALSE,
-             na.rm = TRUE) +
-  geom_text(aes(label = country), 
+waste %>% 
+  filter(Continent == "Asia") %>% 
+  summarize(med = median(gdp_pc))
+
+waste %>% 
+  filter(Continent == "Americas") %>% 
+  summarize(med = median(gdp_pc))
+
+waste %>% 
+  filter(Continent == "Europe") %>% 
+  summarize(med = median(gdp_pc))
+
+waste %>% 
+  filter(Continent == "Oceania") %>% 
+  summarize(med = median(gdp_pc))
+
+waste %>% 
+  filter(Continent == "Africa") %>% 
+  summarize(med = median(gdp_pc))
+
+```
+
+```{r}
+gdp_plot <- waste %>% 
+  mutate(prop_mis = mismanaged_pc / waste_pc,
+                prop_mis = round(prop_mis, 2),
+         gdp_cut = cut(gdp_pc, 
+                       breaks = c(17942.83, 13605.93, 28678.37, 4984.194, 2994.61))) %>% 
+  drop_na()%>% 
+  ggplot(aes(Continent, prop_mis, color = gdp_cut)) +
+  geom_boxplot(fill = "white") +
+  geom_point(na.rm = TRUE) +
+  geom_jitter(width = 0.3, 
+              alpha = 0.3,
+              na.rm = TRUE) +
+  labs(
+    x = NULL,
+    y = "Percent of mismanaged plastic waste per capita",
+    title = "Correlation of gdp per capita and\nmismanaged plastic wastes by continents",
+    color = "GDP per captia (percentile)"
+  ) +
+  scale_color_calc(labels = c("25th",
+                              "50th",
+                              "75th",
+                              "100th")) +
+  theme_half_open(12) +
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 13))
+
+gdp_plot 
+
+```
+
+```{r joint plots}
+
+p1 <- waste %>% 
+  arrange(-total_pop) %>% 
+  ggplot(aes(gdp_pc, waste_pc * 365,
+             label = country)) +
+  geom_point(aes(size = mismanaged_waste,
+                 color = Continent),
+             show.legend = FALSE) +
+  stat_smooth(geom = "line",
+              color = "dodgerblue",
+              alpha =0.9,
+              method = "lm",
+              show.legend = FALSE) +
+  geom_smooth(method = "lm", 
+              color = NA,
+              alpha = 0.3,
+              show.legend = FALSE) +
+  geom_text(size = 2.5,
             vjust = 1, 
             check_overlap = TRUE,
             na.rm = TRUE)+
-  scale_x_continuous(labels = comma_format()) +
+  scale_x_log10(labels = dollar_format())+
+  scale_y_log10() +
   theme_half_open(12) +
+  guides(col = guide_legend(override.aes = list(size = 2.5)),
+          size = guide_legend(override.aes = list())) +
   labs(x = "GDP per capita",
-       y = "Waste per capita",
-       title = "Country income correlate with plastic wastes",
-       subtitle = "Size represents total population")
+       y = "Total plastic waste per capita \n(kg/year)",
+       title = "Total plastic waste per capita in 2010",
+       subtitle = "Size represents mismanaged plastic waste(tons)")
 
 p1
 
-p2 <- plastic_waste %>% 
-  arrange(-population) %>% 
+
+p2 <- waste %>% 
+  arrange(-total_pop) %>% 
+  ggplot(aes(gdp_pc, mismanaged_pc * 365,
+             label = country)) +
+  geom_point(aes(size = mismanaged_waste,
+                 color = Continent)) +
+  stat_smooth(geom = "line",
+              color = "dodgerblue",
+              alpha = 0.9,
+              method = "loess",
+              show.legend = FALSE) +
+  geom_smooth(method = "loess", 
+              color = NA,
+              alpha = 0.3,
+              show.legend = FALSE) +
+  geom_text(size = 2.5,
+            vjust = 1, 
+            check_overlap = TRUE,
+            na.rm = TRUE)+
+  scale_x_log10(labels = dollar_format())+
+  scale_y_log10() +
+  theme_half_open(12) +
+  guides(col = guide_legend(override.aes = list(size = 2.5)),
+          size = guide_legend(override.aes = list())) +
+  labs(x = "GDP per capita",
+       y = "Mismanaged plastic waste per capita \n(kg/year)",
+       title = "Mismanaged plastic waste in 2010",
+       subtitle = "Size represents mismanaged plastic waste(tons)") +
+  theme(legend.position = "bottom") +
+  guides(col = guide_legend(override.aes = list(size = 2.5)),
+         size = guide_legend(override.aes = list()))
+
+p2
+
+```
+
+
+```{r}
+p1 <- waste %>% 
+  arrange(-total_pop) %>% 
   ggplot(aes(gdp_pc, mismanaged_pc)) +
-  geom_point(aes(size = population),
+  geom_point(aes(size = total_pop,
+                 color = Continent),
             show.legend = FALSE,
             na.rm = TRUE) +
+  stat_smooth(geom = "line",
+              color = "dodgerblue",
+              alpha = 0.9,
+              method = "loess",
+              show.legend = FALSE) +
+  geom_smooth(method = "loess", 
+              color = NA,
+              alpha = 0.3,
+              show.legend = FALSE) +
   geom_text(aes(label = country), 
             vjust = 1, 
             check_overlap = TRUE,
@@ -240,20 +406,60 @@ p2 <- plastic_waste %>%
         axis.text.y = element_text(size = 9),
         axis.title.x = element_text(size = 9)) +
   labs(x = "GDP per capita",
-       y = "Mismanaged plastic waste (kg per person per day)",
-       title = "Country income correlates with mismanaged plastic waste",
+       y = "Mismanaged plastic waste\n(kg per person per day)",
+       title = "GDP correlates with mismanaged plastic waste",
        subtitle = "Size represents total population")
 
-p2
+p1
 
-p3 <- plastic_waste %>% 
-  mutate(prc_pop_coastal = pmin(1, coastal_population / population)) %>% 
-  arrange(-population) %>% 
+p2 <- waste %>% 
+  mutate(prc_pop_coastal = pmin(1, coastal_pop / total_pop)) %>% 
+  arrange(-total_pop) %>% 
   ggplot(aes(gdp_pc, mismanaged_pc)) +
-  geom_point(aes(size = coastal_population,
-                 color = coastal_population),
+  geom_point(aes(size = coastal_pop,
+                 color = Continent),
                  show.legend = FALSE,
                  na.rm = TRUE) +
+  stat_smooth(geom = "line",
+              color = "dodgerblue",
+              alpha = 0.9,
+              method = "loess",
+              show.legend = FALSE) +
+  geom_smooth(method = "loess", 
+              color = NA,
+              alpha = 0.3,
+              show.legend = FALSE) +
+  geom_text(aes(label = country), 
+            vjust = 1, 
+            check_overlap = TRUE,
+            na.rm = TRUE)+
+  scale_x_log10(labels = dollar_format()) +
+  scale_y_log10() +
+  theme_half_open(12) +
+  labs(x = "GDP per capita",
+       y = "Mismanaged plastic waste\n(kg per person per day)",
+       title = "GDP correlates with mismanaged plastic waste",
+       subtitle = "Size & color represent a coastal population")
+p2
+
+
+p3 <- waste %>% 
+  mutate(prc_pop_coastal = pmin(1, coastal_pop / total_pop)) %>% 
+  arrange(-total_pop) %>% 
+  ggplot(aes(gdp_pc, mismanaged_pc)) +
+  geom_point(aes(size = mismanaged_waste,
+                 color = coastal_pop),
+             show.legend = FALSE,
+             na.rm = TRUE) +
+  stat_smooth(geom = "line",
+              color = "dodgerblue",
+              alpha = 0.9,
+              method = "loess",
+              show.legend = FALSE) +
+  geom_smooth(method = "loess", 
+              color = NA,
+              alpha = 0.3,
+              show.legend = FALSE) +
   geom_text(aes(label = country), 
             vjust = 1, 
             check_overlap = TRUE,
@@ -263,41 +469,53 @@ p3 <- plastic_waste %>%
   scale_color_distiller(palette = 1 )+
   theme_half_open(12) +
   labs(x = "GDP per capita",
-       y = "Mismanaged plastic waste (kg per person per day)",
-       title = "Country income correlates with mismanaged plastic waste",
-       subtitle = "Size & color represent a coastal population")
+       y = "Mismanaged plastic waste\n(kg per person per day)",
+       title = "GDP correlates with mismanaged plastic waste",
+       subtitle = "Size represents a mismanage waste(ton), \ncolor represents a coastal population")
 p3
 ```
 
 ```{r joint plots}
 
-p1 <- plastic_waste %>% 
-  arrange(-population) %>% 
-  ggplot(aes(gdp_pc, mismanaged_pc)) +
-  geom_point(aes(size = population,
-                 color =population),
-            show.legend = FALSE,
-            na.rm = TRUE) +
-  theme_half_open(12) + 
+p1 <- waste %>% 
+  mutate(prc_pop_coastal = pmin(1, coastal_pop / total_pop)) %>% 
+  arrange(-total_pop) %>% 
+  ggplot(aes(gdp_pc, mismanaged_pc *365)) +
+  geom_point(aes(size = mismanaged_waste,
+                 color = Continent),
+             na.rm = TRUE) +
+  stat_smooth(geom = "line",
+              color = "dodgerblue",
+              alpha = 0.9,
+              method = "loess",
+              show.legend = FALSE) +
+  geom_smooth(method = "loess", 
+              color = NA,
+              alpha = 0.3,
+              show.legend = FALSE) +
   geom_text(aes(label = country), 
             vjust = 1, 
             check_overlap = TRUE,
             na.rm = TRUE)+
-  scale_x_continuous(labels = comma_format()) +
-  scale_color_distiller(palette = 3)+
-  theme(axis.ticks = element_blank(),
-        axis.text.x = element_text(size = 7),
-        axis.text.y = element_text(size = 7),
-        axis.title.x = element_text(size = 7)) +
+  scale_x_log10(labels = dollar_format()) +
+  scale_y_log10() +
+  theme_half_open(12) +
   labs(x = "GDP per capita",
-       y = "Mismanaged plastic waste in \nkg per person per day") 
+       y = "Mismanaged plastic waste per capita(kg/year)",
+       title = "Global mismanaged plastic waste in 2010") +
+  theme(legend.position = "right",
+        plot.title = element_text(size = 24),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(size = 9),
+        axis.text.y = element_text(size = 9),
+        axis.title.x = element_text(size = 9))
 
 # bar plot
 p2 <- plastic_waste %>% 
    top_n(20, mismanaged_pc) %>% 
    ggplot(aes(fct_reorder(country, mismanaged_pc), mismanaged_pc)) + 
    geom_col(color = "white",
-            fill = "#5b0136",
+            fill = "#413413",
             width = 1) + 
    geom_text(aes(label = round(mismanaged_pc, 2)), 
              nudge_y = -.01, 
@@ -309,32 +527,24 @@ p2 <- plastic_waste %>%
    scale_y_continuous(expand = c(0, 0), 
                       limits = c(0, 0.35), 
                       breaks = seq(0, 0.3, by = 0.1)) +
-   theme(axis.ticks = element_blank(),
-         axis.text.x = element_text(size = 7),
-         axis.text.y = element_text(size = 7),
-         axis.title.x = element_text(size = 7)) +
-    theme_half_open(12) +
-   labs(x = NULL, 
-        y = "Mismanaged plastic waste \nper capita in kg")
+   theme(plot.title = element_text(size = 24),
+         axis.ticks = element_blank(),
+         axis.text.x = element_text(size = 9),
+         axis.text.y = element_text(size = 9),
+         axis.title.x = element_text(size = 9)) +
+  theme_half_open(12) +
+  labs(x = NULL, 
+       y = "Mismanaged plastic waste per capita (kg/day)",
+       title = "Top 20 countries of mismanaged plastic waste in 2010")
 
-plot_row <- plot_grid(p1, p2)
 
-title <- ggdraw() + 
-  draw_label(
-    "GDP correlates with mismanaged plastic waste\nSize represents a total population",
-    x = 0,
-    hjust = 0) +
-  theme(
-    # add margin on the left of the drawing canvas,
-    # so title is aligned with left edge of first plot
-    plot.margin = margin(0, 0, 0, 7))
-  
- plot_grid(title, plot_row,
-           ncol = 1,
-           rel_heights = c(0.3, 1)) # rel_heights values control vertical title margins
+ plot_grid(p1, p2,
+           nrow = 1,
+           rel_widths = c(1.5, 1),
+           rel_heights = c(.6, 1))
  
 
-ggsave("C:/Users/inkyscope/Documents/projectR/datavizscope/figures/GDP vs plastic wastes.png")
+ggsave(here("figures", "GDP vs plastic wastes.png"), width = 18, height = 7.5)
 ```
 ### source:[Z3tt/TidyTuesday](https://github.com/Z3tt/TidyTuesday/blob/master/R/2019_21_PlasticWaste.Rmd)
 ```{r data-spatial}
@@ -346,8 +556,8 @@ waste_gdp_map <- wrld_simpl %>%
   st_transform(crs = "+proj=robin") %>% 
   mutate(ISO3 = as.character(ISO3)) %>% 
   left_join(waste_gdp, 
-            by = c("ISO3" = "Code")) %>% 
-  filter(Year == 2010)
+            by = c("ISO3" = "code")) %>% 
+  filter(year == 2010)
 ```
 
 ```{r data-proportion}
@@ -361,9 +571,9 @@ plastic_prop %>%
   count(prop_mis, sort = TRUE) %>% 
   filter(!is.na(prop_mis))
 ```
-### R color palettes exploration
-```{r map}
 
+```{r map}
+# R color palettes exploration
 plastic_map <- waste_gdp_map %>% 
   left_join(plastic_prop, 
             by = c("ISO3" = "code")) %>% 
@@ -403,13 +613,14 @@ plastic_map
 corrplot <- plastic_waste %>% 
   mutate(mis_prc = mismanaged_pc / waste_pc,
           mis_prc = round(mis_prc, 2)) %>% 
-  select(waste_pc, mismanaged_pc, gdp_pc, population, coastal_population, mis_prc) %>% 
+  select(waste_pc, mismanaged_pc, gdp_pc, total_pop, coastal_pop, mis_prc) %>% 
   drop_na() %>% 
   cor() %>%
   corrplot::corrplot(method = "circle")
 ```
 
 ```{r grayscale map}
+
 plastic_map <- waste_gdp_map %>% 
   left_join(plastic_prop, 
             by = c("ISO3" = "code")) %>% 
@@ -429,7 +640,7 @@ plastic_map <- waste_gdp_map %>%
                              "No data")) +   
     labs(
     x = NULL, y = NULL,
-    title = "Correlation of GDP and mismanaged plastic waste across countries",    
+    title = "Mismanaged plastic waste distribution across countries",    
     fill = " ") +
   theme_void() +
   theme(
@@ -439,9 +650,9 @@ plastic_map <- waste_gdp_map %>%
     legend.text = element_text(size = 7),
     legend.title = element_text(size = 9),
     axis.ticks.x = element_blank(),
-    axis.text.x = element_text(size = 7,
+    axis.text.x = element_text(size = 9,
                                color = "grey30"),
-    plot.title = element_text(size = 13,
+    plot.title = element_text(size = 24,
                               hjust = 0.5),
     plot.subtitle = element_text(),
     plot.background = element_rect(fill = "aliceblue",
@@ -454,7 +665,7 @@ plastic_map <- waste_gdp_map %>%
 
 plastic_map
 
-ggsave("C:/Users/inkyscope/Documents/projectR/datavizscope/figures/GDP vs mismanaged plastic wastes_worldmap.png")
+ggsave(here("figures", "mismanaged plastic wastes_worldmap.png"), width = 14, height = 7.5)
 
 ```
 
@@ -483,10 +694,10 @@ plastic_map <- waste_gdp_map %>%
           size = 0.03) +
   scale_fill_tableau(name = "Share of mismanaged plastic wastes",
                      na.value = "gray40",
-                     labels = c("0%–10%", "10%–20%", "20%–30%", 
-                                "30%–40%", "40%–50%", "50%–60%", 
-                                "60%–70%", "70%–80%", "80%–90%", 
-                                "No data")) +   
+                     labels = c("0–10", "10–20", "20–30", 
+                             "30–40", "40–50", "50–60", 
+                             "60–70", "70–80", "80–90", 
+                             "No data")) +   
     labs(
     x = NULL, y = NULL,
     title = "Correlation of GDP and mismanaged plastic waste across the globe",    
@@ -512,67 +723,5 @@ plastic_map <- waste_gdp_map %>%
                              label.position = "bottom")) 
 
 plastic_map 
-```
-### source:[TidyTuesday: Global Plastic Waste Management](https://alyssamvanderbeek.netlify.com/post/tidytuesday-global-plastic-waste-management/)
-```{r}
-library(countrycode)
-continent_gdp_pc <- countrycode::codelist %>% 
-  select(iso3c, continent, region) %>% 
-  janitor::clean_names() %>% 
-  filter(!is.na(continent) & !is.na(region)) %>% 
-  left_join(plastic_waste, by = c("iso3c" = "code")) %>% 
-  drop_na()
-```
-
-```{r}
-continent_gdp_pc %>% 
-  filter(continent == "Asia") %>% 
-  summarize(med = median(gdp_pc))
-
-continent_gdp_pc %>% 
-  filter(continent == "Americas") %>% 
-  summarize(med = median(gdp_pc))
-
-continent_gdp_pc %>% 
-  filter(continent == "Europe") %>% 
-  summarize(med = median(gdp_pc))
-
-continent_gdp_pc %>% 
-  filter(continent == "Oceania") %>% 
-  summarize(med = median(gdp_pc))
-
-continent_gdp_pc %>% 
-  filter(continent == "Africa") %>% 
-  summarize(med = median(gdp_pc))
-```
-
-```{r}
-gdp_plot <- continent_gdp_pc %>% 
-  mutate(prop_mis = mismanaged_pc / waste_pc,
-                prop_mis = round(prop_mis, 2),
-         gdp_cut = cut(gdp_pc, 
-                       breaks = c(17942.83, 13605.93, 28678.37, 4984.194, 2994.61))) %>% 
-  drop_na()%>% 
-  ggplot(aes(continent, prop_mis, color = gdp_cut)) +
-  geom_boxplot(fill = "white") +
-  geom_point(na.rm = TRUE) +
-  geom_jitter(width = 0.3, 
-              alpha = 0.3,
-              na.rm = TRUE) +
-  labs(
-    x = NULL,
-    y = "Percent of country's mismanaged plastic waste per capita",
-    title = "Correlation of gdp per capita and\nmismanaged plastic wastes by continents",
-    color = "GDP per captia\n (percentile)"
-  ) +
-  scale_color_calc(labels = c("25th",
-                              "50th",
-                              "75th",
-                              "100th")) +
-  theme_half_open(12) +
-  theme(legend.position = "right",
-        plot.title = element_text(size = 13))
-
-gdp_plot 
 ```
 
