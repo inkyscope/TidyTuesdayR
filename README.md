@@ -26,11 +26,10 @@ personal repo for data integrity by repeating, reinforcing, continuing, and refi
 ![Cheese consumption](https://github.com/inkyscope/datavizRscope/blob/master/figures/Cheese%20consumption%20in%20USA.png)
 
 ### Global plastic wastes in 2010 by [Our World in Data](https://ourworldindata.org/plastic-pollution)
-![Global plastic wastes in 2010](https://https://github.com/inkyscope/datavizRscope/blob/master/figures/GDP%20vs%20plastic%20wastes.png)
+![Global plastic wastes in 2010](https://github.com/inkyscope/datavizRscope/blob/master/figures/GDP%20vs%20plastic%20wastes.png)
 
 ### Global plastic wastes world map in 2010 by [Our World in Data](https://ourworldindata.org/plastic-pollution)
 ![Global plastic wastes world map in 2010](https://github.com/inkyscope/datavizRscope/blob/master/figures/mismanaged%20plastic%20wastes_worldmap.png)
-
 
 ### Bike traffic in Seatle by [seatle.gov](http://www.seattle.gov/transportation/projects-and-programs/programs/bike-program/bike-counters)
 ![Weekly seasonal trend of bike traffic in Seatle](https://github.com/inkyscope/datavizRscope/blob/master/figures/bike-traffic-in-Seastle.png)
