@@ -1,0 +1,220 @@
+---
+title: "persimon_voronoi_canvas"
+author: "Sung Inkyung"
+date: '2019 9 18 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+###source:[@chisatini](https://chichacha.netlify.com/2018/11/12/utilizing-k-means-to-extract-colours-from-your-favourite-images/)
+
+```{r}
+library(tidyverse) 
+library(imager) 
+library(treemap)
+library(ggvoronoi) 
+library(here)
+```
+
+```{r}
+img <- load.image("C:/Users/inkyscope/Documents/projects/image/persimon.jpg")
+```
+
+
+```{r number of pixel}
+df_size <- dim(img)[1]*dim(img)[2]
+
+max_row_num <- 150000
+
+
+shrink_ratio  <- if(df_size > max_row_num) {max_row_num / df_size } else {1}
+img <- img %>% imresize(shrink_ratio)
+
+hex_pix <- img %>% 
+  as.data.frame(wide="c") %>%
+  rename(red=c.1,green=c.2,blue=c.3) %>%
+  mutate(hexvalue = rgb(red,green,blue))
+```
+
+
+```{r grayscale & luminance value}
+gray_pix <- img %>% 
+  grayscale() %>% 
+  as.data.frame()
+
+hex_pix <- hex_pix %>% 
+  inner_join(gray_pix)
+
+hex_pix %>% head()
+  
+```
+
+
+```{r K-Means algorithm on RGB value from image}
+
+my_K <- 12
+
+kmeans_rgb <- kmeans(hex_pix %>% 
+                       select(red, green, blue), 
+                     centers=my_K)
+
+hex_pix$cluster_num <- kmeans_rgb$cluster
+
+kmeans_center <- kmeans_rgb$centers %>% 
+  as.data.frame() %>% 
+  mutate(group_hex = rgb(red, green, blue), 
+         cluster_num = row_number()) %>% 
+  inner_join(hex_pix %>% 
+               count(cluster_num))
+
+my_color <- kmeans_center$group_hex
+
+my_color
+```
+
+
+```{r reviewing color palettes}
+
+num_row <- floor(my_K/4)
+
+kmeans_center %>% 
+  ggplot(aes(x = (cluster_num - 1) %% num_row,
+             y = floor((cluster_num-1)/num_row))) + 
+  geom_tile(aes(fill = group_hex)) +
+  geom_label(aes(label = paste(cluster_num, ":", group_hex, "\n", n, "distinct hexvalues")),
+             lineheight=0.8) +
+  scale_fill_manual(values = sort(kmeans_center$group_hex),
+                    guide="none") +
+  theme_void() +
+  labs(subtitle = paste0("K-Means clustering center colour with ",
+                         my_K, "clusters" )) +
+  scale_y_reverse()
+```
+```{r which colors get clustered together?}
+hex_pix %>% 
+  sample_n(size = 4500) %>% 
+  count(cluster_num, hexvalue) %>% 
+  treemap(index = c("cluster_num", "hexvalue"),
+          type = "color",
+          vSize = "n",
+          vColor = "hexvalue",
+          algorithm = "squarified",
+          border.col = c("#ffffff", "#ffffff50"),
+          fontsize.labels = c(9, 0),
+          aspRatio = 16/9,
+          title = "Clusters with RGB")
+
+```
+```{r voronoi abstract art}
+hex_pix_mini <- hex_pix %>% 
+  sample_n(size = 1000,
+           weight = (value))
+
+hex_pix_mini %>% 
+  ggplot(aes(x = x, 
+             y = y)) +
+  geom_voronoi(aes(fill = hexvalue), 
+               color = "#000000",
+               size = 0.1) +
+  scale_fill_manual(values = sort(unique(hex_pix_mini$hexvalue)),
+                    guide = "none") +
+  scale_y_reverse() +
+  coord_fixed() +
+  theme_void()
+
+ggsave(here("figures", "persimon.png"))
+```
+
+```{r}
+img <- load.image("C:/Users/inkyscope/Documents/projects/image/ocean-in-castle.jpg")
+```
+
+```{r}
+df_size <- dim(img)[1]*dim(img)[2]
+
+max_row_num <- 150000
+
+
+shrink_ratio  <- if(df_size > max_row_num) {max_row_num / df_size } else {1}
+img <- img %>% imresize(shrink_ratio)
+
+hex_pix <- img %>% 
+  as.data.frame(wide="c") %>%
+  rename(red=c.1,green=c.2,blue=c.3) %>%
+  mutate(hexvalue = rgb(red,green,blue))
+
+gray_pix <- img %>% 
+  grayscale() %>% 
+  as.data.frame()
+
+hex_pix <- hex_pix %>% 
+  inner_join(gray_pix)
+
+hex_pix %>% head()
+
+hex_pix_mini <- hex_pix %>% 
+  sample_n(size = 1000,
+           weight = (value))
+
+hex_pix_mini %>% 
+  ggplot(aes(x = x, 
+             y = y)) +
+  geom_voronoi(aes(fill = hexvalue), 
+               color = "#000000",
+               size = 0.1) +
+  scale_fill_manual(values = sort(unique(hex_pix_mini$hexvalue)),
+                    guide = "none") +
+  scale_y_reverse() +
+  coord_fixed() +
+  theme_void()
+
+ggsave(here("figures", "oceanInCastle.png"))
+```
+
+```{r}
+img <- load.image("C:/Users/inkyscope/Documents/projects/image/persimon-color.jpg")
+
+
+df_size <- dim(img)[1]*dim(img)[2]
+
+max_row_num <- 150000
+
+
+shrink_ratio  <- if(df_size > max_row_num) {max_row_num / df_size } else {1}
+img <- img %>% imresize(shrink_ratio)
+
+hex_pix <- img %>% 
+  as.data.frame(wide="c") %>%
+  rename(red=c.1,green=c.2,blue=c.3) %>%
+  mutate(hexvalue = rgb(red,green,blue))
+
+gray_pix <- img %>% 
+  grayscale() %>% 
+  as.data.frame()
+
+hex_pix <- hex_pix %>% 
+  inner_join(gray_pix)
+
+hex_pix %>% head()
+
+hex_pix_mini <- hex_pix %>% 
+  sample_n(size = 1000,
+           weight = (value))
+
+hex_pix_mini %>% 
+  ggplot(aes(x = x, 
+             y = y)) +
+  geom_voronoi(aes(fill = hexvalue), 
+               color = "#000000",
+               size = 0.05) +
+  scale_fill_manual(values = sort(unique(hex_pix_mini$hexvalue)),
+                    guide = "none") +
+  scale_y_reverse() +
+  coord_fixed() +
+  theme_void()
+
+ggsave(here("figures", "persimon2.png"))
+```
+
