@@ -1,7 +1,7 @@
 # datavizRscope
 a personal take for data integrity by repeating, reinforcing, continuing, and refining constantly
 
-## References(Book, Website, Github)
+## References(Book, Website, Youtube, Github)
 | link | Description |
 |------|-------|
 |[:link:](http://www.gradaanwr.net)|Graphical data analysis with R by Anton Unwin|
