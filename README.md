@@ -1,5 +1,24 @@
 # datavizRscope
-personal repo for data integrity by repeating, reinforcing, continuing, and refining constantly
+a personal take for data integrity by repeating, reinforcing, continuing, and refining constantly
+
+## References(Book, Website, Github)
+| link | Description |
+|------|-------|
+|[:link:](http://www.gradaanwr.net)|Graphical data analysis with R by Anton Unwin|
+|[:link:](http://ddar.datavis.ca/)| Discrete Data Analysis with R by Michael Friendly|
+|[:link:](https://r4ds.had.co.nz/)|R for Data Science by Garrett Grolemund, Hadley Wickham|
+|[:link:](https://ggplot2-book.org/)|ggplot2: Elegant Graphics for Data Analysis by Hadley Wickham|
+|[:link:](https://socviz.co/)|Data Visualization a practical introduction by Kieran healy|
+|[:link:](https://serialmentor.com/dataviz/index.html)|Fundamentals of Data Visualization by Claus O. Wilke|
+|[:link:](http://uc-r.github.io/)|UC Business Analytics R Programming Guide by Bradley Boehmke|
+|[:link:](https://www.tidytextmining.com/)|Tidy Text Mining with R by Julia Silge and David Robinson|
+|[:link:](https://youtu.be/nx5yhXAQLxw)|Tidy Tuesday screencast by David Robinson|
+|[:link:](https://ratsgo.github.io/)|Textmining by ratsgo's blog|
+|[:link:](https://nsgrantham.shinyapps.io/tidytuesdayrocks/)|tidy tuesday by Neal Grantham|
+|[:link:](https://stat545.com/index.html)|STAT 545 Data wrangling, exploration, and analysis with R Jenny Bryan|
+
+### Persimon (2+0 Solo exhibition in 2013:Sung Inkyung) by [Voronoi package] (https://chichacha.netlify.com/2018/11/12/utilizing-k-means-to-extract-colours-from-your-favourite-images/)
+![persimon2](https://github.com/inkyscope/datavizRscope/blob/master/figures/persimon2.png)
 
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
