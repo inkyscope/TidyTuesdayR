@@ -17,6 +17,8 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://nsgrantham.shinyapps.io/tidytuesdayrocks/)|Tidy Tuesday Shinyapp by Neal Grantham|
 |[:link:](https://stat545.com/index.html)|STAT 545 Data wrangling, exploration, and analysis with R Jenny Bryan|
 
+### Ramen ratings by [the ramen rater](https://www.theramenrater.com/resources-2/the-list/)
+![Categories for ramen ratings](https://github.com/inkyscope/datavizRscope/blob/master/figures/categories%20for%20ramen%20rating.png)
 
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
