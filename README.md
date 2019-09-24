@@ -17,8 +17,6 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://nsgrantham.shinyapps.io/tidytuesdayrocks/)|Tidy Tuesday Shinyapp by Neal Grantham|
 |[:link:](https://stat545.com/index.html)|STAT 545 Data wrangling, exploration, and analysis with R Jenny Bryan|
 
-### Persimon (2+0 Solo exhibition in 2013:Sung Inkyung) by [Voronoi diagram](https://chichacha.netlify.com/2018/11/12/utilizing-k-means-to-extract-colours-from-your-favourite-images/)
-![persimon2](https://github.com/inkyscope/datavizRscope/blob/master/figures/persimon2.png)
 
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
