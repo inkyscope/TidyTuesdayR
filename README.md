@@ -1,5 +1,22 @@
 # datavizRscope
-personal repo for data integrity by repeating, reinforcing, continuing, and refining constantly
+a personal take for data integrity by repeating, reinforcing, continuing, and refining constantly
+
+## References(Book, Website, Youtube, Github)
+|  :link:  | Title |
+|----------|-------------|
+|[:link:](http://www.gradaanwr.net)|Graphical data analysis with R by Anton Unwin|
+|[:link:](http://ddar.datavis.ca/)| Discrete Data Analysis with R by Michael Friendly|
+|[:link:](https://r4ds.had.co.nz/)|R for Data Science by Garrett Grolemund, Hadley Wickham|
+|[:link:](https://ggplot2-book.org/)|ggplot2: Elegant Graphics for Data Analysis by Hadley Wickham|
+|[:link:](https://socviz.co/)|Data Visualization a practical introduction by Kieran Healy|
+|[:link:](https://serialmentor.com/dataviz/index.html)|Fundamentals of Data Visualization by Claus O. Wilke|
+|[:link:](http://uc-r.github.io/)|UC Business Analytics R Programming Guide by Bradley Boehmke|
+|[:link:](https://www.tidytextmining.com/)|Tidy Text Mining with R by Julia Silge and David Robinson|
+|[:link:](https://youtu.be/nx5yhXAQLxw)|Tidy Tuesday screencast by David Robinson|
+|[:link:](https://ratsgo.github.io/)|Textmining by ratsgo's blog|
+|[:link:](https://nsgrantham.shinyapps.io/tidytuesdayrocks/)|Tidy Tuesday Shinyapp by Neal Grantham|
+|[:link:](https://stat545.com/index.html)|STAT 545 Data wrangling, exploration, and analysis with R Jenny Bryan|
+
 
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
