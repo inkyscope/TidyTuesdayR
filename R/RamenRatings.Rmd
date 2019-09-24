@@ -14,7 +14,9 @@ library(tidyverse)
 library(ggridges)
 library(skimr)
 library(broom)
+library(tidybayes)
 library(cowplot)
+library(here)
 ```
 ### source[tidy tuesday by david robinson](https://github.com/dgrtwo/data-screencasts/blob/master/ramen-ratings.Rmd)
 ### source[tidy tuesday by carsten stann](https://github.com/carstenstann/TidyTuesday/blob/master/2019/2019_23_RamenRatings.Rmd)
@@ -44,7 +46,7 @@ ramen_ratings_gathered %>%
   group_by(category) %>% 
   top_n(20, n) %>%
   ungroup() %>% 
-  mutate(value = drlib::reorder_within(value, n, category)) %>% #package (drlib) 
+  mutate(value = drlib::reorder_within(value, n, category)) %>% 
   ggplot(aes(value, n, fill = category))+
   geom_col(show.legend = FALSE)+
   facet_wrap(~category, scales = "free_y")+
@@ -100,37 +102,82 @@ p2 <- ramen_ratings_gathered  %>%
   mutate(country = fct_lump(country, 10),
          country = fct_relevel(country, "Other")) %>% 
   ggplot(aes(stars, country)) +
-  geom_density_ridges(scale = 2, 
-                      aes(fill = country), 
-                      alpha = 0.5,
-                      color = "#0000001A",
-                      na.rm = TRUE,
-                      show.legend = FALSE) +
+  stat_intervalh(.width = c(.1, .25, .5, .75, 1),
+                 height = 5, show.legend = FALSE) +
+  rcartocolor::scale_colour_carto_d(palette = "Peach") +
+    #geom_density_ridges(scale = 2, 
+                     # aes(fill = country), 
+                     # alpha = 0.5,
+                      #color = "#0000001A",
+                      #na.rm = TRUE,
+                     # show.legend = FALSE) +
+  geom_point(aes(stars, country), 
+             color = "#4d3093", 
+             size = 0.1, 
+             alpha = 0.1)+
   geom_vline(lty =2, 
              xintercept = 3.69,
              alpha = 0.8) +
   scale_fill_manual(values = tol11qualitative) +
-  labs(title = "Top ten countries in ramen rating in ramen ratings",
-       caption = "Source: The Ramen Rater",
+  labs(title = "Top 10 countries in ramen ratings",
        x = "rating",
        y = " ") +
-    plot_theme + 
-  theme(plot.margin = margin(0, .1, .1, .5, "cm"))
+  plot_theme
 
 
-p3 <- ramen_ratings_gathered  %>% 
-  ggplot(aes(stars)) +
-  geom_density(fill = "#FAECA5",
-               na.rm = TRUE) + 
-  labs(title = "Distribution of Ratings",
-       caption = "Source: TheRamenRater.com") + 
-  plot_theme + 
-  theme(plot.margin = margin(0, .5, .1, .1, "cm"))
+p3 <- ramen_ratings%>%
+  count(country = fct_lump(country, 12), 
+        brand = fct_lump(brand, 20), sort=TRUE)%>%
+  mutate(colour = case_when(
+    country == "United States" ~ "#1B9E77",
+    country == "South Korea" ~ "#666666",
+    country == "Malaysia" ~ "#66A61E",
+    country == "Indonesia" ~ "#7570B3",
+    country == "Taiwan" ~ "#A6761D",
+    country == "China" ~ "#D95F02",
+    country == "Thailand" ~ "#E6AB02",
+    country == "Japan" ~ "#E7298A",
+    T ~ "#808080"))%>%
+  ggplot(aes(x = 0,
+             y = fct_rev(factor(country)),
+             xend = brand,
+             yend = 1, 
+             colour= colour,
+             alpha = (colour != "grey60")
+             ))+
+  geom_curve(aes(colour = colour), 
+             curvature = -0.5, 
+             arrow = arrow(length = unit(0.005, "npc")), 
+             show.legend = F) +
+  scale_x_discrete() +
+  scale_y_discrete() +
+  scale_color_identity() +
+  scale_size_identity() +
+  scale_alpha_manual(values = c(0.1, 0.2), guide = F) +
+  scale_size_manual(values = c(0.1, 0.4), guide = F) +
+  labs(y = " ",
+       x = "Brand",
+       title = "Top 20 Ramen brands from their origin countries",
+       caption = "Source: The Ramen Rater") +
+  theme_minimal () +
+  theme(
+    title = element_text(size = 10), 
+    panel.grid = element_blank(),
+    legend.position = "none",
+    axis.text.x = element_text(angle = 40, 
+                               hjust = 1, 
+                               margin = margin(t = -2, r = 0, b = 0, l = 0))
+  )
+  
 ```
 
 ```{r Layout plots in grid}
 plot_grid(p1, plot_grid(p2, p3), 
-          ncol = 1, rel_heights = c(1.7, 1))
+          ncol = 1, 
+          rel_heights = c(1.2, 1))
+
+ggsave(here("figures", "categories for ramen rating.png"), width = 10, height = 10, units = "in")
 ```
+
 
 
