@@ -18,7 +18,6 @@ library(patchwork)
 library(here)
 ```
 
-
 ```{r}
 wildlife_impacts <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-07-23/wildlife_impacts.csv") %>% 
   select(-c(5:11, 16:17, 19:21)) %>% 
@@ -103,6 +102,6 @@ time_zone <- wildlife_impacts %>%
 
 time_zone
 
-ggsave(here("figures", "Wildlife-impacts-timezone.png"), width = 10, height = 6)
+ggsave("C:/Users/inkyscope/Documents/projectR/datavizRscope/figures/ Wildlife-impacts-timezone.png", width = 10, height = 6)
          
 ```

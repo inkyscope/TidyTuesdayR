@@ -502,7 +502,7 @@ p1 <- waste %>%
   theme_half_open(12) +
   labs(x = "GDP per capita",
        y = "Mismanaged plastic waste per capita(kg/year)",
-       title = "Global mismanaged plastic waste in 2010") +
+       title = "Global mismanaged plastic waste(2010)") +
   theme(legend.position = "right",
         plot.title = element_text(size = 24),
         axis.ticks = element_blank(),
@@ -535,16 +535,16 @@ p2 <- plastic_waste %>%
   theme_half_open(12) +
   labs(x = NULL, 
        y = "Mismanaged plastic waste per capita (kg/day)",
-       title = "Top 20 countries of mismanaged plastic waste in 2010")
+       title = "Top 20 countries of mismanaged plastic waste")
 
 
  plot_grid(p1, p2,
            nrow = 1,
-           rel_widths = c(1.5, 1),
+           rel_widths = c(1.2, 1),
            rel_heights = c(.6, 1))
  
 
-ggsave(here("figures", "GDP vs plastic wastes.png"), width = 18, height = 7.5)
+ggsave(here("figures", "GDP vs plastic wastes.png"), width = 13, height = 5.5)
 ```
 ### source:[Z3tt/TidyTuesday](https://github.com/Z3tt/TidyTuesday/blob/master/R/2019_21_PlasticWaste.Rmd)
 ```{r data-spatial}
