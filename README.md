@@ -13,10 +13,12 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](http://uc-r.github.io/)|UC Business Analytics R Programming Guide by Bradley Boehmke|
 |[:link:](https://www.tidytextmining.com/)|Tidy Text Mining with R by Julia Silge and David Robinson|
 |[:link:](https://youtu.be/nx5yhXAQLxw)|Tidy Tuesday screencast by David Robinson|
-|[:link:](https://ratsgo.github.io/)|Textmining by ratsgo's blog|
+|[:link:](https://ratsgo.github.io/)|Textmining by ratsgo's blog (Lee KiChang)|
 |[:link:](https://nsgrantham.shinyapps.io/tidytuesdayrocks/)|Tidy Tuesday Shinyapp by Neal Grantham|
 |[:link:](https://stat545.com/index.html)|STAT 545 Data wrangling, exploration, and analysis with R Jenny Bryan|
 
+### Ramen ratings by [the ramen rater](https://www.theramenrater.com/resources-2/the-list/)
+![Categories for ramen ratings](https://github.com/inkyscope/datavizRscope/blob/master/figures/categories%20for%20ramen%20rating.png)
 
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
