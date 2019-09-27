@@ -1,0 +1,184 @@
+---
+title: "TennisGrandSlam"
+author: "Sung Inkyung"
+date: '2019 9 6 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source[tidy tuesday by Christian Burkhart] (https://github.com/ch-bu/tidytuesday/blob/master/2019-04-09/tidytuesday_tennis.R)
+```{r}
+library(tidyverse)
+library(gghighlight)
+library(lubridate)
+```
+
+```{r data}
+path <- paste0(
+  'https://raw.githubusercontent.com/rfordatascience/tidytuesday/',
+  'master/data/2019/2019-04-09/'
+)
+players <- read_csv(paste0(path, 'player_dob.csv'))
+grand_slams <- read_csv(paste0(path, 'grand_slams.csv'))
+grand_slam_timeline <- read_csv(paste0(path, 'grand_slam_timeline.csv'))
+```
+```{r}
+grand_slams %>% 
+  count(name, grand_slam, sort = TRUE) %>% 
+  add_count(name, wt = n) %>% 
+  filter(n >= 8) %>% 
+  mutate(name = fct_reorder(name, n, sum)) %>% 
+  ggplot(aes(name, n, fill = grand_slam)) +
+  scale_fill_brewer(palette = 3)+
+  geom_col() +
+  coord_flip() +
+  theme_minimal() +
+  labs(x = "",
+       y = "# of Grand Slam tournaments",
+       title = "Tennis players with the most Grand Slam tournament wins",
+       subtitle = "1968 - Present",
+       fill = "Grand Slam")
+
+grand_slam_timeline %>% 
+  count(year, tournament) %>% 
+  arrange(year)
+
+grand_slam_timeline %>% 
+  filter(year == 2018, tournament == "US Open") %>% 
+  count(outcome, sort = T)
+
+grand_slam_timeline %>%
+  filter(tournament == "US Open", outcome=="Won") %>% 
+  count(player, tournament) %>% 
+  arrange(desc(n))
+
+
+```
+ 
+```{r}
+french_open_players <- players %>% 
+  filter(grand_slam == "French Open") %>% 
+  rename(player = name) %>% 
+  drop_na() 
+```
+
+```{r}
+outcome_ranking <- c("1st Round", "2nd Round", "3rd Round", 
+                     "4th Round", "Quarterfinalist",
+                     "Semi-finalist", "Finalist", "Won")
+
+french_open <- grand_slam_timeline %>% 
+  filter(tournament == "French Open", gender == "Male") %>% 
+  filter(outcome %in% outcome_ranking) %>% 
+  drop_na(outcome) 
+
+french_open %>% 
+  count(player, outcome) %>% 
+  arrange(desc(player)) %>% 
+  filter(outcome == "Won") 
+  
+```
+
+```{r}
+french_open %>% 
+  filter(year > 1995) %>% 
+  ggplot(aes(year, outcome, group = player, color = player)) +
+  geom_line() +
+  gghighlight(player == c("Rafael Nadal", "Roger Federer", "Novak Djokovic"),
+              unhighlighted_colour = alpha("#abd7e5", 0.4),
+              label_key = player,
+              label_params = list(size = 3)
+              ) +
+  geom_point(size = 2.5) +
+  scale_color_brewer(type = "div", palette = "Dark2") +
+  theme_minimal()
+```
+
+```{r}
+french_open_only <- french_open %>%  
+  anti_join(french_open_players, by ="player") 
+
+french_open_only %>%
+  filter(year > 1995) %>% 
+  ggplot(aes(year, outcome, group = player, color = player)) +
+  geom_line() +
+  gghighlight(player == c("Roger Federer", "Novak Djokovic"),
+              unhighlighted_colour = alpha("#abd7e5", 0.4),
+              label_key = player,
+              label_params = list(size = 3)
+              ) +
+  geom_point(size = 2.5) +
+  scale_color_brewer(type = "div", palette = "Dark2") +
+  theme_minimal()
+
+```
+```{r}
+f_players <- grand_slam_timeline %>%
+  filter(tournament == "French Open", gender == "Female") %>%
+  filter(!outcome %in% c("Lost Qualifier", "Retired", "Absent", "Qualification Stage 1")) %>%
+  count(player, tournament) %>%
+  select(-tournament) %>%
+  rename(participation = `n`) 
+ # summarize(max(participation))= 7
+
+f_wins <- grand_slam_timeline %>%
+  filter(outcome == "Won", tournament == "French Open", gender == "Female") %>%
+  count(player, tournament) %>%
+  rename(wins = `n`) %>%
+  select(-tournament) %>%
+  filter(wins > 1) %>%
+  arrange(desc(wins))
+  # summarize(max(wins))= 26
+
+# wins_split <- max(f_wins$wins) / 2
+# participations_split <- max(f_players$participation) / 2
+```
+
+```{r}
+f_wins %>% 
+  left_join(players, by = "player") %>%
+  ggplot(aes(x = wins, y = participation)) + 
+  annotate(
+    "rect", xmin = 3.5, xmax = 7, ymin = 0, ymax = 26, 
+    fill = "#ffc1c1", 
+    alpha = .3
+  ) +
+  annotate(
+    "rect", xmin = 0, xmax = 3.5, ymin = 0, ymax = 26, 
+    fill = "#abd7e5", 
+    alpha = .1
+  ) +
+  annotate(
+    "rect", xmin = 3.5, xmax = 7, ymin = 13, ymax = 26, 
+    fill = "#ebf88a", 
+    alpha = .3,
+    ) +
+  annotate(
+    "rect", xmin = 0, xmax = 3.5, ymin = 13, ymax = 26, 
+    fill = "#75827d", 
+    alpha = .3
+  ) +
+  geom_point(aes(size = wins),
+             show.legend = FALSE) +
+  geom_text(aes(label = player),
+            nudge_x = -1.1,
+            nudge_y = 0.2) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.y = element_text(margin = margin(r = 10), 
+                                size = 11),
+    axis.title.x = element_text(margin = margin(t = 10),
+                                size = 11),
+    axis.text = element_text(color = "#326983"),
+    aspect.ratio = 1
+  ) +
+  labs(
+    x = "Wins",
+    y = "Number of participations",
+    title = "Top Female players in French Open (1968 ~ present)"
+  ) 
+
+```

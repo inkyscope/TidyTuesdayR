@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(lubridate)
+library(circlize)
 library(LaCroixColoR)
 library(patchwork)
 library(here)
@@ -19,8 +20,7 @@ library(here)
 
 ```{r}
 nobel_winners <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-14/nobel_winners.csv") %>% 
-  distinct(full_name, prize_year, category, .keep_all = TRUE) %>% 
-  mutate(decade = 10 * (prize_year %/% 10),
+  distinct(full_name, prize_year, category, .keep_all = TRUE) %>%   mutate(decade = 10 * (prize_year %/% 10),
          age = prize_year - year(birth_date))
 
 nobel_winner_all_pubs <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-14/nobel_winner_all_pubs.csv") %>% 
@@ -34,6 +34,68 @@ skimr::skim(nobel_winners)
 skimr::skim(nobel_winner_all_pubs)
 nobel_winners %>% 
   count(category, sort = TRUE)
+dim(nobel_winners)
+```
+```{r}
+# country code: alpha-2code from the ISO3166
+country <- nobel_winners %>% 
+  rename(country = death_country) %>% 
+  mutate(country = ifelse(is.na(country),
+                          birth_country, country)) %>% 
+  mutate(country = recode(country,
+                          "United States of America" = "US",
+                          "Canada" = "CA",
+                          "United Kingdom" = "GB",
+                          "France" = "FR",
+                          "West Germany (Germany)" = "DE",
+                          "Italy" = "IT",
+                          "Sweden" = "SE",
+                          "Switzerland" = "CH",
+                          "Netherlands" = "NL",
+                          "Japan" = "JP"))
+
+
+top_10_country <- country %>% 
+  select(country, category) %>% 
+  filter(!is.na(country)) %>% 
+  group_by(country, category) %>% 
+  tally() %>% 
+  mutate(sum = sum(n)) %>% 
+  arrange(-sum) %>% 
+  distinct(country, sum) %>% 
+  head(10) %>% 
+  select(country)
+
+
+nobel_country <- top_10_country %>% 
+  left_join(country, by = "country") %>% 
+  select(country, category) %>% 
+  group_by(country, category)
+
+nrow(nobel_country) / nrow(country)*100
+```
+### source[Circular Visualization in R by Zuguang Gu] (https://jokergoo.github.io/circlize_book/book/index.html)
+```{r circular network plot}
+
+tol10qualitative = c(US = "#AA4499", CA = "#882255", GB = "#CC6677", 
+                     FR = "#661100", DE = "#DDCC77", IT = "#999933", 
+                     SE = "#117733", CH = "#44AA99", NL = "#88CCEE",
+                     JP = "#332288")
+
+
+par(mfrow = c(1, 2))
+circos.par(start.degree = 0)
+chordDiagram(nobel_country, 
+             directional = 1, 
+             diffHeight  = -0.04,
+             grid.col = tol10qualitative,
+             transparency = 0.7)
+abline(h = 0, lty = 2, col = "#00000080")
+circos.clear()
+
+ggsave(here("figures", "Top10NobelPrizeCountries.png"), width = 7, height = 7)
+
+
 ```
 
 ```{r}
@@ -42,23 +104,32 @@ nobel_winners %>%
   ggplot(aes(category, age)) +
   geom_boxplot() +
   geom_jitter(size = .7, alpha =.5) +
-  geom_hline(yintercept =  59.5, color = "#8d1673", linetype = "dashed", size = .9) +
+  geom_hline(yintercept =  59.5, 
+             color = "#8d1673", 
+             linetype = "dashed", 
+             size = .9) +
   coord_flip()
 
 nobel_winners %>% 
   mutate(category = fct_reorder(category, age, median, na.rm = TRUE)) %>% 
-  ggplot(aes(x = fct_rev(category), age, fill = category, alpha = .7)) +
+  ggplot(aes(x = fct_rev(category), age, 
+             fill = category, 
+             alpha = .7)) +
   geom_violin(show.legend = FALSE) +
   geom_jitter(size = .7, alpha =.5,
               show.legend = FALSE) +
-  geom_hline(yintercept =  59.5, color = "#8d1673", lty = "dashed", size = .9) +
-  scale_fill_manual(values = lacroix_palette("PeachPear", n = 6, type = "discrete")) +
+  geom_hline(yintercept =  59.5, 
+             color = "#8d1673", 
+             lty = "dashed", 
+             size = .9) +
+  scale_fill_manual(values = lacroix_palette("PeachPear", 
+                                             n = 6, 
+                                             type = "discrete")) +
   coord_flip()+
   theme_half_open()
 
 nobel_winners %>% 
-  distinct(full_name, prize_year, category, .keep_all = TRUE) %>% 
-  mutate(decade = 10 * (prize_year %/% 10),
+  distinct(full_name, prize_year, category, .keep_all = TRUE) %>%   mutate(decade = 10 * (prize_year %/% 10),
          age = prize_year - year(birth_date),
          year = prize_year) %>% 
   ggplot(aes(year, age))+ 
