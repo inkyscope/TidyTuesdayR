@@ -2,7 +2,7 @@
 a personal take for data integrity by repeating, reinforcing, continuing, and refining constantly
 
 ## References(Book, Website, Youtube, Github)
-|  link  | Title | Author |
+|  Link  | Title | Author |
 |--------|-------|--------|
 |[:link:](http://www.gradaanwr.net)|Graphical data analysis with R | Anton Unwin |
 |[:link:](http://ddar.datavis.ca/)| Discrete Data Analysis with R | Michael Friendly |
