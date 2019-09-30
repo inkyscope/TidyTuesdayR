@@ -8,11 +8,11 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](http://ddar.datavis.ca/)| Discrete Data Analysis with R | Michael Friendly |
 |[:link:](https://r4ds.had.co.nz/)|R for Data Science | Garrett Grolemund, Hadley Wickham |
 |[:link:](https://ggplot2-book.org/)|ggplot2: Elegant Graphics for Data Analysis | Hadley Wickham |
-|[:link:](https://www.r-graph-gallery.com/)|R graph gallery | Yan Holtz |
-|[:link:](https://bbc.github.io/rcookbook/)|BBC Visual and Data Journalism cookbook for R graphics | BBC Data Team|
 |[:link:](https://socviz.co/)|Data Visualization a practical introduction | Kieran Healy |
 |[:link:](https://serialmentor.com/dataviz/index.html)|Fundamentals of Data Visualization | Claus O. Wilke |
-|[:link:](http://uc-r.github.io/)|UC Business Analytics R Programming Guide | Bradley Boehmke
+|[:link:](http://uc-r.github.io/)|UC Business Analytics R Programming Guide | Bradley Boehmke |
+|[:link:](https://www.r-graph-gallery.com/)|R graph gallery | Yan Holtz |
+|[:link:](https://bbc.github.io/rcookbook/)|BBC Visual and Data Journalism cookbook for R graphics | BBC Data Team|
 |[:link:](https://www.tidytextmining.com/)|Tidy Text Mining with R | Julia Silge, David Robinson |
 |[:link:](https://youtu.be/nx5yhXAQLxw)|Tidy Tuesday screencast | David Robinson |
 |[:link:](https://ratsgo.github.io/)|Textmining | Lee KiChang |
