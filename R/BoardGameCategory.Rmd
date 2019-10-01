@@ -1,0 +1,201 @@
+---
+title: "BoardGame"
+author: "Sung Inkyung"
+date: '2019 9 7'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source[tidy tuesday by Christian Burkhart](https://github.com/ch-bu/tidytuesday/blob/master/2019-03-12/board_games.R)
+### source[jthtomasmock](https://jthomasmock.github.io/nfl_plotting_cookbook/)
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(ggbeeswarm)
+library(ggforce)
+```
+
+```{r}
+board_games <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-12/board_games.csv") %>% 
+  mutate(year = 10*(year_published %/% 10)) %>% 
+  mutate(average_rating = round(average_rating, 1))
+
+View(board_games)
+```
+
+```{r}
+board_games %>% 
+  count(category, sort = TRUE) 
+
+board_games %>% 
+  count(year, sort = TRUE) %>% 
+  arrange(desc(year)) # 1950-2010
+
+board_games %>% 
+  group_by(category) %>% 
+  count(category) %>% 
+  filter(n >= 100) %>% 
+  ggplot(aes(x= reorder(category, n), n)) +
+  geom_point() +
+  geom_col(width = 0.05) +
+  scale_fill_brewer(palette = "Dark2") +
+  coord_flip()+
+  theme(axis.title.y = element_blank())
+
+board_games %>%
+  count(category, sort = TRUE) %>%
+  drop_na() %>%
+  slice(1:10)
+
+board_games %>% 
+  select(category, average_rating) %>% 
+  summarise(mean(average_rating))
+  
+
+board_games %>% 
+  ggplot(aes(average_rating)) +
+  geom_histogram()
+```
+
+```{r}
+top7_category <- c("Wargame,World War II", "Card Game", 
+                  "Abstract Strategy", 
+                  "Napoleonic,Wargame", "Economic", 
+                  "Card Game,Fantasy", "Dice")
+
+top_category <- board_games %>%
+  filter(category %in% top7_category) %>%
+  group_by(category, year) %>%
+  summarise(
+    avg_rating = mean(average_rating)
+  ) %>% 
+  mutate(avg_rating = round(avg_rating, 1))
+
+top_category_selected <- top_category %>%
+  mutate(avg_rating = round(avg_rating, 1)) %>% 
+  arrange(category, year) %>%
+  group_by(category) %>%
+  slice(1:1) %>%
+  ungroup()
+
+```
+
+```{r}
+tol7qualitative=c("#332288", "#88CCEE", "#44AA99", "#117733", "#DDCC77", "#CC6677","#AA4499")
+
+board_games %>%
+  ggplot(aes(x = year, y = average_rating)) +
+  geom_jitter(color = "#d3d3d3",
+              width = 5,
+              alpha =.1) +
+  geom_line(data = top_category,
+            aes(x = year, 
+                y = avg_rating,
+                color = category), 
+            size = .9) +
+  geom_text_repel (data = top_category_selected,
+                   aes(x = year, 
+                       y = avg_rating, 
+                       label = category), 
+                   color = "black",
+                   size = 3) +
+  scale_color_manual(values = tol7qualitative) +
+  labs(
+    x = " ",
+    y = "Average rating",
+    title = "7 major board game categories (1950-2010)",
+    caption = "source: Board Game Geek",
+    subtitle = "7 major categories are selected based on the average rating since 1950.\nThe gray points represent the average rating of all board games.\nThe color lines represent the average rating of each category per year."
+  ) +
+  theme(
+    panel.grid.major = element_blank(), # romove the panel grids
+    panel.grid.minor = element_blank(),
+    axis.text = element_text(color = "#f3e165"),
+    axis.title.y = element_text(margin = margin(r = 30)),
+    axis.title = element_text(colour = "#f3e165"),
+    plot.caption = element_text(size = 9,
+                                color = "#abd7e5"),
+    plot.subtitle = element_text(margin = margin(b = 10)),
+    ) +
+  guides(color = guide_legend(reverse = TRUE)) +
+  theme_minimal() 
+
+```
+```{r}
+category_selected <- board_games %>% 
+  group_by(category, name, average_rating, year) %>% 
+  summarize(avg_rating = mean(average_rating)) %>% 
+  mutate(avg_rating = round(avg_rating, 1)) %>%
+  filter(category %in% top7_category) %>% 
+  ggplot(aes(x= reorder(category, average_rating), y = average_rating, 
+             fill = category)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.3,
+              alpha = 0.2,
+              show.legend = FALSE)+
+  geom_hline(yintercept = 6.4,
+             size = 1,
+             lty = "dashed",
+             color = "#004ea8") +
+  scale_fill_brewer(palette = "Set2") +
+  scale_y_continuous(limits = c(1.0, 10.0),
+                     breaks = seq(1.0, 10.0, 4)) +
+  coord_flip() +
+  labs(x = "",
+       y = "average rating",
+       title = "Top 7 Game categories since 1950") +
+  theme_minimal()+
+  theme(legend.position = "none")
+```
+```{r sina plot}
+category_selected <- board_games %>% 
+  group_by(category, name, average_rating, year) %>% 
+  summarize(avg_rating = mean(average_rating)) %>% 
+  mutate(avg_rating = round(avg_rating, 1)) %>%
+  filter(category %in% top7_category) %>% 
+  ggplot(aes(category, average_rating, color = category)) +
+  geom_sina(alpha = 0.5,
+            na.rm = TRUE,
+            show.legend = FALSE) +
+  geom_hline(yintercept = 6.4,
+             size = 1,
+             lty = "dashed",
+             color = "#004ea8") +
+  scale_fill_brewer(palette = "Set2") +
+  scale_y_continuous(limits = c(1.0, 10.0),
+                     breaks = seq(1.0, 10.0, 4)) +
+  coord_flip() +
+  labs(x = "",
+       y = "average rating",
+       title = "Top 7 Game categories since 1950") +
+  theme_minimal()+
+  theme(legend.position = "none")
+```
+```{r beeswarm plot}
+category_selected <- board_games %>% 
+  group_by(category, name, average_rating, year) %>% 
+  summarize(avg_rating = mean(average_rating)) %>% 
+  mutate(avg_rating = round(avg_rating, 1)) %>%
+  filter(category %in% top7_category) %>% 
+  ggplot(aes(category, average_rating, color = category)) +
+  geom_beeswarm(priority = "random",
+                alpha = 0.9,
+                size = 0.5,
+                na.rm = TRUE,
+                show.legend = FALSE) +
+  geom_hline(yintercept = 6.4,
+             size = 1,
+             lty = "dashed",
+             color = "#004ea8") +
+  scale_fill_brewer(palette = "Set2") +
+  scale_y_continuous(limits = c(1.0, 10.0),
+                     breaks = seq(1.0, 10.0, 4)) +
+  coord_flip() +
+  labs(x = "",
+       y = "average rating",
+       title = "Top 7 Game categories since 1950") +
+  theme_minimal()+
+  theme(legend.position = "none")
+```
