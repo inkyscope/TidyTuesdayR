@@ -21,6 +21,9 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
+### Number by college major and gender by [fivethirtyeight/ACS](https://github.com/fivethirtyeight/data/tree/master/college-majors)
+![number by college major and gender](https://github.com/inkyscope/datavizRscope/blob/master/figures/NumberInCollegeMajorGender.png)
+
 ### Ramen ratings by [the ramen rater](https://www.theramenrater.com/resources-2/the-list/)
 ![Categories for ramen ratings](https://github.com/inkyscope/datavizRscope/blob/master/figures/categories%20for%20ramen%20rating.png)
 
