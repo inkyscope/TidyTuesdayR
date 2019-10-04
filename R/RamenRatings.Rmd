@@ -28,14 +28,11 @@ ramen_ratings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascie
 library(drlib)
 
 ramen_ratings_gathered <- ramen_ratings %>%  
-  mutate(style = fct_lump(style, 4),
-         country = fct_lump(country, 12),
-         brand = fct_lump(brand, 20)) %>% 
-  replace_na(list(style = "Other")) %>% 
-  mutate(brand = fct_relevel(brand,"Other"),
-         country = fct_relevel(country, "Other"),
-         style = fct_relevel(style, "Pack"))%>% 
-   drop_na()
+  mutate(style = fct_relevel(fct_lump(style, 4), "Other"),
+         country = fct_relevel(fct_lump(country, 12), "Other"),
+         brand = fct_relevel(fct_lump(brand, 12), "Other"))%>%
+  replace_na(list(style = "Other")) %>%  
+  drop_na()
 
 skim(ramen_ratings_gathered) 
 
@@ -47,14 +44,14 @@ ramen_ratings_gathered %>%
   top_n(20, n) %>%
   ungroup() %>% 
   mutate(value = drlib::reorder_within(value, n, category)) %>% 
-  ggplot(aes(value, n, fill = category))+
+  ggplot(aes(value, n, fill = category)) +
   geom_col(show.legend = FALSE)+
-  facet_wrap(~category, scales = "free_y")+
+  facet_wrap(~category, scales = "free_y") +
   scale_x_reordered()+ # package(drlib)
   coord_flip()+
   labs(title = "Categories relating to ramen rating",
   x = "category",
-  y = " ")+
+  y = " ") +
   theme_minimal()
 ```
 
@@ -83,15 +80,24 @@ p1 <- lm(stars ~brand + country + style, ramen_ratings_gathered) %>%
   ggplot(aes(estimate, term, color = category)) +
   geom_point(na.rm = TRUE,
              show.legend = FALSE) +
-  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high),
+                 show.legend = FALSE) +
   geom_vline(lty =2, 
+             color = "#9a2543",
              xintercept = 0) +
   facet_wrap(~ category, ncol = 1, 
              scales = "free_y") +
+  scale_color_brewer(palette = "Set2") +
   labs(x = "Coefficient",
        y =" ",
        title = "Categories relating to ramen ratings") +
-  plot_theme 
+  theme_minimal() +
+  theme(axis.title = element_blank(),
+              panel.grid.major.x = element_blank(),
+              panel.grid.minor = element_blank(),
+              plot.title = element_text(size = 16, margin = margin(b = 10)),
+              plot.subtitle = element_text(size = 11, color = "darkslategrey", margin = margin(b = 25)),
+              plot.caption = element_text(size = 9, margin = margin(t = 10), color = "#757575", hjust = 1))
 
 
 tol11qualitative=c("#332288", "#6699CC", "#88CCEE", "#44AA99", "#117733", 
@@ -103,13 +109,14 @@ p2 <- ramen_ratings_gathered  %>%
          country = fct_relevel(country, "Other")) %>% 
   ggplot(aes(stars, country)) +
   stat_intervalh(.width = c(.1, .25, .5, .75, 1),
-                 height = 5, show.legend = FALSE) +
+                 height = 5, 
+                 show.legend = FALSE) +
   rcartocolor::scale_colour_carto_d(palette = "Peach") +
     #geom_density_ridges(scale = 2, 
                      # aes(fill = country), 
                      # alpha = 0.5,
-                      #color = "#0000001A",
-                      #na.rm = TRUE,
+                     # color = "#0000001A",
+                     # na.rm = TRUE,
                      # show.legend = FALSE) +
   geom_point(aes(stars, country), 
              color = "#4d3093", 
@@ -178,6 +185,3 @@ plot_grid(p1, plot_grid(p2, p3),
 
 ggsave(here("figures", "categories for ramen rating.png"), width = 10, height = 10, units = "in")
 ```
-
-
-
