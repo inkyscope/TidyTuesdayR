@@ -1,0 +1,212 @@
+---
+title: "RomanEmperors"
+author: "Sung Inkyung"
+date: '2019 10 7 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source [tidy tuesday by gil henriques] (https://github.com/GilHenriques/TidyTuesdays/blob/master/2019-08-16%20Roman%20emperors/emperors.R)
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggalluvial)
+library(here)
+```
+
+```{r}
+emperors <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-13/emperors.csv")
+
+View(emperors)
+
+glimpse(emperors)
+```
+
+
+```{r}
+emperors %>% 
+  count(dynasty)
+
+emperors %>% 
+  count(era) 
+
+emperors %>% 
+  count(cause)
+
+emperors %>% 
+  count(cause) %>% 
+  mutate(cause = fct_reorder(cause, n)) %>% 
+  ggplot(aes(x = cause, y = n)) +
+  geom_col() +
+  coord_flip() +
+  scale_y_continuous(expand = expand_scale(mult = c(0, 0.2))) +
+  labs(x = "",
+       y = "Number of death",
+       title = "Principal causes of death",
+       subtitle = glue("Based on {nrow(emperors)} observations"),
+       caption = "Source | Wikipedia") +
+  theme_minimal_vgrid()
+
+```
+
+```{r}
+bc_births <- c("Augustus", "Tiberius", "Claudius", "Galba")
+
+chronicles <- emperors %>% 
+  mutate_if(is.Date, list(year = year)) %>% 
+  mutate(birth_year = if_else(name %in% bc_births, -birth_year, birth_year),
+         reign_start_year = if_else(name == "Augustus",
+                                    -reign_start_year,
+                                    reign_start_year),
+         age = death_year - birth_year, unit = "year",
+         duration = time_length(abs(reign_end - reign_start), unit = "year"))
+         
+        # reign_start_age = reign_start_year - birth_year
+        # reign_end_age = reign_end_yea - birth_year
+
+chronicles %>% 
+  filter(duration == max(duration))
+
+missing_birth_estimates <- chronicles %>% 
+  filter(is.na(birth_year)) %>% 
+  mutate(birth_year = case_when(name == "Florian" ~ 202,
+                                name == "Numerian" ~ 248,
+                                name == "Carinus" ~ 245,
+                                name == "Severus II" ~ 260,
+                                name == "Vetranio" ~ 325))
+
+era_year <- chronicles %>% 
+  filter(era == "Dominate") %>% 
+  summarize(yearmin = min(reign_start_year, na.rm = T)) %>% 
+  pull 
+
+
+```
+
+```{r}
+chronicles_new <- chronicles %>% 
+  filter(!is.na(birth_year)) %>% 
+  bind_rows(missing_birth_estimates)
+
+dynasties <- chronicles_new  %>% 
+  group_by(dynasty) %>% 
+  summarize(reign_start_year = min(reign_start_year),
+            reign_end_year = max(reign_end_year))
+
+```
+
+```{r}
+plot <- chronicles_new %>% 
+  ggplot(aes(y = reorder(name, reign_start_year), 
+             color = dynasty)) +
+  geom_blank() +
+  geom_rect(aes(xmin = -62, 
+                xmax = 400, 
+                ymin = index - 0.5, 
+                ymax = index + 0.5, 
+                fill = dynasty), 
+            alpha = 0.1, 
+            colour = NA) +
+  geom_vline(xintercept = era_year, 
+             color = "#d6cfc7", 
+             size = 1.2) +
+  geom_segment(aes(x = birth_year, xend = death_year, yend = name),
+               size = 2, color = "#818380", alpha = 0.7,
+               lineend = "round") +
+  geom_segment(aes(x = reign_start_year, xend = reign_end_year, yend = name, 
+                   color = dynasty), size = 2,
+               lineend = "round") +
+  geom_segment(data = filter(chronicles_new, reign_start_year == reign_end_year), 
+               aes(x = reign_start_year - 0.5, xend = reign_start_year + 0.5,
+                   y = name, yend = name, 
+                   color = dynasty), size = 2,
+               lineend = "round") +
+  geom_text(aes(x = death_year, label = name), 
+            color = "black",
+            hjust = 0, size = 2, nudge_x = 3) +
+  scale_color_brewer(name = "dynasty", 
+                    palette = "Dark2") +
+  scale_fill_brewer(name = "dynasty", 
+                    palette = "Dark2") +
+  scale_x_continuous(breaks = c(-62, 0, 100, 200, 300, 400), 
+                     labels = c("62 BC", "1 AD", "100 AD", "200 AD", "300 AD", "400 AD")) +
+  annotate("text", 
+           x = era_year - 10, 
+           y = 2.5, label = "Principate era", 
+           size = 3.5, 
+           hjust = 1) +
+  annotate("text", 
+           x = era_year + 10, 
+           y = 2.5, label = "Dominate era", 
+           size = 3.5, 
+           hjust = 0) +
+  expand_limits(x = c(-62, 450)) +
+  labs(x = "", 
+       y = "",
+       title = "A chronology of Roman Emperors by dynasty", 
+       subtitle = "From Augustus(26BC–14AD) to TheodosiusI(379AD–395AD)\nLifespan(light colors) and reign duration and dynasty (colors) of Roman Emperors" ,
+       caption = "source: Wikipedia") +
+  theme(axis.text = element_blank(),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 11),
+        plot.caption = element_text(size = 7,
+                                    hjust = 1),
+        plot.background = element_rect(fill = "#d6cfc7"),
+        panel.background = element_rect(fill = "#d6cfc7"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size = 7),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = c(0.2, 0.65),
+        legend.title = element_text(size = 9),
+        legend.background = element_rect(fill = "#d6cfc7",
+                                         size = 0)) 
+ggsave(here ("figures", "RomanEmperorsDynastyChronicles.png"), width = 9, height = 7, units = "in")
+
+```
+
+```{r}
+rise_fall_cause<- emperors %>% 
+  select(index, rise, cause) %>% 
+  mutate(rise = case_when(
+    str_detect(rise, "Appointment") ~ "Appointment",
+  TRUE ~ as.character(rise)
+))
+
+rise_fall_plot <- rise_fall_cause %>% 
+  ggplot(aes(axis1 = rise, axis2 = cause)) +
+  geom_alluvium(aes(fill = rise), 
+                width = 0.2,
+                show.legend = FALSE) +
+  geom_stratum(fill = "gray70",
+               color = "white", 
+               size = 0.1, 
+               width = 0.4) +
+  geom_text(stat = "stratum", 
+            size = 3, 
+            label.strata = TRUE) +
+  scale_x_discrete(limits = c("Rise", "Fall"), 
+                   expand = c(0, 0), 
+                   position = "top") +
+  scale_fill_brewer(palette = "Dark2",
+                    name = "Rise and Fall Causes") +
+  labs(title = "The rise and fall of Roman Emperors", 
+       caption = "Data: Wikipedia") +
+  theme(plot.title = element_text(vjust = -3), 
+        axis.text.x = element_text(size = 11, 
+                                   color = "gray70",
+                                   face = "bold"),
+        axis.ticks = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "none",
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) + 
+  theme_minimal()
+
+rise_fall_plot
+```
