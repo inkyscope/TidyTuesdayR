@@ -17,9 +17,12 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://youtu.be/nx5yhXAQLxw)|Tidy Tuesday screencast | David Robinson |
 |[:link:](https://ratsgo.github.io/)|Textmining | Lee KiChang |
 |[:link:](https://nsgrantham.shinyapps.io/tidytuesdayrocks/)|Tidy Tuesday Shinyapp | Neal Grantham |
-|[:link:](https://stat545.com/index.html)|STAT 545 Data wrangling, exploration, and analysis with R | Jenny Bryan |
+|[:link:](https://https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/video-lectures/l)|MIT 18.06 Linear Algebra, Spring 2005| Gilbert Strang|
+|[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Roman Emperors Dynasty Chronicles by [Wikipedia / Zonination](https://github.com/zonination/emperors/blob/master/README.md)
+![Roman Emperors Dynasty Chronicles](https://github.com/inkyscope/datavizRscope/blob/master/figures/RomanEmperorsDynastyChronicles.png)
 
 ### Number by college major and gender by [fivethirtyeight/ACS](https://github.com/fivethirtyeight/data/tree/master/college-majors)
 ![number by college major and gender](https://github.com/inkyscope/datavizRscope/blob/master/figures/NumberInCollegeMajorGender.png)
