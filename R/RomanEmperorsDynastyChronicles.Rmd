@@ -177,7 +177,8 @@ reign_plot <- chronicles %>%
   expand_limits(x = c(0, 60)) +
   labs(x = " ",
        y = "age",
-       title = "Reign duration of Roman Emperors") +
+       title = "Reign duration of Roman Emperors",
+       caption = caption = "source | Wikipedia / Zonination") +
   theme(panel.border = element_blank(),
         panel.background = element_blank(),
         plot.background = element_blank(),
@@ -245,7 +246,7 @@ dynasty_plot <- chronicles_new %>%
        y = "",
        title = "A chronology of Roman Emperors by dynasty", 
        subtitle = "From Augustus(26BC–14AD) to TheodosiusI(379AD–395AD)\nLifespan(light colors) and reign duration and dynasty (colors) of Roman Emperors" ,
-       caption = "source: Wikipedia") +
+       caption = "source | Wikipedia / Zonination") +
   theme(axis.text = element_blank(),
         plot.title = element_text(size = 14),
         plot.subtitle = element_text(size = 11),
