@@ -21,6 +21,10 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Roman Emperors Reign Duration by [Wikipedia / Zonination](https://github.com/zonination/emperors/blob/master/README.md)
+![Roman Emperors Reign Duration](https://github.com/inkyscope/datavizRscope/blob/master/figures/RomanEmperorsReignDuration.png
+)
+
 ### Roman Emperors Dynasty Chronicles by [Wikipedia / Zonination](https://github.com/zonination/emperors/blob/master/README.md)
 ![Roman Emperors Dynasty Chronicles](https://github.com/inkyscope/datavizRscope/blob/master/figures/RomanEmperorsDynastyChronicles.png)
 
