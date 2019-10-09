@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(ggalluvial)
+library(ggtext)
 library(glue)
 library(cowplot)
 library(here)
@@ -48,7 +49,7 @@ emperors %>%
        y = "Number of death",
        title = "Principal causes of death",
        subtitle = glue("Based on {nrow(emperors)} observations"),
-       caption = "Source | Wikipedia") +
+       caption = "source | Wikipedia / Zonination")  +
   theme_minimal_vgrid()
 
 ```
@@ -178,7 +179,7 @@ reign_plot <- chronicles %>%
   labs(x = " ",
        y = "age",
        title = "Reign duration of Roman Emperors",
-       caption = caption = "source | Wikipedia / Zonination") +
+       caption = "source | Wikipedia / Zonination") +
   theme(panel.border = element_blank(),
         panel.background = element_blank(),
         plot.background = element_blank(),
@@ -225,9 +226,9 @@ dynasty_plot <- chronicles_new %>%
   geom_text(aes(x = death_year, label = name), 
             color = "black",
             hjust = 0, size = 2, nudge_x = 3) +
-  scale_color_brewer(name = "dynasty", 
+  scale_color_brewer(name = "Dynasty", 
                     palette = "Dark2") +
-  scale_fill_brewer(name = "dynasty", 
+  scale_fill_brewer(name = "Dynasty", 
                     palette = "Dark2") +
   scale_x_continuous(breaks = c(-62, 0, 100, 200, 300, 400), 
                      labels = c("62 BC", "1 AD", "100 AD", "200 AD", "300 AD", "400 AD")) +
@@ -245,11 +246,12 @@ dynasty_plot <- chronicles_new %>%
   labs(x = "", 
        y = "",
        title = "A chronology of Roman Emperors by dynasty", 
-       subtitle = "From Augustus(26BC–14AD) to TheodosiusI(379AD–395AD)\nLifespan(light colors) and reign duration and dynasty (colors) of Roman Emperors" ,
+       subtitle = "From <span style='color:#E7298A'>**Augustus** </span>26BC:14AD to <span style = 'color #A6761D'>**TheodosiusI** </span>379AD:395AD.<br>Average age at death is 49 years old. Average reign duration is 8 years.<br><span style='color:#E6AB02'>**Elagabalus** </span>and <span style ='color:#7570B3'> **Gordian III** </span>are the youngest emperors: 19 years old. <span style = 'color:#7570B3'> **Gordian I** </span>is <br>the oldest emperor: 79 years old. <span style = 'color:#1B9E77'> **Constatine the Great** </span>has the longest reign: 30.85 years.<br> <span style = 'color:#7570B3'>**Gordian I** </span>and <span style = 'color:#7570B3'> **Gordian II** </span>have the shortest reign: 0.06 years.<br> Lightcolor and colors represent lifespan, reign duration and dynasty of Roman Emperors respectively",
        caption = "source | Wikipedia / Zonination") +
   theme(axis.text = element_blank(),
-        plot.title = element_text(size = 14),
-        plot.subtitle = element_text(size = 11),
+        plot.title = element_markdown(size = 16),
+        plot.subtitle = element_markdown(size = 11,
+                                         margin = margin(10, 10, 10, 10)),
         plot.caption = element_text(size = 7,
                                     hjust = 1),
         plot.background = element_rect(fill = "#d6cfc7"),
@@ -265,15 +267,10 @@ dynasty_plot <- chronicles_new %>%
         legend.title = element_text(size = 9),
         legend.background = element_rect(fill = "#d6cfc7",
                                          size = 0)) 
+
+
 ggsave(here ("figures", "RomanEmperorsDynastyChronicles.png"), width = 9, height = 7, units = "in")
 
-```
-
-```{r note}
-## note: not allowed me to apply ggtext package to give it a shot to as below;
-## to match color of emperors with dynasty's color, who represent some features extracted from roman emperors dynasty chronicles;
-## subtitle = "From <span style='color:#E7298A'> **Augustus** </span>(26BC–14AD) to 
-## <span style = 'color:#A6761D'> **TheodosiusI** </b>(379AD–395AD).<br> Average age at ## death is 49 years old.<br> Average reign duration is 8 years old.<br> <span style = ## 'color:#E6AB02'> **Elagabalus** </span> and <span style='color:#7570B3'> **Gordian ## III** </span> are the youngest emperors(19 years old).<br> <span style =  'color : ## #7570B3'> **Gordian I** </span> is the oldest emperor(79 years old).<br> <span style ## = 'color:#1B9E77'> **Constatine the Great** </span> has the longest  reign(30.85 years).<br> <span style = 'color:#7570B3'> **Gordian I** and **Gordian II** </span> have the shortest reign(0.06 years). <br> Lifespan(light colors) and reign duration and dynasty (colors) of Roman Emperors"
 ```
 
 ```{r}
