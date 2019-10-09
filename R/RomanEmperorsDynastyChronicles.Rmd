@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(ggalluvial)
+library(glue)
+library(cowplot)
 library(here)
 ```
 
@@ -61,10 +63,11 @@ chronicles <- emperors %>%
                                     -reign_start_year,
                                     reign_start_year),
          age = death_year - birth_year, unit = "year",
+         reign_start_age = reign_start_year - birth_year,
+         reign_end_age = reign_end_year - birth_year,
          duration = time_length(abs(reign_end - reign_start), unit = "year"))
          
-        # reign_start_age = reign_start_year - birth_year
-        # reign_end_age = reign_end_yea - birth_year
+        
 
 chronicles %>% 
   filter(duration == max(duration))
@@ -98,7 +101,102 @@ dynasties <- chronicles_new  %>%
 ```
 
 ```{r}
-plot <- chronicles_new %>% 
+library(ggforce)
+
+reign_plot <- chronicles %>% 
+  filter(!is.na(age)) %>% 
+  ggplot(aes(reorder(name, -age), age)) +
+  geom_bar(stat = "identity",
+           position = "stack",
+           width = 0.8,
+           fill = "#e0ab76",
+           alpha = 0.3,
+           na.rm = TRUE) +
+  geom_segment(aes(x = name, 
+                   y = reign_start_age,
+                   xend = name,
+                   yend = reign_end_age),
+               color = "#3776a9",
+               alpha = 0.7,
+               size = 1.7,
+               na.rm = TRUE) +
+  geom_errorbar(aes(x = name,
+                    y = age,
+                    ymin = age,
+                    ymax = age),
+                color = "#9a2543",
+                width = 0.85,
+                na.rm = TRUE) +
+  geom_mark_circle(
+    aes(
+      label = glue("{name}"),
+      description = "The oldest emperor(79 years old)",
+      filter = age == max(age)),
+    expand = unit(0.01, "mm"),
+    label.fontsize = 7,
+    label.buffer = unit(30, "mm"),
+    label.hjust = 1, 
+    show.legend = FALSE
+  ) +
+  geom_mark_circle(
+    aes(
+      label = glue("{name}"),
+      description = "The youngest emperor(19 years old)",
+      filter = age == min(age)),
+    expand = unit(0.01, "mm"),
+    label.fontsize = 7,
+    label.buffer = unit(3, "mm"),
+    label.hjust = 1, 
+    show.legend = FALSE
+  ) +
+  geom_mark_circle(
+    aes(
+      label = glue("{name}"),
+      description = "The longest reign(30.85 years)",
+      filter = duration == max(duration)),
+    expand = unit(3, "mm"),
+    label.fontsize = 7,
+    label.buffer = unit(30, "mm"),
+    label.hjust = 1,
+    show.legend = FALSE
+  ) +
+  geom_mark_circle(
+    aes(
+      label = glue("{name}"),
+      description = "The shortest reign(0.06 years)",
+      filter = duration == min(duration)),
+    expand = unit(0.01, "mm"),
+    label.fontsize = 7,
+    label.buffer = unit(10, "mm"),
+    label.hjust = 1,
+    show.legend = FALSE
+  ) +
+  coord_flip() +
+  scale_y_continuous(limits = c(0, 80),
+                     breaks = seq(0, 80, 10)) +
+  expand_limits(x = c(0, 60)) +
+  labs(x = " ",
+       y = "age",
+       title = "Reign duration of Roman Emperors") +
+  theme(panel.border = element_blank(),
+        panel.background = element_blank(),
+        plot.background = element_blank(),
+        panel.grid.major.x = 
+        element_line(size = 0.2,
+                     linetype="dotted",  
+                     color="#3776a9"),
+        panel.grid.major.y= element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line.x = element_blank(),
+        axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank()) 
+
+ggsave(here("figures", "RomanEmperorsReignDuration.png"), width = 9, height = 7, units = "in")
+```
+
+```{r}
+dynasty_plot <- chronicles_new %>% 
   ggplot(aes(y = reorder(name, reign_start_year), 
              color = dynasty)) +
   geom_blank() +
@@ -168,6 +266,13 @@ plot <- chronicles_new %>%
                                          size = 0)) 
 ggsave(here ("figures", "RomanEmperorsDynastyChronicles.png"), width = 9, height = 7, units = "in")
 
+```
+
+```{r note}
+## note: not allowed me to apply ggtext package to give it a shot to as below;
+## to match color of emperors with dynasty's color, who represent some features extracted from roman emperors dynasty chronicles;
+## subtitle = "From <span style='color:#E7298A'> **Augustus** </span>(26BC–14AD) to 
+## <span style = 'color:#A6761D'> **TheodosiusI** </b>(379AD–395AD).<br> Average age at ## death is 49 years old.<br> Average reign duration is 8 years old.<br> <span style = ## 'color:#E6AB02'> **Elagabalus** </span> and <span style='color:#7570B3'> **Gordian ## III** </span> are the youngest emperors(19 years old).<br> <span style =  'color : ## #7570B3'> **Gordian I** </span> is the oldest emperor(79 years old).<br> <span style ## = 'color:#1B9E77'> **Constatine the Great** </span> has the longest  reign(30.85 years).<br> <span style = 'color:#7570B3'> **Gordian I** and **Gordian II** </span> have the shortest reign(0.06 years). <br> Lifespan(light colors) and reign duration and dynasty (colors) of Roman Emperors"
 ```
 
 ```{r}
