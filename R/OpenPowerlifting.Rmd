@@ -1,0 +1,244 @@
+---
+title: "PowerLifting"
+author: "Sung Inkyung"
+date: '2019 10 14 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source[tidy tuesday by Thomasmock] (https://github.com/jthomasmock/tidytuesday/tree/master/2019/2019-10-08)
+### source[tidy tuesday by johanie fournier] (https://johaniefournier.com/tyt2019-41/)
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggforce)
+library(ggridges)
+library(ggtext)
+library(cowplot)
+
+```
+
+```{r}
+ipf_lifts <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-08/ipf_lifts.csv")
+```
+
+```{r}
+ipf_lifts %>% 
+  count(place)
+
+ipf_lifts %>% 
+  count(date)
+
+ipf_lifts %>% 
+  count(equipment)
+```
+
+```{r}
+lifts <- ipf_lifts %>%
+  filter_at(vars(starts_with("best")), all_vars(. > 0)) %>% 
+  mutate(name = str_replace_all(name, "[[:punct:]+]", ""),
+         name = str_remove(name, "^\\s"),
+         name = iconv(name, from = 'UTF-8', to = 'ASCII//TRANSLIT')) %>%  
+  mutate(year = year(date),
+         age = round(age, 0)) %>% 
+  filter_at(vars(starts_with("best")), all_vars(. > 0)) %>% 
+  filter(place != "DD" & place != "DQ",
+         str_detect(place, "1")) %>% 
+  select(-c(event, division, federation, date)) %>% 
+  pivot_longer(starts_with("best"), 
+               names_to = "lift", 
+               values_to = "weight") %>%  
+  filter(weight > 0) %>%
+  drop_na()
+
+
+max_lifts <-lifts %>% 
+  group_by(name) %>% 
+  mutate(lift = recode(lift, 
+                       "best3bench_kg" = "Bench",
+                       "best3deadlift_kg" = "Deadlift",
+                       "best3squat_kg" = "Squat"),
+         sex = recode(sex, 
+                      "F" = "Female",
+                      "M" = "Male")) %>% mutate(age_class = if_else(age_class == "80-999" , "80+", as.character(age_class)), sex = if_else(sex == "F", "Female", "Male")) %>% 
+  ungroup()
+
+# check to see if the max has ties ;
+check <- max_lifts %>% 
+  group_by(sex, lift, year) %>% 
+  summarise(total = n())
+  
+```
+
+```{r}
+lift_weights <- max_lifts %>% 
+  mutate(ratio = weight / bodyweight_kg) %>% 
+  filter(!is.na(ratio),
+         !is.na(age)) %>% 
+  select(age, sex, year, lift, ratio) %>% 
+  group_by(sex, lift, age) %>% 
+  summarise(average = mean(ratio,
+                           na.rm = TRUE),
+            sd = sd(ratio,
+                    na.rm = TRUE)) %>% 
+  drop_na() %>% 
+  ungroup()
+
+lift_weights %>% 
+  group_by(sex) %>% 
+  filter(average == max(average))
+
+lift_weights %>% 
+  group_by(sex) %>% 
+  filter(average == min(average))
+
+lift_weights %>% 
+  ggplot(aes(age, average, color = sex)) +
+  geom_point(show.legend = FALSE) +
+  geom_jitter(size = 0.7, alpha = 0.7) +
+  geom_smooth(method = "lm") +
+  scale_color_manual(values = c("#f15e75", "#27c96d")) +
+  facet_wrap(~lift) +
+  labs(x = "age",
+       y = "Ratio of max lift weights by bodyweight(kg)",
+       title = "<span style = 'color : #f15e75'>**Women**</span> disciplines more than <span style = 'color :#27c96d'>**men**</span> over ages",
+       subtitle = "For the best of their ability, men can lift 3.3X their body weight in deadlift area.\nWomen, for the category, can lift 2.7X their weight.\nWhat is surprising is that women keeps their physical competence under control \nmore steadily than men." ,
+       caption="source | OpenPowerlifting.org" ) +
+  theme(
+    plot.title = element_markdown(size = 18, 
+                                  hjust = 0,
+                                  vjust= 0.5, 
+                                  color = "#404040"),
+    plot.subtitle = element_text(size = 13, color = "#404040"),
+    plot.caption = element_text(size = 9, color = "#404040"),
+    axis.title.y = element_text(size = 9),
+    axis.title.x = element_text(size = 9),
+    legend.position = "none",
+    panel.grid = element_blank()
+  ) +
+  guides(col = guide_legend(reverse = TRUE))
+
+```
+
+```{r}
+# aggregating # of max achieved
+max_players <- max_lifts %>% 
+  group_by(sex, name, weight) %>% 
+  summarise(max = max(weight,na.rm = TRUE),
+            n = n(),
+            total = n()) %>% 
+  ggplot(aes(n, total, fill = sex)) +
+  geom_col(position = "dodge") +
+  scale_x_continuous(breaks = seq(0, 12, 1)) +
+  scale_y_continuous(breaks = seq(0, 15, 3)) +
+  scale_fill_manual(values = c("#f15e75", "#27c96d")) +
+  coord_flip() +
+  labs(x = "Number of max weight achieved",
+       y = "Number of players",
+       title = "The max number of achievements across all IPF championships",
+       caption = "OpenPowerlifting.org") +
+  theme_minimal() +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+
+```{r}
+max_gender_weight <- max_lifts %>% 
+  group_by(year, sex, lift) %>% 
+  filter(weight == max(weight,
+                      na.rm = TRUE)) %>% #year > 2010
+  ggplot(aes(year, weight, group = lift, color = lift)) +
+  
+  geom_point() +
+  geom_line(aes(color = lift), size = 1) +
+  scale_color_manual(values = c("#32a852", "#9365a8", "#b58e00")) +
+  facet_grid(. ~ sex) +
+  guides(color = guide_legend(reverse = TRUE)) +
+  theme_minimal()
+
+max_gender_weight 
+
+
+max_equip_weight <- max_lifts %>% 
+  group_by(sex, year, equipment, lift) %>%
+  filter(year >= 2010,
+         equipment %in% c("Raw", "Single-ply")) %>%
+  summarize(max = max(weight),
+            n = n()) %>%
+  ggplot(aes(x = year, y = max, group = lift, color = lift)) +
+  geom_line(size = 1) +
+  geom_point(size = 3) +
+  geom_hline(yintercept = 0, color = "black", size = 0.7) +
+  scale_x_discrete(breaks = seq(2012, 2018, 2)) +
+  scale_y_continuous(breaks = seq(0, 500, 100)) +
+  scale_color_manual(values = c("#32a852", "#9365a8", "#b58e00")) +
+  facet_grid(sex ~ equipment, scales = "free") +
+  guides(color = guide_legend(reverse = TRUE)) +
+  theme_minimal()
+
+max_equip_weight 
+  
+  
+```
+
+```{r}
+age_lifts <- max_lifts %>% 
+  group_by(age, sex, lift) %>% 
+  summarize(max = max(weight,
+                      na.rm = TRUE)) %>% 
+  ungroup()
+
+max_age <- age_lifts %>% 
+  group_by(sex, lift,) %>% 
+  top_n(1, max) 
+```
+
+
+```{r}
+max_age_weight <- age_lifts %>% 
+  ggplot(aes(age, max, 
+             group = lift, 
+             color = lift,
+             fill = lift)) +
+  geom_point(size = 1, alpha = 0.7) +
+  geom_jitter(size = 1, alpha = 0.7)+
+  geom_smooth(method = "loess",  size = 1) +
+  geom_segment(data = max_age,
+               aes(x = age, y = max,
+                   xend = age, yend = 0),
+               size = 2, alpha = 0.7) +
+  geom_point(data = max_age,
+             size = 3, 
+             color = "black",
+             shape = 21, 
+             stroke = 1.5) +
+  geom_mark_circle(data = filter(max_age, sex == "Male"), 
+                   aes(label = max)) +
+  geom_mark_circle(data = filter(max_age, sex == "Female"), 
+                   aes(label = max)) +
+  facet_wrap( ~ sex,
+             scales = "free") +
+  scale_color_manual(values = c("#32a852", "#9365a8", "#b58e00"),
+                     aesthetics = c("fill", "color")) +
+  scale_x_continuous(breaks = seq(0, 80, 10)) +
+  scale_y_continuous(breaks = seq(0, 500, 100)) +
+  labs(
+    x = "",
+    y = "Max lifted weight(kg)",
+    caption = "source: OpenPowerlifting.org",
+    title = "<span style='color:#32a852'>**Bench**</span>, <span style='color:#9365a8'>**Deadlift**</span>, and <span style='color:#b58e00'>**Squat**</span> performances peak around 30",
+    subtitle = "Max performance highlighted in black circle"
+  ) +
+  theme(
+    plot.title = element_markdown(),
+    legend.position = "none",
+    axis.title.y = element_text(size = 11),
+    panel.grid.major = element_blank(),
+    plot.background = element_blank()
+  ) 
+  
+max_age_weight
+
+```
