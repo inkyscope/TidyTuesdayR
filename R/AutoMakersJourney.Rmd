@@ -172,7 +172,7 @@ top_save_plot <- top_save %>%
 
 top_save_plot
 
-ggsave(here("figures", "top_save_plot.png"), width = 10, height = 7, units = "in")
+ggsave(here("figures", "TopSavingCarJourney.png"), width = 10, height = 7, units = "in")
 
 ```
 
