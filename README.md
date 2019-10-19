@@ -21,6 +21,12 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Big EPA Cars by [EPA](https://openpowerlifting.org/data)
+![Journey by cars](https://github.com/inkyscope/datavizRscope/blob/master/figures/TopSavingCarJourney.png)
+
+### Big EPA Cars by [EPA](https://openpowerlifting.org/data)
+![Journey by cars](https://github.com/inkyscope/datavizRscope/blob/master/figures/TopSavingRank.png)
+
 ### Roman Emperors Reign Duration by [Wikipedia / Zonination](https://github.com/zonination/emperors/blob/master/README.md)
 ![Roman Emperors Reign Duration](https://github.com/inkyscope/datavizRscope/blob/master/figures/RomanEmperorsReignDuration.png
 )
