@@ -8,7 +8,6 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 ### source[data in detail](https://www.fueleconomy.gov/feg/ws/index.shtml#fuelType1)
 ```{r}
 library(tidyverse)
@@ -146,16 +145,16 @@ top_save_plot <- top_save %>%
   labs(x = "",
        y = "",
        title = "Cost saving journey of major automakers",
-       subtitle = "Suggesting headwinds and tailwinds against moving upward are displayed among automakers<br>since 1984. <span style='color:#44AA77'>**Jaguar**</span>, <span style = 'color:#DDDD77'>**Mercedez-Benz**</span> and<span style='color:#DDAA77'> **Porsche**</span> need a bold plan to shift.",
+       subtitle = "Suggesting headwinds and tailwinds against moving upward are displayed among automakers<br>since 1984. <span style='color:#44AA77'>**Jaguar**</span>, <span style = 'color:#DDDD77'> **Mercedez-Benz**</span> and <span style='color:#DDAA77'> **Porsche**</span> need a bold plan to shift.",
        caption = "source | fueleconomy.gov") +
   theme(panel.background = element_rect(fill = "#c4e2f3"),
         panel.grid.major = element_blank(),
         panel.grid.major.x = element_blank(),
         axis.text = element_text(color = "#1c1c39"),
         axis.ticks = element_blank(),
-        plot.title = element_textbox(color = "#1c1c39",
-                                  size = 18,
-                                  margin = margin(b = 10)),
+        plot.title = element_markdown(color = "#1c1c39",
+                                      size = 18,
+                                      margin = margin(b = 10)),
         plot.subtitle = element_markdown(color = "#1c1c39",
                                          size = 13,
                                          margin = margin(b = 20)),
@@ -172,10 +171,10 @@ top_save_plot <- top_save %>%
 
 top_save_plot
 
-ggsave(here("figures", "TopSavingCarJourney.png"), width = 10, height = 7, units = "in")
+ggsave(here("figures", "TopSavingCarJourney.png"), width = 13, height = 10, units = "in")
 
 ```
-
+### source[tidy tuesday by jake kaupp](https://github.com/jkaupp/tidytuesdays/blob/master/2019/week42/R/analysis.R)
 ```{r}
 colors <- set_names(grey.colors(22), pull(top_make, make))
 colors[["Dodge"]] <- "#390071"
@@ -221,15 +220,15 @@ rank_plot <-
   labs(x = "",
        y = "",
        title = "Fuel cost savings journey of major automakers since 1984",
-       subtitle = "It appears to be hard to set a default value for the pereference or purpose of<br>car buyers despite of cost saving advantage. Since it is a challenging task to<br>pull off a desired result.",
+       subtitle = "It appears to be hard to set a default value for the pereference or purpose of \ncar buyers despite of cost saving advantage. Since it is a challenging task to \npull off a desired result.",
        caption = "source | fueleconomy.gov") +
   theme(panel.background = element_rect(fill = "#b9bbb6"),
         panel.grid = element_blank(),
         axis.text = element_text(color = "#1c1c39"),
-        plot.title = element_textbox(color = "#1c1c39",
+        plot.title = element_text(color = "#1c1c39",
                                   size = 18,
                                   margin = margin(b = 5)),
-        plot.subtitle = element_markdown(color = "#1c1c39",
+        plot.subtitle = element_text(color = "#1c1c39",
                                          size = 13,
                                          margin = margin(b = 15)),
         plot.caption = element_text(color = "#132048",
@@ -240,6 +239,6 @@ rank_plot <-
 
 rank_plot
 
-ggsave(here("figures", "TopSavingRank.png"), width = 10, height = 7, units = "in")
+ggsave(here("figures", "TopSavingRank.png"), width = 13, height = 10, units = "in")
 
 ```
