@@ -129,7 +129,7 @@ top_save <- big_epa_cars %>%
   mutate(rank = min_rank(desc(total_save))) %>% 
   ungroup()
 
-tol22rainbow= c("#771155", "#AA4488", "#CC99BB", "#114477", "#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#117744", "#44AA77", "#88CCAA", "#777711", "#AAAA44", "#DDDD77", "#774411", "#AA7744", "#DDAA77", "#771122", "#AA4455", "#DD7788", "#525252")
+tol22rainbow= c("#771155", "#AA4488", "#CC99BB", "#114477", "#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#117744", "#008000", "#88CCAA", "#777711", "#AAAA44", "#244C96", "#774411", "#AA7744", "#FFA500", "#771122", "#AA4455", "#DD7788", "#525252")
 
 top_save_plot <- top_save %>%
   sample_frac(1) %>% 
@@ -145,7 +145,7 @@ top_save_plot <- top_save %>%
   labs(x = "",
        y = "",
        title = "Cost saving journey of major automakers",
-       subtitle = "Suggesting headwinds and tailwinds against moving upward are displayed among automakers<br>since 1984. <span style='color:#44AA77'>**Jaguar**</span>, <span style = 'color:#DDDD77'> **Mercedez-Benz**</span> and <span style='color:#DDAA77'> **Porsche**</span> need a bold plan to shift.",
+       subtitle = "Suggesting headwinds and tailwinds against moving upward are displayed among automakers<br>since 1984. <span style='color:#008000'>**Jaguar**</span>, <span style = 'color:#244C96'>**Mercedez-Benz**</span> and <span style='color:#FFA500'>**Porsche**</span> need a bold plan to shift.",
        caption = "source | fueleconomy.gov") +
   theme(panel.background = element_rect(fill = "#c4e2f3"),
         panel.grid.major = element_blank(),
@@ -153,11 +153,11 @@ top_save_plot <- top_save %>%
         axis.text = element_text(color = "#1c1c39"),
         axis.ticks = element_blank(),
         plot.title = element_markdown(color = "#1c1c39",
-                                      size = 18,
-                                      margin = margin(b = 10)),
+                                      size = 20,
+                                      margin = margin(b = 5)),
         plot.subtitle = element_markdown(color = "#1c1c39",
-                                         size = 13,
-                                         margin = margin(b = 20)),
+                                         size = 15,
+                                         margin = margin(b = 15)),
         plot.caption = element_text(color = "#132048",
                                     size = 9,
                                     hjust = 1),
@@ -171,7 +171,7 @@ top_save_plot <- top_save %>%
 
 top_save_plot
 
-ggsave(here("figures", "TopSavingCarJourney.png"), width = 13, height = 10, units = "in")
+ggsave(here("figures", "TopSavingCarJourney.png"), width = 11, height = 9, units = "in")
 
 ```
 ### source[tidy tuesday by jake kaupp](https://github.com/jkaupp/tidytuesdays/blob/master/2019/week42/R/analysis.R)
