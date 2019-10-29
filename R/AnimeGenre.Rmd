@@ -1,0 +1,88 @@
+---
+title: "Anime"
+author: "Sung Inkyung"
+date: '2019 10 28 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(GGally)
+library(broom)
+library(ggtext)
+library(lubridate)
+library(here)
+```
+
+```{r}
+anime <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-23/tidy_anime.csv") 
+```
+
+```{r}
+top_genres <- anime %>% 
+  mutate(year = year(start_date)) %>% 
+  group_by(genre) %>% 
+  tally() %>% 
+  arrange(-n) %>% 
+  top_n (20)%>% 
+  inner_join(anime) %>% 
+  mutate(title = coalesce(title_english, name)) %>% 
+  filter(type !="Unknown",
+         genre != "NA") %>% 
+  select(-c("name", "title_synonyms", "title_japanese", "background", "premiered", "broadcast",  "related", "airing")) %>% 
+  distinct(title, .keep_all = TRUE)
+  
+
+Toei_Animation <-  top_genres %>% 
+  filter(studio == "Toei Animation",
+         genre == "Adventure")
+
+variables <- c("genre", "score",  "scored_by", "members", "popularity", "favorites")
+
+Toei_Animation %>% 
+  select(variables) %>% 
+  mutate(above_avg = score > mean(score))%>% 
+  ggparcoord(alpha = 0.7, 
+             scale = "center",
+             columns = 1:6,
+             groupColumn = "above_avg")
+
+```
+
+```{r}
+dokgotak <- png::readPNG("C:/Users/inkyscope/Documents/projects/tidytuesday/image/Dokgotak.png")
+a <- grid::rasterGrob(dokgotak, interpolate = T)
+
+lm(score ~ genre, top_genres) %>% 
+  tidy(conf.int = TRUE) %>% 
+  filter(term != "(Intercept)") %>% 
+  arrange(desc(estimate)) %>% 
+  extract(term, c("category", "term"), "^([a-z]+)([A-Z].*)") %>%
+  mutate(term = fct_reorder(term, estimate)) %>% 
+  ggplot(aes(estimate, term, color = term)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_vline(lty = 2, xintercept = 0) +
+  annotation_custom(a, xmin = -3, xmax = -1, ymin = 3.7, ymax = 18) +
+  scale_x_continuous(breaks = seq(-3, 2, 1)) +
+  geom_hline(yintercept = 0,
+             size = 4,
+             color = "black") +
+  labs(x = "Estimated effect on anime score",
+       y = "",
+       title = "Coefficients that predict anime score across genres",
+       subtitle = "The image below is a main character(Dokgo Tak) from Korean animated films listed on<br>the website under *shounen* and *sports* genre. Shounen means boy in Japanese. " ,
+       caption = "Source | myanimelist.net") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "white"),
+        plot.title = element_text(size = 16),
+        plot.subtitle = element_markdown(size = 12),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave(here("figures", "DokgoTak.png"), width = 8, height = 6, units = )
+
+```
