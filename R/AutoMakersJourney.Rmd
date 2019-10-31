@@ -129,7 +129,10 @@ top_save <- big_epa_cars %>%
   mutate(rank = min_rank(desc(total_save))) %>% 
   ungroup()
 
-tol22rainbow= c("#771155", "#AA4488", "#CC99BB", "#114477", "#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#117744", "#008000", "#88CCAA", "#777711", "#AAAA44", "#244C96", "#774411", "#AA7744", "#FFA500", "#771122", "#AA4455", "#DD7788", "#525252")
+tol22rainbow= c("#771155", "#AA4488", "#CC99BB", "#114477", "#4477AA", "#77AADD", 
+                "#117777", "#44AAAA", "#77CCCC", "#117744", "#008000", "#88CCAA", 
+                "#777711", "#AAAA44", "#244C96", "#774411", "#AA7744", "#FFA500", 
+                "#771122", "#AA4455", "#DD7788", "#525252")
 
 top_save_plot <- top_save %>%
   sample_frac(1) %>% 
@@ -144,8 +147,8 @@ top_save_plot <- top_save %>%
   expand_limits(x = 2020) +
   labs(x = "",
        y = "",
-       title = "Cost saving journey of major automakers",
-       subtitle = "Suggesting headwinds and tailwinds against moving upward are displayed among automakers<br>since 1984. <span style='color:#008000'>**Jaguar**</span>, <span style = 'color:#244C96'>**Mercedez-Benz**</span> and <span style='color:#FFA500'>**Porsche**</span> need a bold plan to shift.",
+       title = "Fuel economy journey of major automakers",
+       subtitle = "Incessant efforts to advance, downturn, and revitalize in cost savings are observed among automakers <br>since 1984. However, <span style='color:#008000'>**Jaguar**</span>, <span style = 'color:#244C96'>**Mercedez-Benz**</span> and <span style='color:#FFA500'>**Porsche**</span> don't seem to traget improving fuel economy.",
        caption = "source | fueleconomy.gov") +
   theme(panel.background = element_rect(fill = "#c4e2f3"),
         panel.grid.major = element_blank(),
