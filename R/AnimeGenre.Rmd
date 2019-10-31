@@ -126,7 +126,7 @@ title <- ggplot(data.frame(x = 1:2, y = 1:10)) +
   labs(x = "",
        y = "",
        title = "Coefficients that predict anime score across genres",
-       subtitle = "The highest coefficient anime genres of them all are *Shonen* and *Seinen*. *Shounen* is targeted for teenage <br> boys and *Seinen* toward young adult men. Image below is Dokgo Tak, a main character of Korean animated <br> film listed under *Shounen* and *Sports* genre. He has a rebellious spirit against social conventions and <br> refuses to give up and renew its commitment to overcoming difficulties. Its corresponding topics like <br> friendship, family are reflected in the word frequency plot from the synopsis of two genres.") +
+       subtitle = "Anime genres with the highest coefficient  are *Shounen* and *Seinen*. *Shounen* is targeted for teenage  boys and <br> *Seinen* toward young adult men. Image below is Dokgo Tak, a main character of Korean animated film listed <br> under *Shounen* and *Sports* genre. He has a rebellious spirit against social conventions and refuses to <br> give up and renew its commitment to overcoming difficulties. Its corresponding topics like friendship, family <br> are reflected in the word frequency plot from the synopsis of the relevant genres.") +
   theme(plot.title = element_text(size = 16),
         plot.subtitle = element_markdown(size = 10),
         plot.caption = element_text(size = 7,
