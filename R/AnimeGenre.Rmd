@@ -11,15 +11,21 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(tidytext)
 library(GGally)
 library(broom)
 library(ggtext)
 library(lubridate)
+library(cowplot)
+library(patchwork)
 library(here)
 ```
 
 ```{r}
 anime <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-23/tidy_anime.csv") 
+
+anime %>% 
+  count(genre, sort = TRUE)
 ```
 
 ```{r}
@@ -57,7 +63,7 @@ Toei_Animation %>%
 dokgotak <- png::readPNG("C:/Users/inkyscope/Documents/projects/tidytuesday/image/Dokgotak.png")
 a <- grid::rasterGrob(dokgotak, interpolate = T)
 
-lm(score ~ genre, top_genres) %>% 
+p1 <- lm(score ~ genre, top_genres) %>%
   tidy(conf.int = TRUE) %>% 
   filter(term != "(Intercept)") %>% 
   arrange(desc(estimate)) %>% 
@@ -67,22 +73,225 @@ lm(score ~ genre, top_genres) %>%
   geom_point() +
   geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
   geom_vline(lty = 2, xintercept = 0) +
-  annotation_custom(a, xmin = -3, xmax = -1, ymin = 3.7, ymax = 18) +
+  annotation_custom(a, xmin = -3, xmax = -1, ymin = 3.7, ymax = 16) +
   scale_x_continuous(breaks = seq(-3, 2, 1)) +
   geom_hline(yintercept = 0,
-             size = 4,
+             size = 7,
              color = "black") +
   labs(x = "Estimated effect on anime score",
-       y = "",
-       title = "Coefficients that predict anime score across genres",
-       subtitle = "The image below is a main character(Dokgo Tak) from Korean animated films listed on<br>the website under *shounen* and *sports* genre. Shounen means boy in Japanese. " ,
-       caption = "Source | myanimelist.net") +
+       y = "") +
   theme(legend.position = "none",
         panel.background = element_rect(fill = "white"),
         plot.title = element_text(size = 16),
         plot.subtitle = element_markdown(size = 12),
-        plot.margin = margin(10, 10, 10, 10))
+        axis.text.x = element_text(size = 9))
 
-ggsave(here("figures", "DokgoTak.png"), width = 8, height = 6, units = )
+
+p1
+```
+
+```{r}
+anime_syn <-  anime %>% 
+  filter(genre == c("Shonen", "Seinen")) %>% 
+  select(name, genre, score, synopsis) %>% 
+  filter(!is.na(synopsis),
+         !is.na(score)) %>% 
+  unnest_tokens(word, synopsis) %>% 
+  anti_join(stop_words) %>% 
+  filter(!str_detect(word, "[0-9]"), 
+         !str_detect(word, "takumi|fujiwara|keisuke|ryousuke|takahashi|takumi|ssr|todo|juku|dr|kenzo|tenma|dr|source|mal|written|rewrite|japan|ann|tokyo|manga")) 
+  
+
+p2 <- anime_syn %>% 
+  count(word) %>% 
+  mutate(word = fct_reorder(word, n)) %>% 
+  top_n(20) %>% 
+  ggplot(aes(x = word, y = n), group = 1) +
+  geom_bar(stat = "identity",
+           fill = "#425e78",
+           show.legend = FALSE) +
+  coord_flip()+
+  labs(x = "",
+       y = "Word frequency",
+       caption = "Source | myanimelist.net") +
+  theme_half_open(12) +
+  theme(axis.text = element_text(size = 9))
+
+p2
+
+```
+
+```{r}
+title <- ggplot(data.frame(x = 1:2, y = 1:10)) +
+  labs(x = "",
+       y = "",
+       title = "Coefficients that predict anime score across genres",
+       subtitle = "The highest coefficient anime genres of them all are *Shonen* and *Seinen*. *Shounen* is targeted for teenage <br> boys and *Seinen* toward young adult men. Image below is Dokgo Tak, a main character of Korean animated <br> film listed under *Shounen* and *Sports* genre. He has a rebellious spirit against social conventions and <br> refuses to give up and renew its commitment to overcoming difficulties. Its corresponding topics like <br> friendship, family are reflected in the word frequency plot from the synopsis of two genres.") +
+  theme(plot.title = element_text(size = 16),
+        plot.subtitle = element_markdown(size = 10),
+        plot.caption = element_text(size = 7,
+                                    hjust = 0)
+        )
+
+title + p1 + p2 +
+  plot_layout(width = c(0, 2, 1.5))
+
+ggsave("C:/Users/inkyscope/Documents/projectR/datavizRscope/figures/DokgoTak.png")
+
+```
+
+```{r}
+library(widyr)
+library(ggraph)
+library(igraph)
+
+genre_words <- anime_syn %>% 
+  mutate(anime_id = row_number()) %>% 
+  add_count(word) %>% 
+  filter(n >50)
+
+genre_score <- anime_words %>% 
+  group_by(word) %>% 
+  summarise(median_score = median(score),
+            occurrences = n()) %>% 
+  arrange(desc(median_score))
+
+
+genre_word_cors <- genre_words %>% 
+  select(anime_id, word) %>% 
+  pairwise_cor(word, anime_id, sort = TRUE) %>% 
+  head(100)
+
+vertices <- genre_score %>% 
+  filter(word %in% genre_word_cors$item1 |
+           word %in% genre_word_cors$item2)
+
+
+set.seed(2019)
+
+genre_word_cors %>% 
+  graph_from_data_frame(vertices = vertices) %>% 
+  ggraph() +
+  geom_edge_link() +
+  geom_node_point(aes(size = occurrences))+
+  geom_node_point(aes(size = occurrences,
+                      color = median_score)) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  scale_color_gradient2(low = "red",
+                        mid = "white",
+                        high = "blue",
+                        midpoint = 0, 
+                        guide = "colorbar") +
+  theme_void()
+
+```
+
+```{r synopsis including all genres}
+anime_synopsis <- anime %>% 
+  filter(!is.na(name)) %>% 
+  select(name, genre, synopsis, score, scored_by) %>% 
+  na.omit() %>% 
+  unnest_tokens(word, synopsis) %>% 
+  anti_join(stop_words) %>% 
+ # filter(str_detect(word, "[a-z]")) %>% 
+  filter(!str_detect(word, "[0-9]"),
+         !str_detect(word, "source|mal|ann|girls|written|rewrite|yamato|youkai|sakura|hiro|otaku"))
+
+anime_synopsis %>% 
+  count(word, sort = TRUE) %>% 
+  mutate(word = fct_reorder(word, n)) %>% 
+  head(30) %>% 
+  ggplot(aes(word, n)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "",
+       y = "",
+       title = "Common words in horror movies synopsis")
+```
+```{r}
+anime_words <- anime_synopsis %>% 
+  mutate(anime_id = row_number()) %>% 
+  add_count(word) %>% 
+  filter(n > 1000)
+
+anime_score <- anime_words %>% 
+  group_by(word) %>% 
+  summarise(median_score = median(score),
+            occurrences = n()) %>% 
+  arrange(desc(median_score))
+```
+
+```{r}
+top_word_cors <- anime_words %>% 
+  
+  select(anime_id, word) %>% 
+  pairwise_cor(word, anime_id, sort = TRUE) %>% 
+  head(200)
+
+vertices <- anime_score %>% 
+  filter(word %in% top_word_cors$item1 |
+           word %in% top_word_cors$item2)
+
+
+set.seed(2019)
+
+top_word_cors %>% 
+  graph_from_data_frame(vertices = vertices) %>% 
+  ggraph() +
+  geom_edge_link() +
+  geom_node_point(aes(size = occurrences * 1.1)) +
+  geom_node_point(aes(size = occurrences,
+                      color = median_score)) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  scale_color_gradient2(low = "red",
+                        mid = "white",
+                        high = "blue",
+                        midpoint = 0, 
+                        guide = "colorbar") +
+  theme_void()
+
+
+```
+```{r}
+anime_word_matrix <- anime_words %>% 
+  distinct(anime_id, word, score) %>% 
+  cast_sparse(anime_id, word)
+```
+
+```{r}
+library(glmnet)
+
+score <- anime_words$score[match(rownames(anime_word_matrix), anime_words$anime_id)]
+
+lasso_model <- cv.glmnet(anime_word_matrix, log(score + 1))
+
+plot(lasso_model)
+```
+
+```{r}
+tidy(lasso_model$glmnet.fit) %>% 
+  filter(term %in% c("boy", "girl", "world", "appearance", "victory", "soul", "childhood")) %>% 
+  ggplot(aes(lambda, estimate, color = term)) +
+  geom_line() +
+  scale_x_log10()
+
+tidy(lasso_model$glmnet.fit) %>% 
+  filter(lambda == lasso_model$lambda.min) %>% 
+  arrange(desc(estimate)) %>% 
+  View()
+
+tidy(lasso_model$glmnet.fit) %>% 
+  filter(lambda == lasso_model$lambda.min) %>% 
+  arrange(desc(estimate)) %>% 
+  filter(term != "(Intercept)") %>% 
+  top_n(25, abs(estimate)) %>% 
+  mutate(term = fct_reorder(term, estimate)) %>% 
+  ggplot(aes(term, estimate)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "",
+       y = "Coefficient",
+       title = "Largest coefficient in the predictive model",
+       subtitle = "Based on a LASSO regression")
 
 ```
