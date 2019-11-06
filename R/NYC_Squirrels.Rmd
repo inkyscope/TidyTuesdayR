@@ -1,0 +1,188 @@
+---
+title: "NYC_Squirrel"
+author: "Sung Inkyung"
+date: '2019 11 4 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(lubridate)
+library(scales)
+library(patchwork)
+library(here)
+```
+
+```{r}
+nyc_squirrels <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-29/nyc_squirrels.csv")
+
+```
+### source[tidy tuesday by tacookson](https://github.com/tacookson/tidy-tuesday/blob/master/nyc-squirrels.Rmd)
+
+```{r}
+activity <- nyc_squirrels %>%
+  add_count(primary_fur_color) %>%
+  group_by(primary_fur_color, n) %>%
+  summarise_at(vars(running:foraging), mean) %>%
+  ungroup() %>%
+  filter(!is.na(primary_fur_color)) %>%
+  pivot_longer(names_to = "activity", running:foraging) %>%
+  mutate(cases = n * value) %>% 
+  nest(-primary_fur_color, -activity) %>%
+  mutate(model = map(data, ~ prop.test(.$cases, .$n, correct = FALSE)),
+         tidied = map(model, tidy)) %>%
+  unnest(tidied) %>%
+  unnest(data) %>% 
+  mutate(activity = fct_reorder(str_to_title(activity), estimate))
+
+p <- activity %>% 
+  ggplot(aes(activity, estimate, col = primary_fur_color)) +
+  geom_point(size = 2, position = position_dodge(width = 0.8)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(width = 0.8)) +
+  coord_flip() +
+  expand_limits(y = 0) +
+  scale_color_manual(values = c("#000000", "#d2691e", "#b9bbb6")) +
+  scale_y_continuous(labels = scales:: percent_format(),
+                     breaks = seq(0, 0.6, 0.1)) +
+  guides(col = guide_legend(reverse = TRUE,
+                            title = "Color")) +
+  labs(x = "",
+       y = "% of activity from squirrels",
+       title = "Reactions of squirrels in New York Central Park",
+       subtitle = "An estimated probability of relevant activities using 95% confidence intervals") +
+  theme(legend.position = c(0.85, 0.3),
+        legend.background = element_rect(fill = "transparent",
+                                         size = 0.5,
+                                         linetype = "solid"),
+        legend.key = element_rect(fill = "transparent",
+                                  color = NA),
+        legend.title = element_blank(),
+        plot.title = element_text(size = 16),
+        plot.subtitle = element_text(size = 13),
+        panel.background = element_rect(fill = "#009E73"),
+        panel.grid = element_blank(),
+        plot.margin = margin(10, 10, 10, 10))
+
+p
+        
+```
+
+```{r parsing description of "other interactions"}
+other_activity <- nyc_squirrels %>% 
+  filter(!is.na(other_interactions)) %>% 
+  unnest_tokens(word, other_interactions) %>% 
+  anti_join(stop_words) %>% 
+  filter(!str_detect(word, "[0-9]")) %>% 
+  count(primary_fur_color, word) %>% 
+  filter(!is.na(primary_fur_color)) %>% 
+  group_by(primary_fur_color) %>% 
+  top_n(10, n) %>% 
+  ungroup() %>% 
+  mutate(word = fct_reorder(word, n)) 
+```
+
+```{r}
+library(igraph)
+library(ggraph)
+
+set.seed(2019)
+
+a <- grid::arrow(type = "closed",
+                     length = unit(3, "mm"))
+
+graph <- 
+  graph_from_data_frame(other_activity)
+
+#V(graph)$color[Cinammon] <- "#d2691e"
+#V(graph)$color[Black] <- "#000000"
+#V(graph)$color[Gray] <- "#808080"
+
+k <- graph %>% 
+  ggraph(layout = "kk") +
+  geom_edge_link(aes(edge_alpha = n), 
+                 show.legend = FALSE,
+                 arrow = a, 
+                 end_cap = circle(15, "mm")) +
+  geom_node_point(aes(size = 1.5),
+                  color = "#009E73") +
+  geom_node_text(aes(label = name),
+                 vjust = 1, hjust = 0.5,
+                 check_overlap = TRUE) +
+  labs(title = "Other activities of squirrles in New York Central Park") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(color = "#009E73",
+                                       size = 1,
+                                       linetype = 1),
+        plot.title = element_text(size = 16,
+                                  hjust = 0.5,
+                                  lineheight = 1.2),
+        plot.margin = margin(10, 10, 10, 10))
+
+k
+
+## What to learn: change color vertext respectively
+```
+
+```{r}
+p + k + plot_layout(nrow = 1)
+
+ggsave(here("figures", "Activities of squirrels.png"), width = 13, height = 5, units = "in")
+```
+
+
+```{r}
+other_activity_tf_idf <- other_activity %>% 
+  count(primary_fur_color, word) %>% 
+  bind_tf_idf(word, primary_fur_color, n) %>% 
+  arrange(desc(tf_idf)) %>% 
+  ungroup() %>% 
+  select(primary_fur_color, word, tf_idf) %>% 
+  filter(tf_idf > 0.005) 
+
+library(igraph)
+
+squirrel_graph <- 
+  graph_from_data_frame(other_activity_tf_idf)
+
+library(ggraph)
+set.seed(2019)
+
+arrow <- grid::arrow(type = "closed",
+                     length = unit(3, "mm"))
+
+kk <- squirrel_graph %>% 
+  ggraph(layout = "kk") +
+  geom_edge_link(aes(edge_alpha = tf_idf), 
+                 show.legend = FALSE,
+                 arrow = arrow, end_cap = circle(15, "mm")) +
+  geom_node_point(aes(size = 3),
+                  color = "#009E73") +
+  geom_node_text(aes(label = name),
+                 vjust = 1, hjust = 1) +
+  theme_void()+
+  theme(legend.position = "none")
+```
+###source[data-imaginist](https://www.data-imaginist.com/2017/ggraph-introduction-layouts/)
+```{r}
+layout <- create_layout(squirrel_graph, layout = "drl")
+
+drl <- ggraph(layout) + 
+  geom_edge_link(aes(edge_alpha = tf_idf), 
+                 show.legend = FALSE,
+                 arrow = arrow, end_cap = circle(15, "mm")) +
+  geom_node_point(aes(size = 3),
+                  color = "#009E73") +
+  geom_node_text(aes(label = name),
+                 vjust = 1, hjust = 1) +
+  theme_void()+
+  theme(legend.position = "none")
+
+
+```
