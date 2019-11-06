@@ -64,9 +64,6 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 ### Student Teacher Ratio by [UNESCO](http://data.uis.unesco.org/index.aspx?queryid=180)
 ![StudenTeacheRatio](https://github.com/inkyscope/datavizRscope/blob/master/figures/StudenTeacheRation.png)
 
-### Job, Psalms, Proverbs, Ecclessiates (Sentiment analysis)
-![selected Bible books](https://github.com/inkyscope/datavizRscope/blob/master/figures/sentimentPlot.png)
-
 ### Cheese consumption in USA by [USDA](https://www.ers.usda.gov/data-products/dairy-data/documentation/#Loc3)
 ![Cheese consumption](https://github.com/inkyscope/datavizRscope/blob/master/figures/Cheese%20consumption%20in%20USA.png)
 
