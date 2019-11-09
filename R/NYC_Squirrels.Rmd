@@ -125,7 +125,7 @@ squirrel_traffic <- main_plot +
     ggplotGrob(shift_plot),
     xmin = -73.985, xmax = -73.97, ymin = 40.779, ymax = 40.80)
 
-ggsave(here("figures", "SqurrelTraffic.png"), width = 11, height = 6, units = "in")
+ggsave(here("figures", "SquirrelTraffic.png"), width = 11, height = 6, units = "in")
 ```
 
 ```{r}
