@@ -21,11 +21,11 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
-### Squirrels Actvities by [Squirrel Census](https://data.cityofnewyork.us/Environment/2018-Central-Park-Squirrel-Census-Squirrel-Data/vfnx-vebw)
-![Squirrels](https://github.com/inkyscope/datavizRscope/blob/master/figures/squirrels_anim.gif)
-
 ### Squirrels Traffic by [Squirrel Census](https://data.cityofnewyork.us/Environment/2018-Central-Park-Squirrel-Census-Squirrel-Data/vfnx-vebw)
 ![Squirrels](https://github.com/inkyscope/datavizRscope/blob/master/figures/SquirrelTraffic.png)
+
+### Squirrels Actvites by [Squirrel Census](https://data.cityofnewyork.us/Environment/2018-Central-Park-Squirrel-Census-Squirrel-Data/vfnx-vebw)
+![Squirrels](https://github.com/inkyscope/datavizRscope/blob/master/figures/Activities%20of%20squirrels.png)
 
 ### Anime by [MyAnimeList](https://www.kaggle.com/aludosan/myanimelist-anime-dataset-as-20190204)
 ![DokgoTak](https://github.com/inkyscope/datavizRscope/blob/master/figures/DokgoTak.png)
