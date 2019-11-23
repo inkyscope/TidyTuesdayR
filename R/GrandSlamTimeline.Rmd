@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(tidytext)
 library(lubridate)
 library(gghighlight)
 library(here)
@@ -111,13 +112,13 @@ top_players <- plot_data %>%
 plot_top <- plot_data %>% 
   ungroup() %>% 
   mutate(color = case_when(
-      name == "Serena Williams" ~ "#f51b00",
+      name == "Serena Williams" ~ "#990000",
       name == "Steffi Graf" ~ "#ff7f50",
-      name == "Roger Federer" ~ "#0000ff",
+      name == "Roger Federer" ~ "#135476",
       name == "Chris Evert" ~ "#f7e048",
       name == "Martina Navratilova" ~ "#88398a",
-      name == "Rafael Nadal" ~ "#00afab",
-      name == "Novak Djokovic" ~ "#0080ff",
+      name == "Rafael Nadal" ~ "#0080ff",
+      name == "Novak Djokovic" ~ "#00afab",
       T ~ "gray80"),
     name = fct_reorder(name, rolling_win_count)
     ) %>%
@@ -196,15 +197,15 @@ plot_top_gender <- plot_data %>%
   ungroup() %>% 
   mutate(color = case_when(
       name == "Margaret Court" ~ "#ff8080",
-      name == "Serena Williams" ~ "#f51b00",
+      name == "Serena Williams" ~ "#990000",
       name == "Steffi Graf" ~ "#ff7f50",
       name == "Chris Evert" ~ "#fdb827",
       name == "Martina Navratilova" ~ "#88398a",
-      name == "Roger Federer" ~ "#0000ff",
-      name == "Rafael Nadal" ~ "#00afab",
-      name == "Novak Djokovic" ~ "#4863a0",
+      name == "Roger Federer" ~ "#135476",
+      name == "Rafael Nadal" ~ "#0080ff",
+      name == "Novak Djokovic" ~ "#00afab",
       name == "Björn Borg"  ~ "#556393",
-      name == "Pete Sampras" ~ "#66a39c",
+      name == "Pete Sampras" ~ "#50887b",
       T ~ "gray80"),
     name = fct_reorder(name, rolling_win_count)
     ) %>%
@@ -246,6 +247,12 @@ plot_gender_grand_slams <- ggplot(
                      position = "right", 
                      expand = expand_scale(add = c(0, 5))) +
   facet_wrap(~gender, scales = "free") +
+   labs(
+    x = "\nAge",
+    y = "",
+    title = "Most Grand Slam titles won women and men all time 1968 - 2019",
+    subtitle = "<span style='color:#990000'>**Serena Williams**</span> has pulled clear of <span style = 'color:#ff7f50'>**Steffi Graf**</span> to take the overall lead in the ranking.<br><span style='color:#135476'>**Roger Federer**</span> has won the most Grand Slam titles with a total of 20.<br>It reminds me of crunch time with my father watching his go-to players as below since he taught me tennis in 1983",
+    caption = "\nSource: Wikipedia") +
   theme_minimal() +
   theme(
     panel.grid.minor.x = element_blank(),
@@ -258,21 +265,16 @@ plot_gender_grand_slams <- ggplot(
     axis.line.x = element_line(size = 0.3, color = "#5d5d5d"),
     axis.text.y.right = element_text(hjust = 1),
     axis.title.y = element_blank(),
-    plot.title = element_text(face = "bold",
+    plot.title = element_markdown(face = "bold",
                               size = 20, 
-                              margin = margin(t = 45, b = 3)),
-    plot.subtitle = element_text(size = 13,
-                                 margin = margin(t = 5, b = 10)),
+                              margin = margin(t = 10, b = 3)),
+    plot.subtitle = element_markdown(size = 13,
+                                 margin = margin(t = 5, b = 13)),
     plot.caption = element_text(face = "plain", 
                                 hjust = 1,
                                 size = 8,
-                                margin = margin(b = 20))) +
-  labs(
-    x = "\nAge",
-    y = "",
-    title = "Most Grand Slam titles won women and men all time 1968 - 2019",
-    subtitle = "Serena Williams has pulled clear of Steffi Graf to take the overall lead in the ranking.\nRoger Federer has won the most Grand Slam titles with a total of 20.",
-    caption = "\nSource: Wikipedia")
+                                margin = margin(b = 20))) 
+ 
 
 plot_gender_grand_slams
 
