@@ -21,6 +21,9 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Top players in Grand Slams by [Wikipedia](https://en.wikipedia.org/wiki/List_of_Grand_Slam_women%27s_singles_champions)
+![GrandSlamTimeline](https://github.com/inkyscope/datavizRscope/blob/master/figures/GrandSlamPlayers.png)
+
 ### Squirrels Traffic by [Squirrel Census](https://data.cityofnewyork.us/Environment/2018-Central-Park-Squirrel-Census-Squirrel-Data/vfnx-vebw)
 ![Squirrels](https://github.com/inkyscope/datavizRscope/blob/master/figures/SquirrelTraffic.png)
 
