@@ -22,7 +22,7 @@ library(cartogram)
 library(ggthemes)
 library(cowplot)
 library(patchwork)
-library(here)
+#library(here)
 ```
 ### sources:[Tidy Tuesday by David Robinson_ Screencast](https://youtu.be/BRdLOYtJk9o)
 ### source;[tidy tuesday by carsten stann](https://github.com/carstenstann/TidyTuesday/blob/master/2019/2019_21_PlasticWaste.R)
@@ -37,6 +37,7 @@ waste_gdp <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/
 ```{r}
 plastic_coast <-  
   clean_names(plastic_coast)
+
 mismanaged_gdp <- 
   clean_names(mismanaged_gdp)
 waste_gdp <- 

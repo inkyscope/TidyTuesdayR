@@ -1,0 +1,444 @@
+---
+title: "GrandSlamTimeline"
+author: "Sung Inkyung"
+date: '2019 10 12 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(gghighlight)
+library(here)
+
+```
+
+```{r}
+path <- paste0(
+  'https://raw.githubusercontent.com/rfordatascience/tidytuesday/',
+  'master/data/2019/2019-04-09/'
+)
+players <- read_csv(paste0(path, 'player_dob.csv'))
+grand_slams <- read_csv(paste0(path, 'grand_slams.csv'))
+grand_slam_timeline <- read_csv(paste0(path, 'grand_slam_timeline.csv'))
+```
+
+```{r}
+gs_wins <- grand_slams %>% 
+  group_by(name, gender) %>% 
+  mutate(wins_all = n()) %>% 
+  group_by(name, gender, grand_slam, wins_all) %>% 
+  summarise(wins_per_game = n()) %>% 
+  ungroup()
+
+plot <- gs_wins %>% 
+  group_by(grand_slam) %>% 
+  top_n(10, wt = wins_all) %>% 
+  ungroup() %>% 
+  mutate(name = fct_reorder(name, wins_all),
+         grand_slam = str_to_title(grand_slam)) %>% 
+  ggplot(aes(name, wins_per_game, 
+             fill = grand_slam)) +
+  geom_col(show.legend = FALSE)+
+  coord_flip() +
+  scale_fill_manual(values = c("#00afab", "#7474c1", "#cedc00", "#4dc8f0"))+
+  facet_grid(~grand_slam) +
+  labs(x = "",
+       y = "# of wins per game",
+       title = "Tennis players with the most Grand Slam tournament wins",
+       subtitle = "1968 - Present\nNovak Djokovic is for Australian open, Rafael Nadal for French Open, Chris Evert for \nUS Open, Martina Navratilova and Roger Federer are for Wimbledon. Pete Sampras \ndoesn't like French Open? Bjorn Borg stayed with tournaments in Europe only.") +
+  theme_minimal()
+
+plot
+```
+### source[tidy tuesday by jkaupp] (https://github.com/jkaupp/tidytuesdays/blob/master/2019/week15/R/analysis.R)
+### source[r4ds: 16.Dates and times/16.4 Time spans by hadley wickham] (https://r4ds.had.co.nz/dates-and-times.html#time-spans)
+```{r}
+plot_data <- players %>% 
+  select(name, date_of_birth) %>% 
+  left_join(grand_slams, by = "name") %>% 
+  mutate(age = interval(date_of_birth, tournament_date)/years(1)) %>% #learning point!
+  group_by(name) %>% 
+  filter(n()>1)
+  
+
+order <- plot_data %>% 
+  group_by(name) %>% 
+  filter(rolling_win_count == max(rolling_win_count)) %>% # cumulative sum of wins across time/player
+  arrange(rolling_win_count) %>% 
+  pull(name)
+  
+
+plot <- plot_data %>% 
+  filter(year > 1980) %>% 
+  ggplot(aes(x = year, y = factor(name, order), 
+                              size = rolling_win_count, 
+                              color = gender, 
+                              alpha = rolling_win_count)) +
+  geom_point(aes(group = name),
+             show.legend = FALSE) + 
+  facet_wrap(~gender, scales = "free_y") +
+  scale_color_manual(values = c("#e678cc","#0080ff")) +
+  scale_size_area("Rolling Win Count") +
+  guides(size = guide_legend(override.aes = list(shape = 21, color = "black")), 
+  color = FALSE, alpha = FALSE) +
+  theme(legend.position = "bottom",
+        axis.text.y = element_text(size = 7)) +
+  labs(x = "",
+       y = "",
+       title = "Players based on the cumulative sum of wins across time since 1980",
+       subtitle = "Performances of tennis players I've been following since my father taught tennis in 1983.\nIt reminds me of time watching games of the players as below with my father",
+       caption = "Data: Wikipedia")+
+  theme_minimal()
+
+plot
+```
+### source[tidy tuesday by thomas mock] (https://github.com/jthomasmock/tidytuesday_projects/blob/master/2019/2019-02-09/tennis_grandslams.R) (https://gist.github.com/johnburnmurdoch/bd20db77b2582031604ccd1bdc4be582)
+```{r}
+top_players <- plot_data %>% 
+  group_by(name) %>% 
+  filter(rolling_win_count == max(rolling_win_count)) %>% 
+  top_n(1, rolling_win_count) %>% 
+  ungroup() %>% 
+  top_n(7, rolling_win_count) %>% 
+  pull(name)
+
+# create plot dataframe
+plot_top <- plot_data %>% 
+  ungroup() %>% 
+  mutate(color = case_when(
+      name == "Serena Williams" ~ "#f51b00",
+      name == "Steffi Graf" ~ "#ff7f50",
+      name == "Roger Federer" ~ "#0000ff",
+      name == "Chris Evert" ~ "#f7e048",
+      name == "Martina Navratilova" ~ "#88398a",
+      name == "Rafael Nadal" ~ "#00afab",
+      name == "Novak Djokovic" ~ "#0080ff",
+      T ~ "gray80"),
+    name = fct_reorder(name, rolling_win_count)
+    ) %>%
+  mutate(hj = if_else(name == "Chris Evert", 1, 0))
+
+```
+
+```{r}
+plot_grand_slams <- ggplot(
+  plot_top,
+  aes(age, rolling_win_count,
+    group = name, col = color, fill = color,
+    alpha = name %in% top_players)) +
+  theme_minimal() +
+  geom_step(aes(size = name %in% top_players)) +
+  geom_point(data = . %>%
+    group_by(name) %>%
+    top_n(1, rolling_win_count), shape = 21, 
+    aes(col = color), size = 2.5, stroke = 1) +
+  geom_text(
+    data = . %>%
+      group_by(name) %>%
+      top_n(1, rolling_win_count) %>%
+      filter(name %in% top_players) %>%
+      mutate(
+        first_initial = str_sub(name, 1, 1),
+        last_name = gsub(".+\\s", "", name),
+        short_name_wins = paste0("  ", first_initial, ". ", last_name, ":", rolling_win_count, "  ")),
+    aes(label = short_name_wins, hjust = hj)) +
+  scale_color_identity() +
+  scale_fill_identity() +
+  scale_alpha_manual(values = c(0.7, 1), guide = F) +
+  scale_size_manual(values = c(0.5, 0.8), guide = F) +
+  scale_x_continuous(limits = c(15, 45), 
+                     breaks = seq(15, 45, 5), 
+                     expand = c(0, 0)) +
+  scale_y_continuous(position = "right", 
+                     expand = expand_scale(add = c(0, 5))) +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_line(color = "#bababa", size = 0.3),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_line(color = "#5d5d5d", size = 0.3),
+    axis.ticks.length = unit(0.2, "cm"),
+    axis.line.x = element_line(size = 0.3, color = "#5d5d5d"),
+    axis.text.y.right = element_text(hjust = 1),
+    axis.title.y = element_blank(),
+    plot.caption = element_text(hjust = 1, face = "bold")) +
+  labs(
+    x = "\nAge",
+    y = "",
+    title = "Serena owns the most Grand Slam wins, but was less efficient than Graf",
+    subtitle = "Cumulative Open Era Grand Slams won, by age",
+    caption = "\nSource: Wikipedia")
+
+plot_grand_slams
+  
+```
+
+```{r}
+top_gender <- plot_data %>% 
+  group_by(name) %>% 
+  filter(rolling_win_count == max(rolling_win_count)) %>% 
+  group_by(gender) %>% 
+  top_n(5, rolling_win_count) %>% 
+  ungroup() %>% 
+  pull(name)
+```
+
+
+```{r}
+# create plot dataframe
+plot_top_gender <- plot_data %>% 
+  ungroup() %>% 
+  mutate(color = case_when(
+      name == "Margaret Court" ~ "#ff8080",
+      name == "Serena Williams" ~ "#f51b00",
+      name == "Steffi Graf" ~ "#ff7f50",
+      name == "Chris Evert" ~ "#fdb827",
+      name == "Martina Navratilova" ~ "#88398a",
+      name == "Roger Federer" ~ "#0000ff",
+      name == "Rafael Nadal" ~ "#00afab",
+      name == "Novak Djokovic" ~ "#4863a0",
+      name == "Björn Borg"  ~ "#556393",
+      name == "Pete Sampras" ~ "#66a39c",
+      T ~ "gray80"),
+    name = fct_reorder(name, rolling_win_count)
+    ) %>%
+  mutate(hj = if_else(name == "Chris Evert", 1, 0))
+
+```
+
+```{r}
+
+plot_gender_grand_slams <- ggplot(
+  plot_top_gender,
+  aes(age, rolling_win_count,
+    group = name, col = color, fill = color,
+    alpha = name %in% top_gender)) +
+  geom_step(aes(size = name %in% top_gender)) +
+  geom_point(data = . %>%
+    group_by(name) %>%
+    top_n(1, rolling_win_count), shape = 21, 
+    aes(col = color), size = 2.5, stroke = 1) +
+  geom_text(
+    data = . %>%
+      group_by(name) %>%
+      top_n(1, rolling_win_count) %>%
+      filter(name %in% top_gender) %>%
+      mutate(
+        first_initial = str_sub(name, 1, 1),
+        last_name = gsub(".+\\s", "", name),
+        short_name_wins = paste0("  ", first_initial, ". ", last_name, ":", rolling_win_count, "  ")),
+    aes(label = short_name_wins, hjust = hj)) +
+  scale_color_identity() +
+  scale_fill_identity() +
+  scale_alpha_manual(values = c(0.7, 1), guide = F) +
+  scale_size_manual(values = c(0.5, 0.8), guide = F) +
+  scale_x_continuous(limits = c(15, 45), 
+                     breaks = seq(15, 45, 5), 
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 25),
+                     breaks = seq(0, 25, 10),
+                     position = "right", 
+                     expand = expand_scale(add = c(0, 5))) +
+  facet_wrap(~gender, scales = "free") +
+  theme_minimal() +
+  theme(
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_line(color = "#bababa", size = 0.3),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_line(color = "#5d5d5d", size = 0.3),
+    axis.ticks.length = unit(0.2, "cm"),
+    axis.line.x = element_line(size = 0.3, color = "#5d5d5d"),
+    axis.text.y.right = element_text(hjust = 1),
+    axis.title.y = element_blank(),
+    plot.title = element_text(face = "bold",
+                              size = 20, 
+                              margin = margin(t = 45, b = 3)),
+    plot.subtitle = element_text(size = 13,
+                                 margin = margin(t = 5, b = 10)),
+    plot.caption = element_text(face = "plain", 
+                                hjust = 1,
+                                size = 8,
+                                margin = margin(b = 20))) +
+  labs(
+    x = "\nAge",
+    y = "",
+    title = "Most Grand Slam titles won women and men all time 1968 - 2019",
+    subtitle = "Serena Williams has pulled clear of Steffi Graf to take the overall lead in the ranking.\nRoger Federer has won the most Grand Slam titles with a total of 20.",
+    caption = "\nSource: Wikipedia")
+
+plot_gender_grand_slams
+
+ggsave(here("figures", "GrandSlamPlayers.png"), width = 11, height = 7, units = "in")
+```
+### source [tidy tuesday by christian burkhart] (https://christianburkhart.de/blog/tidytuesday_tennis/)
+```{r}
+top_participants <- grand_slam_timeline %>%
+  filter(outcome %in% c("1st Round", "2nd Round", "3rd Round", 
+                     "4th Round", "Quarterfinalist",
+                     "Semi-finalist", "Finalist", "Won")) %>% 
+  add_count(player) %>% 
+  rename(participation = 'n') %>% 
+  distinct(player, gender, participation) 
+  
+
+top_wins <- grand_slam_timeline %>%
+  filter(outcome == "Won") %>%
+  count(player,gender, tournament) %>%
+  rename(wins = `n`) %>%
+  select(-tournament) %>%
+  filter(wins >= 5) %>%
+  arrange(desc(wins))
+
+```
+
+
+```{r}
+p <- 
+  left_join(top_wins, top_participants, by = "player") %>%
+  ggplot(aes(x = wins, y = participation)) + 
+  annotate(
+    "rect", xmin = 7, xmax = 14, ymin = 0, ymax = 50, 
+    fill = "#dff9e0", 
+    alpha = .5
+  ) +
+  annotate(
+    "rect", xmin = 0, xmax = 7, ymin = 0, ymax = 50, 
+    fill = "#a9a9a9", 
+    alpha = .3
+  ) +
+  annotate(
+    "rect", xmin = 7, xmax = 14, ymin = 50, ymax = 100, 
+    fill = "#dbf4fc", 
+    alpha = .5,
+    ) +
+  annotate(
+    "rect", xmin = 0, xmax = 7, ymin = 50, ymax = 100, 
+    fill = "#fefed4", 
+    alpha = .5
+  ) +
+  geom_point(aes(size = wins),
+             color = "#c9f364",
+             show.legend = FALSE) +
+  geom_text(aes(label = player),
+            size = 3.5,
+            nudge_x = 0.5,
+            nudge_y = 2.5,
+            check_overlap = TRUE) +
+  scale_x_continuous(limits = c(0, 14),
+                     breaks = seq(0, 14, 2)) +
+  scale_y_continuous(limits = c(0, 100),
+                     breaks = seq(0, 100, 25)) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "transparent"),
+    plot.title = element_text(margin = margin(b = 7),
+                              size = 20),
+    plot.subtitle = element_text(margin = margin(b = 10),
+                              size = 16),
+    axis.title.y = element_text(margin = margin(r = 10), 
+                                size = 11),
+    axis.title.x = element_text(margin = margin(t = 10),
+                                size = 11),
+    axis.text = element_text(color = "#326983"),
+    aspect.ratio = 1
+  ) +
+  labs(
+    x = "# of Wins",
+    y = "# of participations",
+    title = "Top players in grand slam tournaments (1968 - 2019)",
+    subtitle = "Rafael Nadal is the most efficient player, \nMartina Navratilova is a superb player listed among top men and women players."
+  ) 
+ p
+```
+
+
+```{r}
+outcome_ranking <- c("1st Round", "2nd Round", "3rd Round", 
+                     "4th Round", "Quarterfinalist",
+                     "Semi-finalist", "Finalist", "Won")
+
+
+f_players <- grand_slam_timeline %>%
+  filter(gender == "Female", tournament == "French Open") %>%
+  filter(!outcome %in% c("Lost Qualifier", "Retired", "Absent", "Qualification Stage 1")) %>%
+  count(player, tournament) %>%
+  select(-tournament) %>%
+  rename(participation = `n`) 
+ # summarize(max(participation))= 7
+
+f_wins <- grand_slam_timeline %>%
+  filter(outcome == "Won", tournament == "French Open", gender == "Female") %>%
+  count(player, tournament) %>%
+  rename(wins = `n`) %>%
+  select(-tournament) %>%
+  filter(wins > 1) %>%
+  arrange(desc(wins))
+  # summarize(max(wins))= 26
+
+# wins_split <- max(f_wins$wins) / 2
+# participations_split <- max(f_players$participation) / 2
+```
+
+
+```{r}
+f_wins %>% 
+  left_join(f_players, by = "player") %>%
+  ggplot(aes(x = wins, y = participation)) + 
+  annotate(
+    "rect", xmin = 5, xmax = 10, ymin = 0, ymax = 13, 
+    fill = "#39873c", 
+    alpha = .5
+  ) +
+  annotate(
+    "rect", xmin = 0, xmax = 5, ymin = 0, ymax = 13, 
+    fill = "#4d5b23", 
+    alpha = .1
+  ) +
+  annotate(
+    "rect", xmin = 5, xmax = 10, ymin = 13, ymax = 26, 
+    fill = "#f7e948", 
+    alpha = .7,
+    ) +
+  annotate(
+    "rect", xmin = 0, xmax = 5, ymin = 13, ymax = 26, 
+    fill = "#7474c1", 
+    alpha = .3
+  ) +
+  geom_point(aes(size = wins),
+             color = "#5fe164",
+             show.legend = FALSE) +
+  geom_text(aes(label = player),
+            nudge_x = 1,
+            nudge_y = 1.4) +
+  scale_x_continuous(limits = c(0, 10),
+                     breaks = seq(0, 10, 2)) +
+   labs(
+    x = "# of Wins",
+    y = "# of participations",
+    title = "Top Female players in French Open(1968 - 2019)"
+  ) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "transparent"),
+    plot.title = element_text(margin = margin(b = 15),
+                              size = 16,
+                              hjust = 0.5),
+    axis.title.y = element_text(margin = margin(r = 10), 
+                                size = 11),
+    axis.title.x = element_text(margin = margin(t = 10),
+                                size = 11),
+    axis.text = element_text(color = "#326983"),
+    aspect.ratio = 1
+  ) 
+ 
+```
