@@ -106,10 +106,10 @@ shift_plot <- nyc_squirrels %>%
   coord_fixed() +
   facet_grid(age ~ primary_fur_color) +
   scale_color_manual(values = c("AM" = "#fcba03", 
-                                "PM" = "#24005e")) +
+                                "PM" = "#7256ff")) +
   labs(x = "",
        y = "",
-       title = "Squirrels traffic by shift of <span style = 'color:#fcba03'> AM </span> and <span style = 'color: #24005e'>PM</span>") +
+       title = "Squirrels traffic by shift of <span style = 'color:#fcba03'> AM </span> and <span style = 'color: #7256ff'>PM</span>") +
   theme_minimal()+
   theme(legend.position = "none",
         strip.text = element_text(size = 9),
