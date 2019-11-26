@@ -33,6 +33,9 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 ### Anime by [MyAnimeList](https://www.kaggle.com/aludosan/myanimelist-anime-dataset-as-20190204)
 ![DokgoTak](https://github.com/inkyscope/datavizRscope/blob/master/figures/DokgoTak.png)
 
+### Review Rating Trend of Horror Moviews by [IMDB](https://www.kaggle.com/PromptCloudHQ/imdb-horror-movie-dataset)
+![Horror movies](https://github.com/inkyscope/datavizRscope/blob/master/figures/TrendofHorrorMovies.png)
+
 ### Time for Horror Movies? by [IMDB](https://www.kaggle.com/PromptCloudHQ/imdb-horror-movie-dataset)
 ![Horror movies](https://github.com/inkyscope/datavizRscope/blob/master/figures/HorrorMovies.png)
 
