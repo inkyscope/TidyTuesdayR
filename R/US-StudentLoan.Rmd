@@ -26,7 +26,6 @@ loans <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidy
 ```{r}
 loans <- map(loans, function(x){ifelse(is.na(x), 0, x)}) %>% 
   as_tibble()
-
 ```
 
 ```{r}
@@ -60,10 +59,11 @@ p1 <- loans_processed %>%
   labs(x = "",
        y = "% of change in loan\nfrom previous quarter",
        title = "Comparison of % of change in <span style = 'color:#f74c05'>**loan**</span> and % of <span style = 'color:#00ccff'>**payment**</span>",
-       subtitle = "Top graph: % of change in loan from previous quarter<br>Bottom graph: Zoom in the % of loan being repaid") +
+       subtitle = "Top plot: % of change in loan from previous quarter<br>Bottom plot: Zoom in the % of loan being repaid") +
   theme(legend.position = "none",
         plot.background = element_rect(fill = "transparent"),
         panel.background = element_rect(fill = "transparent"),
+        panel.grid.major.x = element_blank(),
         panel.grid.major.y = element_line(size = 0.7,
                                         linetype = "dotted",
                                         color = "gray85"),
@@ -89,6 +89,7 @@ p2 <- loans_processed %>%
        y = "% of loan repaid") +
   theme(plot.background = element_rect(fill = "transparent"),
         panel.background = element_rect(fill = "transparent"),
+        panel.grid.major.x = element_blank(),
         panel.grid.major.y = element_line(size = 0.7,
                                         linetype = "dotted",
                                         color = "gray85"),
@@ -97,7 +98,9 @@ p2 <- loans_processed %>%
         axis.title.x = element_blank(),
         axis.title.y = element_text(size = 11))
 p2
+```
 
+```{r}
 p3 <- loans %>% 
   mutate_at(vars(starting:wage_garnishments), function(.)./1e9) %>% 
   pivot_longer(names_to = "type", values_to = "amount", cols = c("consolidation", "rehabilitation", "voluntary_payments", "wage_garnishments")) %>% 
@@ -109,33 +112,30 @@ p3 <- loans %>%
   ggplot(aes(yearQ, total, fill = type)) +
   geom_area(aes(group = type), position = "stack", alpha = 0.7) +
   scale_y_continuous(labels = dollar_format(suffix = "B"),
-                     limits = c(0, 3),
-                     breaks = seq(0, 3, 1),
                      expand = expand_scale(mult= c(0, 0.5))) +
   scale_fill_manual(values = c("#d0839b", "#dbfa23", "#58098f", "#e7c101")) +
   labs(x = "",
-       y = "Amount of pyment",
-       title = "US Student Loan Payment Types by quarter since 2015-Q4 ",
-       subtitle = "Most of outstanding loan is collected through rehabilitation",
+       y = " ",
+       title = "US Student Loan Payment Types",
+       subtitle = "Most of outstanding loan is collected through rehabilitation payment type",
        fill = "Type of payment") +
   theme(plot.background = element_rect(fill = "transparent"),
         panel.background = element_rect(fill = "transparent"),
         legend.background = element_rect(fill = "transparent"),
         legend.title = element_text(size = 13),
         legend.text = element_text(size = 11),
-        legend.position = c(0.8, 0.25),
+        legend.position = c(0.8, 0.3),
         legend.key.size = unit(0.7, "cm"),
+        panel.grid.major = element_blank(),
         plot.title = element_text(size = 18),
-        plot.subtitle = element_markdown(size = 15,
-                                         margin = margin(b = 30)),
+        plot.subtitle = element_markdown(size = 15),
         axis.text.x = element_text(size = 9,
                                    angle = 60, vjust = 0.5),
-        axis.text.y = element_text(size = 9,
-                                   hjust = 0.5),
-        axis.title.y = element_text(size = 11))
+        axis.text.y = element_text(size = 9))
 
 p3
-
+```
+```{r}
 p4 <- loans %>% 
   group_by(year, quarter) %>% 
   mutate_at(vars(starting:wage_garnishments), function(.)./1e9) %>% 
@@ -159,41 +159,89 @@ p4 <- loans %>%
            width = 0.55, fill = "#00ccff") +
   scale_y_continuous(labels = dollar_format(suffix = "B"),
                      limits = c(0, 200),
-                     breaks = seq(0, 200, 50),
-                     expand = expand_scale(mult= c(0, 0.5))) +
+                     breaks = seq(0, 200, 50)) +
   coord_flip() +
   labs(x = "",
        y = "",
-       title = "The amount of <span style = 'color:#00ccff'>**payment**</span> vs the total outstanding <span style = 'color:#f74c05'>**loan**</span> every last quarter from 2015-Q4") +
+       title = "The amount of <span style = 'color:#00ccff'>**payment**</span> vs the total outstanding <span style = 'color:#f74c05'>**loan**</span>") +
   theme(plot.background = element_rect(fill = "transparent"),
         panel.background = element_rect(fill = "transparent"),
+        panel.grid.major = element_blank(),
         panel.grid.major.x = element_line(size = 0.7,
                                         linetype = "dotted",
                                         color = "gray85"),
+        panel.grid.major.y = element_blank(),
         plot.title = element_markdown(size = 18,
                                       margin = margin(b = 10)),
         axis.text.x = element_text(size = 9),
         axis.text.y = element_text(size = 9))
 
 p4
+```
 
+
+```{r}
+loans_agency <- loans %>% 
+  group_by(agency_name, year, quarter) %>% 
+  summarise(start = sum(starting, na.rm = TRUE),
+            add = sum(added, na.rm = TRUE),
+            loan_total = start + add,
+            repaid = sum(consolidation, rehabilitation, voluntary_payments, wage_garnishments)) %>% 
+  ungroup() %>% 
+  arrange(year, quarter) %>% 
+  mutate(yearQ = paste(paste0("20",year), paste0("Q",quarter), sep = "-"),
+         payment_ratio = repaid / loan_total,
+         lag1 = lag(loan_total),
+         loan_ratio = (loan_total / lag1) -1) %>% 
+  select(agency = agency_name, payment_ratio, year = yearQ, loan_ratio) %>% 
+  add_count(agency) 
+
+
+p5 <- loans_agency %>% 
+  filter(n > 7) %>% 
+  lm(payment_ratio ~ agency, data = .) %>%
+  tidy(conf.int = TRUE) %>%
+  filter(term != "(Intercept)") %>%
+  extract(term, c("category", "term"), "^([a-z]+)([A-Z].*)") %>%
+  mutate(term = fct_reorder(term, estimate)) %>% 
+  ggplot(aes(estimate, term, color = category)) +
+  geom_point(show.legend = FALSE) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_vline(lty = 2, xintercept = 0) +
+  scale_color_manual(values = "#00ccff") +
+  labs(x = "Estimated effect on repayment",
+       y = "",
+       title = "Effectiveness of student loan collection by agency",
+       subtitle = "It is not different significantly among agencies which reflecting that yearly 
+       trend of<br>reimbursement is quite levelled off as shown on other plots.") +
+ theme(plot.background = element_rect(fill = "transparent"),
+      panel.background = element_rect(fill = "transparent"),
+       legend.position = "none",
+       plot.title = element_text(size = 18),
+       plot.subtitle = element_markdown(size = 15),
+       panel.grid.major = element_blank(),
+       panel.grid.major.x = element_blank(),
+       panel.grid.major.y = element_blank(),
+       axis.text.x = element_text(size = 9),
+       axis.text.y = element_text(size = 9))
+p5
 ```
 
 ```{r}
-patchwork <- ((p1 / p2) | p3) / p4
+patchwork <- ((p1 / p2) | (p3 / p4 / p5))
 
 patchwork + 
   plot_annotation(title = "US Student loans status from 2015",
                   subtitle = "The amount of loans increased by 40% in 2018, from $65.4B to $166B, 2.5 times higher than it was at the end of 2015\n while the percentage of loan being repaid decreases and drop from 3.1% to 1.6%",
                   caption = "Source: Department of Education",
-                  theme = theme(plot.background = element_rect(fill = "#a9a9a9"),
+                  theme = theme(plot.background = element_rect(fill = "#ececec"),
                                 plot.title = element_text(size = 36,
                                                           margin = margin(b = 10)),
                                 plot.subtitle = element_text(size = 24,
                                                              margin = margin(t = 10,
                                                                              b = 20)))) +
-  plot_layout(nrow = 2, heights = c(3, 1))
+  plot_layout(ncol = 2, heights  = c(3, 1))
 
-ggsave(here("figures", "US_StudentLoanPayment.png"), width = 19, height = 15, units = "in")
+ggsave(here("figures", "US_StudentLoanPayment.png"), width = 21, height = 17, units = "in")
 ```
 ## I've been looking for the way of separating main title from the multile plots. Thanks @cnicault contribution to #TidyTuesday, one of my go-to-follow list
