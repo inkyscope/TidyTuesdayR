@@ -14,8 +14,9 @@ library(tidyverse)
 library(osmdata)
 library(scales)
 library(lubridate)
-library(ggpointdensity)
+library(patchwork)
 library(paletteer)
+library(here)
 ```
 
 ```{r}
@@ -23,7 +24,7 @@ tickets <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesd
 ```
 
 ```{r}
-p1 <- tickets %>% 
+p <- tickets %>% 
   mutate(violation_desc = fct_lump(violation_desc, n = 22, 
                                    other_level = "Others")) %>% 
   group_by(violation_desc) %>% 
@@ -40,54 +41,16 @@ p1 <- tickets %>%
        title = "Total amount of fine for 10 violation types") +
   theme_minimal()
 
-p1
+p
 ```
-```{r}
-library(gghighlight)
-library(ggtext)
 
+```{r}
 agency <- tickets %>% 
   mutate(day = as.factor(wday(issue_datetime, label = TRUE, abbr = TRUE)),
          month = month(issue_datetime, label = TRUE, abbr = TRUE),
          hour = as.factor(hour(issue_datetime)),
-         date = date(issue_datetime)) 
-  
-housing <- agency %>% 
-  filter(issuing_agency == "HOUSING")
+         date = date(issue_datetime))
 
-p2 <- agency %>% 
-  group_by(issuing_agency, month) %>% 
-  summarise(total = sum(fine),
-            n = n()) %>% 
-  mutate(avg = round(total / n, 2)) %>% 
-  ungroup() %>% 
-  ggplot(aes(month, avg, group = issuing_agency, color = issuing_agency)) +
-  geom_line(color = "#ff0000") +
-  gghighlight(issuing_agency == "HOUSING",
-             unhighlighted_colour = alpha("#dedede", 0.7),
-             use_direct_label = TRUE,
-             label_key = issuing_agency) +
-  scale_x_discrete(labels = month.abb) +
-  scale_y_continuous(limits = c(0, 120),
-                     breaks = seq(0, 120, 20),
-                     expand = c(0.01, 0)) +
-  scale_color_paletteer_d(pals, stepped) +
-  labs(x = "",
-       y = "Average of fines",
-       title = "Parking violation tickets in Philadelphia",
-       subtitle = "In 2017, the highest fine share of parking ticket was issued from <span style = 'color: #ff0000'>**housing agency**.</span>",
-       caption = "Source: Open Data Philly") +
-  theme(panel.background = element_blank(),
-        panel.grid = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.title = element_markdown(size = 16),
-        plot.subtitle = element_markdown(size = 11))
-  
-  p2
-```
-
-```{r}
 wday <- agency %>% 
   group_by(day, hour) %>% 
   summarise(total = sum(fine, 
@@ -105,7 +68,7 @@ wday <- agency %>%
     day == "토" ~ "Saturday"
   )) 
 
-p3 <- wday %>% 
+p1 <- wday %>% 
   ggplot(aes(hour, day, fill = avg)) +
   geom_tile(color = "white", size = 0.1) +
   coord_equal() +
@@ -119,12 +82,13 @@ p3 <- wday %>%
         panel.grid = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        plot.title = element_text(size = 16),
-        plot.subtitle = element_text(size = 11))
+        plot.title = element_text(size = 13, hjust = 0.5),
+        plot.subtitle = element_text(size = 11, hjust = 0.5),
+        legend.title = element_text(size = 9))
   
-p3
+p1
   
-p4 <- wday %>% 
+p2 <- wday %>% 
   ggplot(aes(hour, day, fill = n)) +
   geom_tile(color = "white", size = 0.1) +
   scale_fill_paletteer_c(gameofthrones, targaryen2,
@@ -132,26 +96,98 @@ p4 <- wday %>%
   labs(x = "Hour of day",
        y = "",
        title = "Parking ticket frequency over day",
-       subtitle = "Daily activities are peaked right before lunch time \nduring weekdays according to the number of parking tickets",
-       caption = "Source: Open Data Philly") +
+       subtitle = "Daily activities are peaked right before lunch time \nduring weekdays according to the number of parking tickets") +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        plot.title = element_text(size = 16),
-        plot.subtitle = element_text(size = 11))
-p4
+        plot.title = element_text(size = 13, hjust = 0.5),
+        plot.subtitle = element_text(size = 11, hjust = 0.5),
+        legend.title = element_text(size = 9))
+p2
 
 ##  need to figure out how to order weekdays; i tried as follwos but not worked. I got NA as well.
 ## mutate(day = ordered(day, levels=c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")))
 ```
+
+
+```{r}
+p3 <- wday %>% 
+  ggplot(aes(hour, avg)) +
+  geom_bar(aes(hour, n, fill = n), stat = "identity") +
+  scale_fill_paletteer_c(gameofthrones, targaryen2,
+                         name = "Frequency") +
+  scale_x_discrete(breaks = seq(0, 23, 1)) +
+  coord_polar() +
+  labs(x = "",
+       y = "",
+       title = "Number of parking tickets by hour of day",
+       caption = "Source: Open Data Philly") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 13, hjust = 0.5),
+        plot.background = element_blank(),
+        axis.text = element_text(size = 9),
+        axis.text.y = element_blank())
+
+g <- (p1 / p2 ) | p3 
+
+ggsave(here("figures", "ParkingTickets.png"), width = 11, height = 7, units = "in")
+```
+
+```{r not working}
+library(ggtext)
+
+  
+housing <- agency %>% 
+  group_by(issuing_agency, month) %>% 
+  summarise(total = sum(fine),
+            n = n()) %>% 
+  mutate(avg = round(total / n, 2)) %>% 
+  ungroup() %>% 
+  filter(issuing_agency == "HOUSING")
+
+p4 <- agency %>% 
+  group_by(issuing_agency, month) %>% 
+  summarise(total = sum(fine),
+            n = n()) %>% 
+  mutate(avg = round(total / n, 2)) %>% 
+  ungroup() %>% 
+  ggplot(aes(month, avg, group = issuing_agency, color = issuing_agency)) +
+  geom_line(color = "#dedede", size = 0.7,
+            show.legend = FALSE) +
+  geom_line(data = housing, aes(month, avg, 
+                                group = issuing_agency,
+                                color = "#ff0000"),
+            size = 1.0,
+            show.legend = FALSE) +
+  scale_x_discrete(labels = month.abb) +
+  scale_y_continuous(limits = c(0, 120),
+                     breaks = seq(0, 120, 20),
+                     expand = c(0.01, 0)) +
+  labs(x = "",
+       y = "Average of fines",
+       title = "Parking violation tickets in Philadelphia",
+       subtitle = "In 2017, the highest fine share of parking ticket was issued from <span style = 'color: #ff0000'>**housing agency**.</span>",
+       caption = "Source: Open Data Philly") +
+  theme(legend.position = "none",
+        panel.background = element_blank(),
+        panel.grid = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.title = element_markdown(size = 16),
+        plot.subtitle = element_markdown(size = 11))
+  
+  p4
+```
+
 ### Source[osmdata package] (https://ggplot2tutor.com/streetmaps/streetmaps/)
 ```{r osmdata features}
 available_features()
 available_tags("highway")
 ```
 
-```{r}
+```{r Philly map}
 
 philly <- getbb("Philadelphia")
 
@@ -178,18 +214,22 @@ map <- violation %>%
   ggplot() +
   geom_sf(data = street1$osm_lines, color = "black", size = 0.4) +
   geom_sf(data = street2$osm_lines, color = "gray50", size = 0.1) +
-  geom_pointdensity(aes(lon, lat), size = 1, alpha = 0.7,
-                    show.legend = FALSE) +
-  scale_color_paletteer_c(gameofthrones, targaryen2) +
+  stat_density2d(aes(lon, lat, fill = stat(level)),
+                 geom = "polygon",
+                 alpha = 0.2,
+                 bins = 70,
+                 show.legend = FALSE) +
+  scale_fill_paletteer_c(gameofthrones, targaryen2) +
   coord_sf(xlim = philly[1,],
            ylim = philly[2,],
            expand = FALSE) +
   labs(x = "",
        y = "",
-       title = "Parking violations issued by housing agency in Philadelphia",
-       caption = "Open Data Philly") +
-  theme(legend.position = "none") +
+       title = "Parking tickets issued by housing agency in Philadelphia",
+       caption = "Source: Open Data Philly") +
+  theme(legend.position = "none",
+        plot.title = element_text(margin = margin(b = 20))) +
   theme_void()
-  
-  
+
+
 ```
