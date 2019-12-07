@@ -21,6 +21,9 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Parking tickets by hour of day by [Open Data Philly ](https://www.opendataphilly.org/dataset/parking-violations)
+![Philadelphia](https://github.com/inkyscope/datavizRscope/blob/master/figures/ParkingTickets.png)
+
 ### US Student Loans Payment by [Department of Education](https://studentaid.ed.gov/sa/about/data-center/student/default)
 ![US Student loans](https://github.com/inkyscope/datavizRscope/blob/master/figures/US_StudentLoanPayment.png)
 
