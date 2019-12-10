@@ -21,6 +21,7 @@ library(here)
 
 ```{r}
 tickets <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-12-03/tickets.csv") 
+
 ```
 
 ```{r}
@@ -47,7 +48,7 @@ p
 ```{r}
 agency <- tickets %>% 
   mutate(day = as.factor(wday(issue_datetime, label = TRUE, abbr = TRUE)),
-         month = month(issue_datetime, label = TRUE, abbr = TRUE),
+         month = as.numeric(month(issue_datetime, label = TRUE, abbr = TRUE)),
          hour = as.factor(hour(issue_datetime)),
          date = date(issue_datetime))
 
@@ -66,8 +67,11 @@ wday <- agency %>%
     day == "목" ~ "Thursday",
     day == "금" ~ "Friday",
     day == "토" ~ "Saturday"
-  )) 
+  ))
+```
 
+
+```{r}
 p1 <- wday %>% 
   ggplot(aes(hour, day, fill = avg)) +
   geom_tile(color = "white", size = 0.1) +
@@ -96,7 +100,7 @@ p2 <- wday %>%
   labs(x = "Hour of day",
        y = "",
        title = "Parking ticket frequency over day",
-       subtitle = "Daily activities are peaked right before lunch time \nduring weekdays according to the number of parking tickets") +
+       subtitle = "Daily activities are peaked around lunch time \nduring weekdays according to the number of parking tickets") +
   theme(panel.background = element_blank(),
         panel.grid = element_blank(),
         panel.grid.major = element_blank(),
@@ -118,70 +122,109 @@ p3 <- wday %>%
   scale_fill_paletteer_c(gameofthrones, targaryen2,
                          name = "Frequency") +
   scale_x_discrete(breaks = seq(0, 23, 1)) +
-  coord_polar() +
+  coord_polar(start = -0.15) + # learning point!!
   labs(x = "",
        y = "",
-       title = "Number of parking tickets by hour of day",
-       caption = "Source: Open Data Philly") +
+       title = "Number of parking tickets by hour of day") +
   theme_minimal() +
   theme(legend.position = "none",
         plot.title = element_text(size = 13, hjust = 0.5),
         plot.background = element_blank(),
         axis.text = element_text(size = 9),
         axis.text.y = element_blank())
+p3
+```
 
-g <- (p1 / p2 ) | p3 
+```{r}
+top_5_violation <- agency %>% 
+  count(violation_desc, sort = TRUE) %>% 
+  top_n(5)
+
+parking_tickets <- agency %>% 
+  mutate(top_violation = case_when(
+    !violation_desc %in% top_5_violation$violation_desc ~ "Others",
+    violation_desc %in% top_5_violation$violation_desc ~as.character(violation_desc)
+  )) %>% 
+  group_by(top_violation, hour) %>% 
+  tally()
+
+p4 <- parking_tickets %>% 
+  ggplot(aes(hour, n, fill = top_violation)) +
+  geom_bar(stat = "identity",
+           position = "stack",
+           color = "white",
+           width = 1,
+           na.rm = TRUE) +
+  coord_polar(start = -0.15) +
+  scale_fill_paletteer_d(palettetown, rapidash,
+                         name = "Violation") +
+  labs(x = "",
+       y = "",
+       title = "Top 5 Parking violation by hour of day in Philadephia",
+       caption = "Source: Open Data Philly") +
+  theme(panel.background = element_blank(),
+        panel.grid = element_line(color = "#dddddd", size = 0.1, 
+                                  linetype = "dotted"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank()
+        ) +
+  guides(fill = guide_legend(override.aes = list(shape = 19)))
+```
+
+```{r}
+g <- (p1 / p2 ) | (p3 / p4)
 
 ggsave(here("figures", "ParkingTickets.png"), width = 11, height = 7, units = "in")
 ```
 
-```{r not working}
+
+
+
+### source:[error message: each group consist of only one observation. Do you need to adjust the group aesthetic?"](https://stackoverflow.com/questions/27082601/ggplot2-line-chart-gives-geom-path-each-group-consist-of-only-one-observation)
+```{r now working!!}
+library(gghighlight)
 library(ggtext)
 
-  
-housing <- agency %>% 
+p5 <- agency %>% 
   group_by(issuing_agency, month) %>% 
   summarise(total = sum(fine),
             n = n()) %>% 
   mutate(avg = round(total / n, 2)) %>% 
   ungroup() %>% 
-  filter(issuing_agency == "HOUSING")
-
-p4 <- agency %>% 
-  group_by(issuing_agency, month) %>% 
-  summarise(total = sum(fine),
-            n = n()) %>% 
-  mutate(avg = round(total / n, 2)) %>% 
-  ungroup() %>% 
-  ggplot(aes(month, avg, group = issuing_agency, color = issuing_agency)) +
-  geom_line(color = "#dedede", size = 0.7,
-            show.legend = FALSE) +
-  geom_line(data = housing, aes(month, avg, 
-                                group = issuing_agency,
-                                color = "#ff0000"),
-            size = 1.0,
-            show.legend = FALSE) +
-  scale_x_discrete(labels = month.abb) +
-  scale_y_continuous(limits = c(0, 120),
-                     breaks = seq(0, 120, 20),
+  ggplot(aes(month, avg, group = issuing_agency, 
+             color = issuing_agency)) +
+  geom_line(color = "#ff0000",
+            na.rm = TRUE) +
+  gghighlight(issuing_agency == "HOUSING",
+             unhighlighted_colour = alpha("#dedede", 0.7),
+             use_direct_label = TRUE,
+             label_key = issuing_agency) +
+  scale_x_continuous(limits = c(1, 12),
+                     breaks = seq(1, 12, 1),
+                     labels = month.abb) +
+  scale_y_continuous(limits = c(40, 140),
+                     breaks = seq(40, 140, 20),
                      expand = c(0.01, 0)) +
+  scale_color_paletteer_d(pals, stepped) +
   labs(x = "",
        y = "Average of fines",
        title = "Parking violation tickets in Philadelphia",
        subtitle = "In 2017, the highest fine share of parking ticket was issued from <span style = 'color: #ff0000'>**housing agency**.</span>",
        caption = "Source: Open Data Philly") +
-  theme(legend.position = "none",
-        panel.background = element_blank(),
+  theme(panel.background = element_blank(),
         panel.grid = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         plot.title = element_markdown(size = 16),
         plot.subtitle = element_markdown(size = 11))
   
-  p4
+  p5
+  
+  ## It was devastating to get the highlight fucntion working for a while. I am so excited to be able to figure this out! Try and fail, pause then succeed is such a rewarding experience!!
 ```
-
-### Source[osmdata package] (https://ggplot2tutor.com/streetmaps/streetmaps/)
+### Source[ggplot2tutor:Streetmaps using osmdata package by Christian Burkhart] (https://ggplot2tutor.com/streetmaps/streetmaps/)
 ```{r osmdata features}
 available_features()
 available_tags("highway")
