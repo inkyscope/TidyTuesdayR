@@ -130,6 +130,8 @@ p3 <- wday %>%
   theme(legend.position = "none",
         plot.title = element_text(size = 13, hjust = 0.5),
         plot.background = element_blank(),
+        panel.grid = element_line(color = "#dedede", size = 0.1, 
+                                  linetype = "dotted"),
         axis.text = element_text(size = 9),
         axis.text.y = element_blank())
 p3
@@ -163,7 +165,7 @@ p4 <- parking_tickets %>%
        title = "Top 5 Parking violation by hour of day in Philadephia",
        caption = "Source: Open Data Philly") +
   theme(panel.background = element_blank(),
-        panel.grid = element_line(color = "#dddddd", size = 0.1, 
+        panel.grid = element_line(color = "#dedede", size = 0.1, 
                                   linetype = "dotted"),
         axis.title.y = element_blank(),
         axis.text.y = element_blank(),
