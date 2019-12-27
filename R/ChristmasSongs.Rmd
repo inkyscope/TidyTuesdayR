@@ -51,10 +51,12 @@ plot <- plot_data %>%
   annotate("text", x = 2001.2, y = 32,
            size = 4,
            hjust = 0,
+           color = "#00b32c",
            label= "Song by Mariah Carey made the Top 100 8 times from 2000 - 2017.") +
   annotate("text", x = 2011.7, y = 10,
            size = 4,
            hjust = 0, 
+           color = "#b3000c",
            label = "9 Xmas songs made \nthe Billboard Top 100\nin 2011.") +
   geom_curve(x = 2001, xend = 2000.4, y = 32, yend = 32, 
              arrow = arrow(length = unit(0.1, "cm"))) +
