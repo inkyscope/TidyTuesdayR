@@ -21,7 +21,7 @@ a personal take for data integrity by repeating, reinforcing, continuing, and re
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
-### Christmas Songs by [Billboard Top 10](https://www.kaggle.com/sharkbait1223/billboard-top-100-christmas-carol-dataset)
+### Christmas Songs by [Billboard Top 100](https://www.kaggle.com/sharkbait1223/billboard-top-100-christmas-carol-dataset)
 ![Christmas Songs](https://github.com/inkyscope/datavizRscope/blob/master/figures/ChristmasSongsTop100.png)
 
 ### Parking tickets by hour of day by [Open Data Philly](https://www.opendataphilly.org/dataset/parking-violations)
