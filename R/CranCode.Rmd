@@ -1,0 +1,158 @@
+---
+title: "CRAN packages"
+author: "Sung Inkyung"
+date: '2019 11 27 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source[blog @philippe] (https://www.pmassicotte.com/post/analyzing-the-programming-languages-used-in-r-packages/)
+### source[tidytuesday screencast: analyzing code in CRAN packages by david robinson] (https://youtu.be/dr4qw8o0nYU)
+```{r}
+library(tidyverse)
+library(tidytext)
+library(cowplot)
+library(ggtext)
+library(ggchicklet)
+library(paletteer)
+library(glue)
+```
+
+
+```{r}
+cran_code <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-12/loc_cran_packages.csv")
+```
+
+```{r}
+by_language <- cran_code %>% 
+  group_by(language) %>% 
+  summarise(packages = n(),
+            code = sum(code),
+            comments = sum(comment),
+            files = sum(file),
+            lines_per_package = code / packages,
+            files_per_package = files / packages,
+            comment_code_ratio = comments / code) %>% 
+  arrange(desc(packages))
+
+by_language %>% 
+  head(20) %>% 
+  mutate(language = fct_reorder(language, packages)) %>% 
+  ggplot(aes(language, packages)) + 
+  geom_col() +
+  coord_flip() +
+  scale_y_continuous(labels = scales::comma) +
+  labs(x = "",
+       y = "# of packages")+
+  theme_minimal_vgrid()
+```
+
+
+```{r}
+by_language %>% 
+  pivot_longer(names_to = "category", values_to = "value", cols = c(packages, code, files)) %>% 
+  group_by(category) %>% 
+  top_n(8) %>% 
+  ungroup() %>% 
+  mutate(language = reorder_within(language, value, category),
+         metric = str_to_title(category)) %>% 
+  ggplot(aes(language, value)) +
+  geom_col()+
+  coord_flip()+
+  scale_x_reordered()+
+  scale_y_continuous(labels = scales::comma)+
+  facet_wrap(~ category, scales = "free", ncol = 1)+
+  labs(x = "Value (# of lines of packages, code, files)") +
+  theme_minimal_vgrid()
+
+
+by_language %>% 
+  filter(packages >=20) %>% 
+  ggplot(aes(packages, comment_code_ratio)) +
+  geom_point()+
+  geom_text(aes(label = language),
+            check_overlap = TRUE,
+            vjust = 1, hjust = 1) +
+  scale_x_log10() +
+  expand_limits(x = 10) +
+  labs(x = "# of package language is used in",
+       y = "Comment/Code ratio")
+
+by_language %>% 
+  filter(packages >=20) %>% 
+  ggplot(aes(packages, lines_per_package)) +
+  geom_point()+
+  geom_text(aes(label = language),
+            check_overlap = TRUE,
+            vjust = 1, hjust = 1)+
+  scale_x_log10()+
+  expand_limits(x = 10)+
+  labs(x = "# of package language is used in",
+       y = "Lines per package")
+
+# How much R code is there in each package?
+cran_code %>% 
+  filter(language == "R") %>% 
+  ggplot(aes(code)) +
+  geom_histogram()+
+  scale_x_log10(labels = scales::comma)
+
+cran_code %>% 
+  filter(language == "R") %>% 
+  arrange(desc(code))
+
+packages <- tidyverse_packages() %>% 
+  str_extract("[a-z\\d]+")
+
+cran_code %>% 
+  filter(pkg_name %in% packages | str_detect(pkg_name, "tidy"),
+         language == "R") %>% 
+  arrange(desc(code)) %>% 
+  View()
+
+cran_code %>% 
+  filter(str_detect(pkg_name, "tidy")) %>% 
+  distinct(pkg_name) %>% 
+  View()
+```
+
+```{r}
+# Programming languages used by the package included in the tidyverse 
+
+
+plot <- cran_code %>% 
+  filter(pkg_name %in% packages) %>% 
+  mutate(language = case_when(
+    language %in% c("C++", "C", "C/C++ Header") ~ "C++",
+    TRUE ~ language
+  )) %>%
+  mutate(pkg_name = fct_reorder(pkg_name, code, sum),
+         language = fct_lump(language, 5),
+         language = fct_reorder(language, code, sum))%>% 
+  ggplot(aes(pkg_name, code,
+             fill = language)) +
+  geom_chicklet(size = 0.1) +
+  coord_flip() +
+  labs(x = " ",
+       y = " ",
+       title = "Programming languages used in the tidyverse package",
+       subtitle = "Illustrated below is the packages by language: most of packages in tidyverse have **R** while **haven** package uses **C++** primarily.",
+       caption = "Source: CRAN") +
+  scale_fill_paletteer_d("yarrr::appletv")+
+  scale_y_continuous(expand = c(0, 0.1),
+                     labels = scales::comma) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_minimal_vgrid() +
+  theme(legend.position = "right",
+        plot.background = element_blank(),
+        plot.title = element_markdown(size = 16,
+                                      margin = margin(b = 10)),
+        plot.subtitle = element_markdown(size = 13,
+                                         margin = margin(b = 25)),
+        plot.caption = element_text(size = 9))
+
+plot
+
+```
