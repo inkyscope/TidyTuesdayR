@@ -36,6 +36,9 @@ It has been my privilege to take a look at various approaches on data analysis a
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### CRAN Code by [CRAN](https://cran.r-project.org/src/contrib/)
+![CRAN Code](https://github.com/inkyscope/datavizRscope/blob/master/figures/ProgrammingLanguagesinTidyverse.png)
+
 ### Christmas Songs by [Billboard Top 100](https://www.kaggle.com/sharkbait1223/billboard-top-100-christmas-carol-dataset)
 ![Christmas Songs](https://github.com/inkyscope/datavizRscope/blob/master/figures/ChristmasSongsTop100.png)
 
