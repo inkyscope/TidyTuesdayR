@@ -197,7 +197,6 @@ cran_code %>%
 ```{r}
 # Programming languages used by the package included in the tidyverse 
 
-
 plot <- cran_code %>% 
   filter(pkg_name %in% packages) %>% 
   mutate(language = case_when(
