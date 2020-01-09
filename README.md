@@ -13,7 +13,7 @@ After around 3 months(summer time!) from the relentless cycles of imitation and 
 
 I'd like to thank you from the core of my heart for contributors to make #Tidy Tuesday get going exuberantly. You have been a rich source of inspiration throughout this year and I am looking forward to returning the favor by joining the part of #TidyTuesday community soon. It would not have been possible without your generous sharing mind and contribution, encouragement and support.
 
-It has been my privilege to take a look at various approaches on data analysis along with an attractive visualization. Whereas it is apparent that my graphs are not enough to capture what data is to be revealed, my passion on data wrangling is getting richer than I anticipated. I have reflected on the by far the most rewarding experiences when I find myself willing to put in the extra effort to create an equivalent or alteration for what I was looking at.
+It has been my previlege to delve into various approaches on data analysis along with a jaw dropping visualization. Whereas it is apparent that my graphs are not enough to capture what data is to be revealed, my passion on data wrangling is getting richer than I anticipated. I have reflected on the by far the most rewarding experiences when I find myself willing to put in the extra effort to create an equivalent or alteration for what I am looking at.
 
 
 ## References(Book, Website, Youtube, Github)
