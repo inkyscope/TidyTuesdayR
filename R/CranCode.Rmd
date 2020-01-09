@@ -18,11 +18,78 @@ library(ggtext)
 library(ggchicklet)
 library(paletteer)
 library(glue)
+library(here)
 ```
 
 
 ```{r}
 cran_code <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-12/loc_cran_packages.csv")
+```
+```{r}
+packages <- tidyverse_packages() %>% 
+  str_extract("[a-z\\d]+")
+
+p1 <- cran_code %>% 
+  filter(pkg_name %in% packages) %>% 
+  mutate(language = reorder_within(language, code, pkg_name)) %>% 
+  mutate(pkg_name = fct_reorder(pkg_name, code, sum, .desc = TRUE)) %>% 
+  ggplot(aes(language, code)) +
+  geom_col() +
+  scale_x_reordered() +
+  scale_y_continuous(expand = expand_scale(mult = c(0, 0.2))) +
+  coord_flip() +
+  facet_wrap(~pkg_name, scales = "free", ncol = 3) +
+  labs(x = "",
+       y = "Number of code lines",
+       title = "Programming languages used by the package included in the tidyverse ecosystem",
+       caption = "Source: CRAN")
+
+p2 <- cran_code %>% 
+  group_by(pkg_name) %>% 
+  add_tally(code) %>% 
+  ungroup() %>% 
+  filter(dense_rank(desc(n)) <= 18) %>% 
+  mutate(language = reorder_within(language, code, pkg_name)) %>% 
+  ggplot(aes(language, code)) +
+  geom_col()+
+  scale_x_reordered() +
+  scale_y_log10(expand = expand_scale(mult = c(0, 0.2))) +
+  coord_flip() +
+  facet_wrap(~ pkg_name, scales = "free", ncol = 3) +
+  labs(x = "",
+       y = "Number of code lines",
+       title = "Programming languages used in packages with the most number of code lines",
+       caption = "Source: CRAN")
+```
+
+```{r R, Python, C++, HTML}
+top4_language <- cran_code %>% 
+  filter(language %in% c("R", "Python","C++", "C", "C/C++ Header", "HTML")) %>% 
+  mutate(language = case_when(
+    language %in% c("C++", "C", "C/C++ Header") ~ "C++",
+    TRUE ~ language
+  )) %>% 
+  group_by(language) %>% 
+  summarise(percent = sum(code) / sum(.$code)) %>% 
+  mutate(percent = round(percent, 1))
+
+top4_plot <- top4_language %>% 
+  mutate(language = fct_reorder(language, percent)) %>% 
+  ggplot(aes(language, percent, fill = language)) +
+  geom_col()+
+  scale_y_continuous(labels = scales::percent,
+                     expand = expand_scale(mult = c(0, 0.2))) +
+  coord_flip() +
+  scale_fill_paletteer_d("yarrr::nemo") +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  labs(x = "",
+       y = "Percentage of code lines",
+       title = "Percentage of R, C++, Python, and HTML used in R packages",
+       subtitle = glue("Based on {n_distinct(cran_code$pkg_name)} packages"),
+       caption = "Source: CRAN"
+  ) +
+  theme_minimal_vgrid()
+
 ```
 
 ```{r}
@@ -36,19 +103,38 @@ by_language <- cran_code %>%
             files_per_package = files / packages,
             comment_code_ratio = comments / code) %>% 
   arrange(desc(packages))
-
-by_language %>% 
+          
+package_plot <- by_language %>% 
   head(20) %>% 
   mutate(language = fct_reorder(language, packages)) %>% 
   ggplot(aes(language, packages)) + 
   geom_col() +
   coord_flip() +
-  scale_y_continuous(labels = scales::comma) +
+  scale_y_continuous(labels = scales::comma,
+                     expand = expand_scale(mult = c(0, 0.02))) +
   labs(x = "",
-       y = "# of packages")+
+       y = "# of packages",
+       title = "Number of R packages using the top 20 most used programming languages",
+       subtitle = glue("Based on {n_distinct(cran_code$pkg_name)} packages"),
+       caption = "Source: CRAN") +
   theme_minimal_vgrid()
-```
 
+
+code_plot <- by_language %>% 
+  filter(dense_rank(desc(code)) <= 16) %>% 
+  mutate(language = fct_reorder(language, code, .fun = sum)) %>% 
+  arrange(desc(language, code)) %>% 
+  ggplot(aes(language, code)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "",
+       y = "# of code lines",
+       title = "Top 16 programming languages used in R packages",
+       subtitle = glue("Based on {n_distinct(cran_code$pkg_name)} packages"),
+       caption = "Data: CRAN")+
+  theme_minimal_vgrid()
+
+```
 
 ```{r}
 by_language %>% 
@@ -74,7 +160,7 @@ by_language %>%
   geom_point()+
   geom_text(aes(label = language),
             check_overlap = TRUE,
-            vjust = 1, hjust = 1) +
+            vjust = 0, hjust = 0) +
   scale_x_log10() +
   expand_limits(x = 10) +
   labs(x = "# of package language is used in",
@@ -86,22 +172,12 @@ by_language %>%
   geom_point()+
   geom_text(aes(label = language),
             check_overlap = TRUE,
-            vjust = 1, hjust = 1)+
+            vjust = 0, hjust = 0)+
   scale_x_log10()+
   expand_limits(x = 10)+
   labs(x = "# of package language is used in",
        y = "Lines per package")
 
-# How much R code is there in each package?
-cran_code %>% 
-  filter(language == "R") %>% 
-  ggplot(aes(code)) +
-  geom_histogram()+
-  scale_x_log10(labels = scales::comma)
-
-cran_code %>% 
-  filter(language == "R") %>% 
-  arrange(desc(code))
 
 packages <- tidyverse_packages() %>% 
   str_extract("[a-z\\d]+")
@@ -138,7 +214,7 @@ plot <- cran_code %>%
   labs(x = " ",
        y = " ",
        title = "Programming languages used in the tidyverse package",
-       subtitle = "Illustrated below is the packages by language: most of packages in tidyverse have **R** while **haven** package uses **C++** primarily.",
+       subtitle = "Illustrated below is the packages by language: most of packages in tidyverse have **R**<br> while **haven** package uses **C++** primarily.",
        caption = "Source: CRAN") +
   scale_fill_paletteer_d("yarrr::appletv")+
   scale_y_continuous(expand = c(0, 0.1),
@@ -153,6 +229,6 @@ plot <- cran_code %>%
                                          margin = margin(b = 25)),
         plot.caption = element_text(size = 9))
 
-plot
-
+ggsave(here("figures", "ProgrammingLanguageinTidyverse.png", width = 11, height = 7, units = "in"))
 ```
+
