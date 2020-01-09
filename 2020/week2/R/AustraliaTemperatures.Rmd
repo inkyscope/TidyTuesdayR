@@ -1,0 +1,94 @@
+---
+title: "AusFires"
+author: "Sung Inkyung"
+date: '2020 1 9 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggridges)
+library(viridis)
+library(here)
+```
+
+```{r}
+temperature <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-07/temperature.csv')
+
+```
+
+
+```{r}
+temperature %>% 
+  count(city_name, sort = TRUE)
+
+```
+
+```{r}
+aus_temp <- temperature %>% 
+  filter(temp_type == 'max', 
+         !is.na(temperature)) %>% 
+  mutate(city_name = str_to_title(city_name), 
+         year = year(date)) %>% 
+  mutate(decade = floor(year/10) * 10) %>% 
+  group_by(city_name, decade)
+
+p1 <- aus_temp %>% 
+  ggplot(aes(temperature, decade, group = decade, 
+             fill = ..x.., alpha = 0.4)) +
+  geom_density_ridges_gradient(scale = 3, 
+                               size = 0.3,
+                               alpha = 0.5) +
+  scale_y_continuous(limits = c(1910, 2020),
+                     breaks = seq(1910, 2020, 30)) +
+  scale_fill_gradientn(colors = c("#0D0887FF", "#CC4678FF",
+                                  "#F0F921FF"),
+                       name = "Temp.°C") +
+  labs(x = "Temperature (°C)",
+       y = "",
+       title = "Max temperatures in Australia are getting hotter",
+       subtitle = "Maximum daily temperature distributions by decade from cities \n Melbourne, Perth, Kent, Port, Sydney, Canberra, and Brisbane",
+       caption = "Source: Australian Bureau of Meteorology") +
+  theme_minimal()
+```
+
+
+```{r}
+p2 <- aus_temp %>%   
+  ggplot(aes(temperature, decade, group = decade,
+             fill = ..x.., alpha = 0.4)) +
+  geom_density_ridges_gradient(scale = 3, 
+                               size = 0.3,
+                               alpha = 0.5) +
+  scale_fill_distiller(palette = "RdBu",
+                       name = "Temp.°C") +
+  labs(x = "Temperature (°C)",
+       y = "",
+       title = "Max temperatures in Australia are getting hotter",
+       subtitle = "Maximum daily temperature distributions by decade from cities \n AMelbourne, Perth, Kent, Port, Sydney, Canberra, and Brisbane",
+       caption = "Source: Australian Bureau of Meteorology") +
+  theme_minimal()
+```
+```{r}
+p3 <- aus_temp %>% 
+  ggplot(aes(temperature, city_name,
+             fill = ..x.., alpha = 0.4)) +
+  geom_density_ridges_gradient(scale = 3, 
+                               size = 0.3,
+                               alpha = 0.5) +
+  scale_fill_distiller(palette = "RdBu",
+                       name = "Temp.°C") +
+  labs(x = "Temperature (°C)",
+       y = "",
+       title = "Australia max temperatures are getting hotter",
+       subtitle = "Maximum daily temperature distributions by decade from 1910 to 2018",
+       caption = "Source: Australian Bureau of Meteorology") +
+  theme_minimal()
+
+ggsave(here("2020", "week2", "AustraliaTemperatures.png"), p3, width = 12, height = 6)
+```
