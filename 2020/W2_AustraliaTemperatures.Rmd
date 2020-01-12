@@ -14,7 +14,6 @@ library(tidyverse)
 library(lubridate)
 library(ggridges)
 library(viridis)
-library(here)
 ```
 
 ```{r}
@@ -26,7 +25,6 @@ temperature <- readr::read_csv('https://raw.githubusercontent.com/rfordatascienc
 ```{r}
 temperature %>% 
   count(city_name, sort = TRUE)
-
 ```
 
 ```{r}
@@ -44,6 +42,11 @@ p1 <- aus_temp %>%
   geom_density_ridges_gradient(scale = 3, 
                                size = 0.3,
                                alpha = 0.5) +
+  geom_vline(xintercept = 21.8,
+             size = 0.9,
+             color = "gray80",
+             alpha = 0.5,
+             linetype = "dotted") +
   scale_y_continuous(limits = c(1910, 2020),
                      breaks = seq(1910, 2020, 30)) +
   scale_fill_gradientn(colors = c("#0D0887FF", "#CC4678FF",
@@ -52,11 +55,10 @@ p1 <- aus_temp %>%
   labs(x = "Temperature (°C)",
        y = "",
        title = "Max temperatures in Australia are getting hotter",
-       subtitle = "Maximum daily temperature distributions by decade from cities \n Melbourne, Perth, Kent, Port, Sydney, Canberra, and Brisbane",
+       subtitle = "Maximum daily temperature distributions by decade from cities \nMelbourne, Perth, Kent, Port, Sydney, Canberra, and Brisbane",
        caption = "Source: Australian Bureau of Meteorology") +
   theme_minimal()
 ```
-
 
 ```{r}
 p2 <- aus_temp %>%   
@@ -65,15 +67,21 @@ p2 <- aus_temp %>%
   geom_density_ridges_gradient(scale = 3, 
                                size = 0.3,
                                alpha = 0.5) +
+  geom_vline(xintercept = 21.8,
+             size = 0.9,
+             color = "gray30",
+             alpha = 0.5,
+             linetype = "dotted") +
   scale_fill_distiller(palette = "RdBu",
                        name = "Temp.°C") +
   labs(x = "Temperature (°C)",
        y = "",
-       title = "Max temperatures in Australia are getting hotter",
-       subtitle = "Maximum daily temperature distributions by decade from cities \n AMelbourne, Perth, Kent, Port, Sydney, Canberra, and Brisbane",
+       title = "Max temperatures in Australia are rising over time",
+       subtitle = "Maximum daily temperature distributions by decade from cities \nMelbourne, Perth, Kent, Port, Sydney, Canberra, and Brisbane",
        caption = "Source: Australian Bureau of Meteorology") +
   theme_minimal()
 ```
+
 ```{r}
 p3 <- aus_temp %>% 
   ggplot(aes(temperature, city_name,
@@ -81,14 +89,92 @@ p3 <- aus_temp %>%
   geom_density_ridges_gradient(scale = 3, 
                                size = 0.3,
                                alpha = 0.5) +
+  geom_vline(xintercept = 21.8,
+             size = 0.9,
+             color = "gray30",
+             alpha = 0.5,
+             linetype = "dotted") +
   scale_fill_distiller(palette = "RdBu",
                        name = "Temp.°C") +
-  labs(x = "Temperature (°C)",
+  labs(x = "Max Temp.(°C)",
        y = "",
-       title = "Australia max temperatures are getting hotter",
+       title = "Australia max temperatures are rising over time",
        subtitle = "Maximum daily temperature distributions by decade from 1910 to 2018",
        caption = "Source: Australian Bureau of Meteorology") +
   theme_minimal()
 
-ggsave(here("2020", "week2", "AustraliaTemperatures.png"), p3, width = 12, height = 6)
+```
+
+```{r}
+cities <- temperature %>% 
+  na.omit() %>% 
+  mutate(city_name = str_to_title(city_name),
+         year = year(date)) %>% 
+  filter(year > 1950 | year < 2020) %>% 
+  group_by(city_name, year = year(date), 
+           month = month(date, label = T)) %>%
+  summarise(temp = mean(temperature, na.rm = T)) %>% 
+  ggplot(aes(year, fct_rev(month), fill = temp)) +
+  geom_raster(na.rm = T) +
+  scale_fill_distiller(palette = "RdBu") +
+  scale_x_continuous(limits = c(1950, 2020),
+                        breaks = seq(1950, 2020, 20))+
+  facet_wrap(~city_name, ncol = 2) +
+  coord_equal() +
+  labs(x = " ",
+       y = " ",
+       title = "Austrian cities temperature since 1950",
+       fill = "Temp Avg\n(°C)",
+       caption = "Source: Austrian Bureau of Meteorology") +
+  theme_minimal() +
+  theme(plot.caption = element_text(color = "gray40"))
+```
+### Source[#TidyTuesday by @geokaramanis] (https://github.com/gkaramanis/tidytuesday/tree/master/2020-week02)
+```{r}
+rainfall <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-07/rainfall.csv')
+```
+
+```{r}
+rainfall_month <- rainfall %>% 
+  na.omit() %>% 
+  filter(year < 2020) %>% 
+  group_by(city_name, year, month) %>%
+  summarise(mean_rainfall = mean(rainfall/period))
+
+rainfall_month %>% 
+  count(year, sort = TRUE) %>% 
+  arrange(desc(year))
+
+rainfall_month %>% 
+  count(mean_rainfall, sort = TRUE) %>% 
+  arrange(desc(mean_rainfall))
+```
+
+```{r}
+rainfall_month %>% 
+  ggplot() +
+  geom_linerange(aes(x = year, ymin = 0, ymax = mean_rainfall),
+                 color = "aliceblue",
+                 alpha = 0.2) +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = seq(1850, 2020, 20)) +
+  scale_y_reverse(expand = c(0, 0)) +
+  facet_wrap(~city_name, ncol = 3) +
+  labs(x = " ",
+       y = "Rainfall in millimeters",
+       title = "Monthly mean rainfall from 1858 to 2019",
+       caption = "Source: Austrian Bureau of Meteorology") +
+  theme_linedraw() +
+  theme(panel.background = element_rect(fill = "#0c9096", 
+                                        color = "#0c9096"),
+        panel.spacing = unit(1, "lines"),
+        strip.background = element_rect(fill = "#6e8d8f",
+                                        color = "#6e8d8f"),
+        strip.text = element_text(size = 13),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 7),
+        plot.caption = element_text(color = "#6e8d8f"))
 ```
