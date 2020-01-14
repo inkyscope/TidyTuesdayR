@@ -1,7 +1,7 @@
 # datavizRscope
 a personal take for data integrity by repeating, reinforcing, continuing, and refining constantly
 
-Dear contributors on #Tidy Tuesday[:link:](https://twitter.com/search?q=%23TidyTuesday&src=hashtag_click)
+Dear contributors on #Tidy Tuesday[:link:](https://twitter.com/search?q=%23TidyTuesday&src=hashtag_click) by R for Data Science [:link:](https://github.com/rfordatascience/tidytuesday)
 
 Since June, I started focusing on my latent interest in R data visualization. In particular, a live screen cast on YOUTUBE by David Robinson has brought me to explore different(!) data(beyond iris and mtcars data). I found myself tremendously lucky when I was introduced to lots of new packages in R and methods such as lasso regression on text. As well, it was intriguing and amazing when he pans out the process to draw insights through a various approach on data. However, when it comes to transplanting those processes on my own rstudio, it has been extremely overwhelming to dive into R language, which reminds me of period when I was grappling with English and German.
 
