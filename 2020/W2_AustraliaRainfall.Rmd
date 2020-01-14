@@ -120,7 +120,7 @@ rainfall <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/t
 ```{r}
 yearly_rainfall <- rainfall %>% 
   na.omit() %>% 
-  filter( year < 2020) %>% 
+  filter(year < 2020) %>% 
   group_by(city_name, year, month) %>%
   summarise(rainfall = mean(rainfall, na.rm = T)) %>% 
   group_by(city_name, year) %>% 
@@ -143,9 +143,9 @@ city_rainfall <- yearly_rainfall %>%
   facet_wrap(~city_name, ncol = 3) +
   labs(x = " ",
        y = "Rainfall(mm)",
-       title = "Monthly average rainfall in Australia cities from 1870 to 2019",
+       title = "Yearly average rainfall by Australia cities from 1870 to 2019",
        caption = "Source: Austrian Bureau of Meteorology") +
-  theme_linedraw() +
+ # theme_linedraw() +
   theme(panel.background = element_rect(fill = "#e25822", 
                                         color = "#e25822"),
         panel.spacing = unit(1, "lines"),
@@ -167,16 +167,27 @@ library(ggforce)
 library(cowplot)
 library(glue)
 
-yearly_rainfall_plot <- yearly_rainfall %>% 
-  ggplot(aes(year, rainfall_total)) +
+yearly_rainfall_plot <- rainfall %>% 
+  group_by(year, month) %>% 
+  summarise(rainfall = mean(rainfall, na.rm = T)) %>%
+  group_by(year) %>%
+  summarise(rainfall = sum(rainfall, na.rm = T)) %>%
+  filter(year >= 1900 & year < 2020) %>%
+  ungroup() %>% # 1957: 17.9mm
+  ggplot(aes(year, rainfall)) +
   geom_point(color =  "#afc3cc",
              na.rm = TRUE) +
   geom_path(color =  "#afc3cc",
             na.rm = TRUE) +
-  geom_mark_circle(aes(filter = year == 2019 & rainfall_total == min(rainfall_total),
-                       label = glue("total rainfall: {round(rainfall_total, 2)} mm"),
+  geom_mark_circle(aes(filter = year == 1957,
+                       label = glue("total rainfall: {round(rainfall, 2)} mm")),
+                   label.buffer = unit(3, "cm"),
+                   label.fontface = 10,
+                   con.linetype = 2) +
+  geom_mark_circle(aes(filter = year == 2019,
+                       label = glue("total rainfall: {round(rainfall, 2)} mm"),
                        description = "Annual rainfall at a 60-year low"),
-                   label.buffer = unit(6, "cm"),
+                   label.buffer = unit(3, "cm"),
                    label.fontface = 10,
                    con.linetype = 2) +
   scale_x_continuous(limits = c(1900, 2020),
@@ -185,8 +196,8 @@ yearly_rainfall_plot <- yearly_rainfall %>%
                      breaks = seq(0, 50, 10)) +
   labs(x = "",
        y = "rainfall (mm)",
-       title = "Average yearly rainfall in Australia from 1900 to 2019",
-       subtitle = "Canberra had 11.8mm in 2019") +
+       title = "Yearly average rainfall variability in Australia from 1900 to 2019",
+       subtitle = "2019 was Australia's driest year on record since 1957(17.97 mm)") +
   theme_minimal_grid(12)
   
               
@@ -194,8 +205,11 @@ yearly_rainfall_plot <- yearly_rainfall %>%
 
 ```{r}
 library(patchwork)
+library(here)
 
 plot <- (yearly_rainfall_plot/city_rainfall)
+
+ggsave(here("2020", "W2_AustraliaRainfall.png"), width = 25, height = 23, units = "cm")
 
 ## Next challenge: It would be more supportive to add a map on the bottome left of the first plot to identify cities location.
 ```
