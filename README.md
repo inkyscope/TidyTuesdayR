@@ -5,7 +5,7 @@ Dear contributors on #Tidy Tuesday[:link:](https://twitter.com/search?q=%23TidyT
 
 Since June, I started focusing on my latent interest in R data visualization. In particular, a live screen cast on YOUTUBE by David Robinson has brought me to explore different(!) data(beyond iris and mtcars data). I found myself tremendously lucky when I was introduced to lots of new packages in R and methods such as lasso regression on text. As well, it was intriguing and amazing when he pans out the process to draw insights through a various approach on data. However, when it comes to transplanting those processes on my own rstudio, it has been extremely overwhelming to dive into R language, which reminds me of period when I was grappling with English and German.
 
-At the beginning, it was devastating to juggle all the necessary elements at once to figure out  algorithms, data structures and relevant packages to tidy up and visualize accordingly. In the meantime, the live, impromptu screen cast delivered regularly by David Robinson(@drob)[:link:]( https://www.youtube.com/watch?v=dr4qw8o0nYU) has encouraged me to withstand that frustration and move through it. When I watch him initiate what he wants to look for and tackle with his accidental mistakes in the process of tidying data and go through it persistently, finally detect and fix it in a timely manner; double check, triple check, try to find why it doesn't work, what he did wrong, how to fix it, sometimes just divert another way blatantly...
+At the beginning, it was devastating to juggle all the necessary elements at once to figure out  algorithms, data structures and relevant packages to tidy up and visualize accordingly. In the meantime, the live, impromptu screen cast delivered regularly by David Robinson(@drob)[:link:]( https://www.youtube.com/watch?v=dr4qw8o0nYU) has encouraged me to withstand that frustration and move through it. He initiates what he wants to look for and tackle with his accidental mistakes in the process of tidying data and go through it persistently, finally detect and fix it in a timely manner; double check, triple check, try to find why it doesn't work, what he did wrong, how to fix it, sometimes just divert another way blatantly...
 
 On top of it, what keeps my interest steady to catch up with uploads on #TidyTuesday is that some of dedicated contributors (@jakekaupp, @geokaramanis, @spren9er, @FournierJohanie, @committedtotape, @christi58451746, @CedScherer, @cnicault, @watzoever...) encompass such an essential attitude on paying an exhaustive attention to details followed by demanding quality work. It enlightens me on what to look for and what I'm hoping to accomplish and how I am going to do it. It compells me to stay motivated and keep on moving forward. 
 
@@ -16,7 +16,7 @@ I'd like to thank you from the core of my heart for contributors to make #Tidy T
 It has been my previlege to delve into various approaches on data analysis along with a jaw dropping visualization. Whereas it is apparent that my graphs are not enough to capture what data is to be revealed, my passion on data wrangling is getting richer than I anticipated. I have reflected on the by far the most rewarding experiences when I find myself willing to put in the extra effort to create an equivalent or alteration for what I am looking at.
 
 
-## References(Book, Website, Youtube, Github)
+## References
 |  Link  | Title | Author |
 |--------|-------|--------|
 |[:link:](http://www.gradaanwr.net)|Graphical data analysis with R | Anton Unwin |
