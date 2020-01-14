@@ -1,7 +1,7 @@
 ---
 title: "AusFires"
 author: "Sung Inkyung"
-date: '2020 1 9 '
+date: '2020 1 14'
 output: html_document
 ---
 
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(lubridate)
 library(ggridges)
-library(viridis)
+library(scales)
 ```
 
 ```{r}
@@ -26,7 +26,7 @@ temperature <- readr::read_csv('https://raw.githubusercontent.com/rfordatascienc
 temperature %>% 
   count(city_name, sort = TRUE)
 ```
-
+### Source[ggridges package @ClausWilke ] (https://wilkelab.org/ggridges/articles/introduction.html)
 ```{r}
 aus_temp <- temperature %>% 
   filter(temp_type == 'max', 
@@ -49,41 +49,21 @@ p1 <- aus_temp %>%
              linetype = "dotted") +
   scale_y_continuous(limits = c(1910, 2020),
                      breaks = seq(1910, 2020, 30)) +
-  scale_fill_gradientn(colors = c("#0D0887FF", "#CC4678FF",
-                                  "#F0F921FF"),
-                       name = "Temp.°C") +
+  #scale_fill_gradientn(colors = c("#0D0887FF", "#CC4678FF",    "#F0F921FF"), name = "Temp.°C") +
+  scale_fill_distiller(palette = "RdBu", name = "Temp.°C") +
+  coord_cartesian(clip = "off") +
   labs(x = "Temperature (°C)",
        y = "",
        title = "Max temperatures in Australia are getting hotter",
        subtitle = "Maximum daily temperature distributions by decade from cities \nMelbourne, Perth, Kent, Port, Sydney, Canberra, and Brisbane",
        caption = "Source: Australian Bureau of Meteorology") +
-  theme_minimal()
+  theme_ridges(grid = FALSE,
+               center_axis_labels = TRUE)
 ```
 
-```{r}
-p2 <- aus_temp %>%   
-  ggplot(aes(temperature, decade, group = decade,
-             fill = ..x.., alpha = 0.4)) +
-  geom_density_ridges_gradient(scale = 3, 
-                               size = 0.3,
-                               alpha = 0.5) +
-  geom_vline(xintercept = 21.8,
-             size = 0.9,
-             color = "gray30",
-             alpha = 0.5,
-             linetype = "dotted") +
-  scale_fill_distiller(palette = "RdBu",
-                       name = "Temp.°C") +
-  labs(x = "Temperature (°C)",
-       y = "",
-       title = "Max temperatures in Australia are rising over time",
-       subtitle = "Maximum daily temperature distributions by decade from cities \nMelbourne, Perth, Kent, Port, Sydney, Canberra, and Brisbane",
-       caption = "Source: Australian Bureau of Meteorology") +
-  theme_minimal()
-```
 
 ```{r}
-p3 <- aus_temp %>% 
+p2 <- aus_temp %>% 
   ggplot(aes(temperature, city_name,
              fill = ..x.., alpha = 0.4)) +
   geom_density_ridges_gradient(scale = 3, 
@@ -96,12 +76,14 @@ p3 <- aus_temp %>%
              linetype = "dotted") +
   scale_fill_distiller(palette = "RdBu",
                        name = "Temp.°C") +
+  coord_cartesian(clip = "off") +
   labs(x = "Max Temp.(°C)",
        y = "",
        title = "Australia max temperatures are rising over time",
        subtitle = "Maximum daily temperature distributions by decade from 1910 to 2018",
        caption = "Source: Australian Bureau of Meteorology") +
-  theme_minimal()
+  theme_ridges(grid = FALSE,
+               center_axis_labels = TRUE)
 
 ```
 
@@ -132,49 +114,89 @@ cities <- temperature %>%
 ### Source[#TidyTuesday by @geokaramanis] (https://github.com/gkaramanis/tidytuesday/tree/master/2020-week02)
 ```{r}
 rainfall <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-07/rainfall.csv')
+
 ```
 
 ```{r}
-rainfall_month <- rainfall %>% 
+yearly_rainfall <- rainfall %>% 
   na.omit() %>% 
-  filter(year < 2020) %>% 
+  filter( year < 2020) %>% 
   group_by(city_name, year, month) %>%
-  summarise(mean_rainfall = mean(rainfall/period))
+  summarise(rainfall = mean(rainfall, na.rm = T)) %>% 
+  group_by(city_name, year) %>% 
+  summarise(rainfall_total = sum(rainfall, na.rm = T)) %>% 
+  ungroup()
 
-rainfall_month %>% 
-  count(year, sort = TRUE) %>% 
-  arrange(desc(year))
+yearly_rainfall %>% 
+  filter(rainfall_total == min(rainfall_total))
 
-rainfall_month %>% 
-  count(mean_rainfall, sort = TRUE) %>% 
-  arrange(desc(mean_rainfall))
 ```
 
 ```{r}
-rainfall_month %>% 
+city_rainfall <- yearly_rainfall %>% 
   ggplot() +
-  geom_linerange(aes(x = year, ymin = 0, ymax = mean_rainfall),
-                 color = "aliceblue",
-                 alpha = 0.2) +
+  geom_linerange(aes(x = year, ymin = 0, ymax = rainfall_total),
+                 color = "#afc3cc") +
   scale_x_continuous(expand = c(0, 0),
-                     breaks = seq(1850, 2020, 20)) +
+                     breaks = seq(1870, 2020, 20)) +
   scale_y_reverse(expand = c(0, 0)) +
   facet_wrap(~city_name, ncol = 3) +
   labs(x = " ",
-       y = "Rainfall in millimeters",
-       title = "Monthly mean rainfall from 1858 to 2019",
+       y = "Rainfall(mm)",
+       title = "Monthly average rainfall in Australia cities from 1870 to 2019",
        caption = "Source: Austrian Bureau of Meteorology") +
   theme_linedraw() +
-  theme(panel.background = element_rect(fill = "#0c9096", 
-                                        color = "#0c9096"),
+  theme(panel.background = element_rect(fill = "#e25822", 
+                                        color = "#e25822"),
         panel.spacing = unit(1, "lines"),
-        strip.background = element_rect(fill = "#6e8d8f",
-                                        color = "#6e8d8f"),
-        strip.text = element_text(size = 13),
+        strip.background = element_rect(fill = "#afc3cc",
+                                        color = "#afc3cc"),
+        strip.text = element_text(size = 13,
+                                  face = "bold",
+                                  color = "#60709c"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.title.x = element_blank(),
         axis.title.y = element_text(size = 9),
         axis.text.x = element_text(size = 7),
-        plot.caption = element_text(color = "#6e8d8f"))
+        plot.caption = element_text(color = "#60709c"))
 ```
+
+```{r}
+library(ggforce)
+library(cowplot)
+library(glue)
+
+yearly_rainfall_plot <- yearly_rainfall %>% 
+  ggplot(aes(year, rainfall_total)) +
+  geom_point(color =  "#afc3cc",
+             na.rm = TRUE) +
+  geom_path(color =  "#afc3cc",
+            na.rm = TRUE) +
+  geom_mark_circle(aes(filter = year == 2019 & rainfall_total == min(rainfall_total),
+                       label = glue("total rainfall: {round(rainfall_total, 2)} mm"),
+                       description = "Annual rainfall at a 60-year low"),
+                   label.buffer = unit(6, "cm"),
+                   label.fontface = 10,
+                   con.linetype = 2) +
+  scale_x_continuous(limits = c(1900, 2020),
+                     breaks = seq(1900, 2020, 10)) +
+  scale_y_continuous(limits = c(0, 50),
+                     breaks = seq(0, 50, 10)) +
+  labs(x = "",
+       y = "rainfall (mm)",
+       title = "Average yearly rainfall in Australia from 1900 to 2019",
+       subtitle = "Canberra had 11.8mm in 2019") +
+  theme_minimal_grid(12)
+  
+              
+```
+
+```{r}
+library(patchwork)
+
+plot <- (yearly_rainfall_plot/city_rainfall)
+
+## Next challenge: It would be more supportive to add a map on the bottome left of the first plot to identify cities location.
+```
+
