@@ -101,6 +101,6 @@ plot <- wrap_plots(list(guide, genre_plot),
   plot_annotation(title = "Annual feature patterns in playlist genre",
                   subtitle = "A colored dot represents each playlist genre. Path represents the mean of density in danceability of each genre in 2015.")
 
-ggsave(here("2020", "SpotifySongsPatterns.png"), width = 26, height= 20, units = "cm")
+ggsave(here("2020", "W4_SpotifySongsPatterns.png"), width = 26, height= 20, units = "cm")
 
 ```
