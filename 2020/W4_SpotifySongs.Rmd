@@ -13,8 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidytuesdayR)
 library(tidyverse)
 library(lubridate)
-library(cowplot)
-library(paletteer)
+library(patchwork)
+library(here)
 ```
 
 
@@ -29,6 +29,7 @@ glimpse(spotify_songs)
 spotify_songs %>% 
   count(playlist_genre, sort = TRUE)
 ```
+
 ```{r}
 spotify <- spotify_songs %>% 
   rename(genre = playlist_genre,
@@ -43,7 +44,8 @@ spotify <- spotify_songs %>%
   summarise_at(vars(everything()), mean) %>% 
   pivot_longer(-c(genre, year), 
                names_to = "feature", 
-               values_to = "mean")
+               values_to = "mean") %>% 
+  mutate(feature = str_to_title(feature))
 ```
 
 
@@ -85,18 +87,20 @@ genre_plot <- spotify %>%
         axis.text.x = element_blank())
 
 guide <- spotify %>% 
-  filter(year == 2015, feature == "danceability") %>% 
+  filter(year == 2015, feature == "Danceability") %>% 
   ggplot(aes(genre, mean, group = year)) + 
   geom_path()+
   geom_point(size = 3, aes(color = genre)) +
   scale_color_manual("Genre", values = dark8equal) +
   theme_void()
 ```
-```{r}
-library(patchwork)
 
+```{r}
 plot <- wrap_plots(list(guide, genre_plot),
                    widths = c(0.25, 0.75)) +
   plot_annotation(title = "Annual feature patterns in playlist genre",
                   subtitle = "A colored dot represents each playlist genre. Path represents the mean of density in danceability of each genre in 2015.")
+
+ggsave(here("2020", "SpotifySongsPatterns.png"), width = 26, height= 20, units = "cm")
+
 ```
