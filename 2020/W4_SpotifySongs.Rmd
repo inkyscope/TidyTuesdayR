@@ -1,0 +1,102 @@
+---
+title: "SpotifySongs"
+author: "Sung Inkyung"
+date: '2020 1 24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+###Source[blogpost by jake kaupp] (https://github.com/jkaupp/tidytuesdays/blob/master/2019/week14/R/analysis.R)
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(lubridate)
+library(cowplot)
+library(paletteer)
+```
+
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2020-01-21') 
+
+
+spotify_songs <- tuesdata$spotify_songs
+
+glimpse(spotify_songs)
+
+spotify_songs %>% 
+  count(playlist_genre, sort = TRUE)
+```
+```{r}
+spotify <- spotify_songs %>% 
+  rename(genre = playlist_genre,
+         subgenre = playlist_subgenre,
+         duration = duration_ms) %>%
+  mutate(track_album_release_date = as_date(track_album_release_date),
+         year = year(track_album_release_date),
+         genre = str_to_upper(genre)) %>% 
+  select(genre, year, danceability, energy, loudness, speechiness, liveness, valence, tempo, duration) %>% 
+  mutate_at(vars(-c(genre, year)), scale) %>% 
+  group_by(genre, year) %>% 
+  summarise_at(vars(everything()), mean) %>% 
+  pivot_longer(-c(genre, year), 
+               names_to = "feature", 
+               values_to = "mean")
+```
+
+
+```{r}
+dark8equal = c("#1B9E77", "#666666", "#66A61E", "#7570B3", "#A6761D", "#D95F02", "#E6AB02", "#E7298A")
+
+feature_plot <- spotify %>% 
+  filter(between(year, 1980, 2020),
+         !is.na(year)) %>% 
+  ggplot(aes(year, mean, group = genre)) +
+  geom_path() +
+  geom_point(size = 1,
+             aes(color = genre)) +
+  facet_grid(genre ~ feature) +
+  scale_color_manual(values = dark8equal) +
+  scale_x_continuous(breaks = seq(1980, 2020, 10)) +
+  labs(x = " ",
+       y = " ",
+       tittle = "Mean of features by playlist genre between 1980 and 2020")
+```
+
+
+```{r}
+genre_plot <- spotify %>% 
+  filter(between(year, 2015, 2020),
+         !is.na(year)) %>% 
+  ggplot(aes(genre, mean, group = year)) +
+  geom_path(show.legend = FALSE) +
+  geom_point(size = 1,
+             aes(color = genre)) +
+  facet_grid(year ~ feature) +
+  scale_color_manual(values = dark8equal) +
+  labs(x = " ",
+       y = " ",
+       tittle = "Mean of features by playlist genre between 1980 and 2020",
+       caption = "Source: Spotify") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_blank())
+
+guide <- spotify %>% 
+  filter(year == 2015, feature == "danceability") %>% 
+  ggplot(aes(genre, mean, group = year)) + 
+  geom_path()+
+  geom_point(size = 3, aes(color = genre)) +
+  scale_color_manual("Genre", values = dark8equal) +
+  theme_void()
+```
+```{r}
+library(patchwork)
+
+plot <- wrap_plots(list(guide, genre_plot),
+                   widths = c(0.25, 0.75)) +
+  plot_annotation(title = "Annual feature patterns in playlist genre",
+                  subtitle = "A colored dot represents each playlist genre. Path represents the mean of density in danceability of each genre in 2015.")
+```
