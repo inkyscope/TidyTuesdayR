@@ -34,6 +34,10 @@ I'd like to thank you from the core of my heart for contributors to make #Tidy T
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Spotify songs by [Spotify](https://www.rcharlie.com/spotifyr/)
+![Song Genres](https://github.com/inkyscope/datavizRscope/blob/master/2020/W4_SpotifySongsFeatures.png)
+
+
 ### Australian Fires by [Bureau of Meteorology](http://www.bom.gov.au/climate/data/stations/)
 ![Australian Fires](https://github.com/inkyscope/datavizRscope/blob/master/2020/W2_AustraliaRainfall.png)
 
