@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidytuesdayR)
 library(tidyverse)
 library(lubridate)
+library(paletteer)
 library(patchwork)
 library(here)
 ```
@@ -116,7 +117,9 @@ genre <- spotify_songs %>%
 popularity <- spotify_songs %>% 
   distinct(track_id, .keep_all = TRUE) %>% 
   group_by(playlist_genre) %>%
-  summarise_at(vars(track_popularity, danceability, tempo, loudness, duration_ms, speechiness, valence, instrumentalness), mean, na.rm = TRUE) %>%
+  summarise_at(vars(popularity = track_popularity, danceability, tempo, loudness, 
+                    duration = duration_ms, speechiness, valence, instrumentalness), 
+               mean, na.rm = TRUE) %>%
   mutate_at(vars(-playlist_genre), scale) 
 
 genre_feature <- popularity %>% 
