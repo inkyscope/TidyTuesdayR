@@ -102,5 +102,46 @@ plot <- wrap_plots(list(guide, genre_plot),
                   subtitle = "A colored dot represents each playlist genre. Path represents the mean of density in danceability of each genre in 2015.")
 
 ggsave(here("2020", "W4_SpotifySongsPatterns.png"), width = 26, height= 20, units = "cm")
-
 ```
+
+
+```{r}
+genre <- spotify_songs %>% 
+  distinct(track_id, .keep_all = TRUE) %>% 
+  group_by(playlist_genre) %>%
+  summarise(n_songs = length(unique(track_name))) %>% 
+  filter(n_songs > 5)
+
+
+popularity <- spotify_songs %>% 
+  distinct(track_id, .keep_all = TRUE) %>% 
+  group_by(playlist_genre) %>%
+  summarise_at(vars(track_popularity, danceability, tempo, loudness, duration_ms, speechiness, valence, instrumentalness), mean, na.rm = TRUE) %>%
+  mutate_at(vars(-playlist_genre), scale) 
+
+genre_feature <- popularity %>% 
+  left_join(genre, by = "playlist_genre") %>% 
+  select(-n_songs) %>% 
+  pivot_longer(-playlist_genre) %>% 
+  mutate(name = str_to_title(name)) %>% 
+  ggplot(aes(name, value, fill = playlist_genre)) +
+  geom_col() +
+  coord_polar() +
+  facet_wrap(~playlist_genre) +
+  scale_fill_paletteer_d(palette = "jcolors::pal5") +
+  theme_minimal() +
+  labs(x = " ",
+       y = " ",
+       title = "Features by playlist genre",
+       caption = "Source: Spotify | Graphic: Sung Inkyung") +
+  theme(legend.position = "none",
+        axis.text.y = element_blank(),
+        panel.spacing.x=unit(3, "lines"),
+        panel.spacing.y=unit(3, "lines"),
+        axis.text.x = element_text(size = 7),
+        strip.text = element_text(size = 11))
+
+ggsave(here("2020", "W4_SpotifySongsFeatures.png"), width = 26, height= 20, units = "cm")
+```
+
+
