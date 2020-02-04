@@ -1,0 +1,75 @@
+---
+title: "TreesSF"
+author: "Sung Inkyung"
+date: '2020 2 4 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggmap)
+library(osmdata)
+library(sf)
+library(paletteer)
+library(here)
+```
+
+
+```{r}
+sf_trees <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-28/sf_trees.csv')
+```
+
+
+```{r}
+sf_trees_cleaned <- sf_trees %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(between(year, 1960, 2019)) %>% 
+  separate(species, c("scientific_name", "common_name"), sep = " :: ") %>% 
+  filter(!is.na(common_name),
+         !is.na(caretaker),
+         !is.na(longitude),
+         !is.na(latitude),
+         !is.na(date)) %>% 
+  mutate(decade = floor(year / 10) * 10) 
+
+top_sf_trees <- sf_trees_cleaned %>% 
+  count(common_name, sort = TRUE) %>% 
+  top_n(6) %>% 
+  pull(common_name)
+
+```
+
+
+```{r}
+tree_plot <- sf_trees_cleaned %>% 
+  filter(common_name %in% top_sf_trees) %>% 
+  ggplot() +
+  geom_point(aes(longitude, latitude, color = common_name),
+             size = 0.3, alpha = 0.7) +
+  coord_equal() +
+  scale_color_paletteer_d("ghibli::YesterdayMedium") +
+  facet_wrap(~decade) +
+  labs(title = "Tree Chronicles in San Francisco",
+       subtitle = "Top 6 Common Tree Species since 1960",
+       color = "Top 6 trees",
+       caption = "Source: sfgov.org | Graphic: @inkyscope") +
+  guides(color = guide_legend(override.aes = list(size = 3))) +
+  theme_void() +
+  theme(legend.text = element_text(size = 9),
+        plot.title = element_text(size = 16,
+                                  margin= margin(b = 10)),
+        plot.subtitle = element_text(size = 13, 
+                                     margin = margin(b = 15)),
+        strip.text.x = element_text(size = 10,
+                                    face = "bold"),
+        plot.caption = element_text(size = 9),
+        plot.margin = unit(c(0, 0.5, 0, 0.5), "cm"))
+
+ggsave(here("2020", "W5_TreeChronicles.png"), width = 16, height = 12, units = "cm")
+  
+```
+
