@@ -84,7 +84,7 @@ hotel_booked %>%
                                title.hjust = 0.5, 
                                label.position = "bottom"))
 
-ggsave(here("2020", "W2_Hotelbookings.png"), width = 18, height = 16, units = "cm")
+ggsave(here("2020", "W7_Hotelbookings.png"), width = 18, height = 16, units = "cm")
 
 ```
 
