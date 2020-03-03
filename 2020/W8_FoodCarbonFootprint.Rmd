@@ -136,7 +136,3 @@ diet_plot <- diet %>%
 ggsave(here("2020", "W8_ContinentsFoodCo2.png"), width = 28, height = 24, units = "cm")
 ```
 
-
-```{r}
-```
-
