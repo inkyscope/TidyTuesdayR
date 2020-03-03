@@ -14,6 +14,7 @@ library(tidyverse)
 library(ggraph)
 library(ggforce)
 library(colorspace)
+library(paletteer)
 library(here)
 ```
 
@@ -77,5 +78,65 @@ food <- ggplot(plot_data) +
   theme(axis.text = element_blank())
 
 ggsave(here("2020", "W8_FoodCarbonFootprint.png"), width = 11, height = 15, units = "cm")
+```
+
+```{r ternary plot}
+library(tricolore)
+library(ggtern)
+```
+
+
+```{r}
+diet <- food_consumption %>% 
+  mutate(continent = countrycode::countrycode(country, 
+                                              origin = "country.name", 
+                                              destination = "continent"),
+         category = case_when(food_category %in% c("Wheat and Wheat Products",
+                                                   "Soybeans", "Rice", 
+                                                   "Nuts inc. Peanut Butter")
+                              ~ "Grains",
+                              food_category %in% c("Milk - inc. cheese",
+                                                   "Eggs") ~ "Dairy",
+                              TRUE ~ "Meat_and_Fish")) %>% 
+  group_by(continent, country, category) %>% 
+  summarize(co2 = sum(co2_emmission)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = category, values_from = co2)
+```
+
+
+```{r}
+tern_plot <- Tricolore(diet, "Dairy", "Meat_and_Fish",
+                       "Grains", breaks = 5, show_data = FALSE)
+
+diet_plot <- diet %>% 
+  drop_na() %>% 
+  mutate(color = tern_plot$rgb) %>% 
+  ggtern(aes(x = Dairy,
+             y = Meat_and_Fish, 
+             z = Grains,
+             color = color)) +
+  geom_point(size = 3) +
+  scale_color_identity() +
+  facet_wrap(~continent, nrow = 2) +
+  labs(title = "CO2 footprints by food category",
+       subtitle = "Discrepancy of food category is noticeable between continents ",
+       caption = "Source: nu3 | Graphic: Sung Inkyung") +
+  theme(plot.title = element_text(margin = margin(b = 20),
+                                  size = 20,
+                                  face = "bold"),
+        plot.subtitle = element_text(margin = margin(b = 30),
+                                     size = 16),
+        plot.caption = element_text(margin = margin(20, 0, 0, 0)),
+        plot.margin = margin(20, 20, 20, 20),
+        panel.spacing.y = unit(2, "lines"),
+        strip.text = element_text(size = 11)) +
+  theme_linedraw()
+
+ggsave(here("2020", "W8_ContinentsFoodCo2.png"), width = 28, height = 24, units = "cm")
+```
+
+
+```{r}
 ```
 
