@@ -53,9 +53,6 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Parking tickets by hour of day by [Open Data Philly](https://www.opendataphilly.org/dataset/parking-violations)
 ![Philadelphia](https://github.com/inkyscope/datavizRscope/blob/master/figures/ParkingTickets.png)
 
-### US Student Loans Payment by [Department of Education](https://studentaid.ed.gov/sa/about/data-center/student/default)
-![US Student loans](https://github.com/inkyscope/datavizRscope/blob/master/figures/US_StudentLoanPayment.png)
-
 ### Top players in Grand Slams by [Wikipedia](https://en.wikipedia.org/wiki/List_of_Grand_Slam_women%27s_singles_champions)
 ![GrandSlamTimeline](https://github.com/inkyscope/datavizRscope/blob/master/figures/GrandSlamPlayers.png)
 
