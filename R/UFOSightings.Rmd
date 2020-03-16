@@ -1,0 +1,80 @@
+---
+title: "UFOSightings"
+author: "Sung Inkyung"
+date: '2020 3 16 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(lubridate)
+library(here)
+```
+
+
+```{r}
+ufo_sightings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-25/ufo_sightings.csv")
+```
+```{r}
+ufo_sightings %>% 
+  count(ufo_shape, sort = TRUE)
+
+ufo_sightings %>% 
+  count(date_documented, sort = T) %>% 
+  arrange(desc( n))
+
+```
+
+
+```{r}
+ufo <- ufo_sightings %>% 
+  filter(!is.na(ufo_shape)) %>% 
+  mutate(date_time = dmy_hm(date_time),
+         month = month(date_time),
+         weekday = weekdays(date_time),
+         year = year(date_time)) %>% 
+  filter(year %in% 1990:2014)
+
+## UFO color code: #7fff00, #ff1693, #9a2be2
+
+world_map <- map_data("world")
+
+ufo_map <- ggplot() +
+  geom_polygon(data = world_map,
+               aes(long, lat, group = group),
+               fill = "#c7ad97",
+               color = "#826148") +
+  geom_point(data = ufo, 
+             aes(longitude, latitude), 
+             alpha = .15, col = "#7fff00",
+             size = .25,
+             na.rm = T)+
+  labs(x = " ",
+       y = " ",
+       title = "UFO Sightings around the World",
+       subtitle = "Distribution of UFO shapes between 1990 and 2014") +
+  theme_void() +
+  theme(plot.title = element_text(hjust = .5,
+                                  size = 16,
+                                  color = "#9a2be2"),
+        plot.subtitle = element_text(hjust = .5,
+                                     size = 13,
+                                     color = "#9a2be2"))
+```
+
+```{r}
+ufo_sightings %>% 
+  ggplot(aes(longitude, latitude)) +
+  borders("world") +
+  geom_point(alpha = .15, col = "#7fff00",
+             size = .5,
+             na.rm = T) +
+  labs(title = "UFO Sightings around the World") +
+  theme_void()
+```
+
