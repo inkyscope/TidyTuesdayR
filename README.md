@@ -40,7 +40,6 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Spotify songs by [Spotify](https://www.rcharlie.com/spotifyr/)
 ![Song Genres](https://github.com/inkyscope/datavizRscope/blob/master/2020/W4_SpotifySongsFeatures.png)
 
-
 ### Australian Fires by [Bureau of Meteorology](http://www.bom.gov.au/climate/data/stations/)
 ![Australian Fires](https://github.com/inkyscope/datavizRscope/blob/master/2020/W2_AustraliaRainfall.png)
 
@@ -58,9 +57,6 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 
 ### Squirrels Traffic by [Squirrel Census](https://data.cityofnewyork.us/Environment/2018-Central-Park-Squirrel-Census-Squirrel-Data/vfnx-vebw)
 ![Squirrels](https://github.com/inkyscope/datavizRscope/blob/master/figures/SquirrelTraffic.png)
-
-### Squirrels Actvites by [Squirrel Census](https://data.cityofnewyork.us/Environment/2018-Central-Park-Squirrel-Census-Squirrel-Data/vfnx-vebw)
-![Squirrels](https://github.com/inkyscope/datavizRscope/blob/master/figures/Activities%20of%20squirrels.png)
 
 ### Anime by [MyAnimeList](https://www.kaggle.com/aludosan/myanimelist-anime-dataset-as-20190204)
 ![DokgoTak](https://github.com/inkyscope/datavizRscope/blob/master/figures/DokgoTak.png)
@@ -86,6 +82,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 
 ### Number by college major and gender by [fivethirtyeight/ACS](https://github.com/fivethirtyeight/data/tree/master/college-majors)
 ![number by college major and gender](https://github.com/inkyscope/datavizRscope/blob/master/figures/NumberInCollegeMajorGender.png)
+
+### UFO Shapes by [NUFORC](http://www.nuforc.org/)
+![UFO Shapes](https://github.com/inkyscope/datavizRscope/blob/master/figures/UFO-Shapes.png)
 
 ### Ramen ratings by [the ramen rater](https://www.theramenrater.com/resources-2/the-list/)
 ![Categories for ramen ratings](https://github.com/inkyscope/datavizRscope/blob/master/figures/categories%20for%20ramen%20rating.png)
