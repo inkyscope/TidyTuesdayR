@@ -74,8 +74,8 @@ plot <- characters %>%
   scale_size_manual(values = c(.1, .5), guide = F) +
   labs(x= "Characters",
        y= "Episode Title",
-       title = "Top 7 Characters in THE OFFICE over 9 Seasons",
-       caption = "Source: Schrute | Graphic: Sung Inkyung") +
+       title = "Characters in The Office (US) Television Show over 9 Seasons",
+       caption = "Source: schrute | Graphic: Sung Inkyung") +
   theme_minimal() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
@@ -83,7 +83,7 @@ plot <- characters %>%
                                    colour = "#d2cac9"),
         plot.title = element_text(margin = margin(b = 20),
                                   face = "bold",
-                                  size = 14),
+                                  size = 12),
         plot.caption = element_text(margin = margin(t = 15),
                                     size = 9),
         axis.text.x = element_text(margin = margin(t = -3, r = 0, b = 0, l = 0),
