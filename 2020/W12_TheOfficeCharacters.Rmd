@@ -1,0 +1,98 @@
+---
+title: "Untitled"
+author: "Sung Inkyung"
+date: '2020 3 18 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+```{r}
+remove_regex <- "[:punct:]|[:digit:]|parts |part |the |and"
+
+office <- schrute::theoffice %>%
+  mutate(
+    season = as.numeric(season),
+    episode = as.numeric(episode),
+    episode_name = str_to_lower(episode_name),
+    episode_name = str_remove_all(episode_name, remove_regex),
+    episode_name = str_trim(episode_name)
+  ) %>%
+  select(season, episode, title = episode_name, character) 
+
+characters <- office %>% 
+  count(title, character) %>% 
+  add_count(character, wt = n, name = "character_count") %>% 
+  filter(character_count > 500) %>% 
+  add_count(title, wt = n, name = "title_count") %>% 
+  filter(title_count > 300) 
+
+```
+    
+   
+```{r}
+plot <- characters %>% 
+  mutate(color = case_when(
+    character == "Michael" ~ "#663068",
+    character == "Dwight" ~ "#89f1b6",
+    character == "Jim" ~ "#fff68f",
+    character == "Pam" ~ "#d15fee",
+    character == "Andy" ~ "#00ccff",
+    character == "Angela" ~ "#ffb947",
+    character == "Kevin" ~ "#ff7256",
+  # character == "Erin" ~ "#3d0623",
+  # character == "Oscar" ~ "#e7baa0",
+  # character == "Darryl" ~ "#7ac5cd",
+  # character == "Phyllis" ~ "#6d7973",
+  # character == "Kelly" ~ "#ffc7d6",
+  # character == "Toby" ~ "#b2b2a2",
+  # character == "Jan" ~ "#1488c5",
+    T ~ "gray40"
+    )) %>% 
+  ggplot(aes(x = 0,
+             y = title,
+             xend = character,
+             yend = 1,
+             color = "color",
+             alpha = (color != "gray70")
+            )) +
+  geom_curve(aes(color = color),
+             curvature = -.5,
+             arrow = arrow(length = unit(.01, "npc")),
+             show.legend = F) +
+  scale_x_discrete()+
+  scale_y_discrete()+
+  scale_color_identity()+
+  scale_alpha_manual(values = c(.2, .5), guide = F) +
+  scale_size_manual(values = c(.1, .5), guide = F) +
+  labs(x= "Characters",
+       y= "Episode Title",
+       title = "Top 7 Characters in THE OFFICE over 9 Seasons",
+       caption = "Source: Schrute | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.grid = element_blank(),
+        plot.background = element_rect(fill = "#d2cac9", 
+                                   colour = "#d2cac9"),
+        plot.title = element_text(margin = margin(b = 20),
+                                  face = "bold",
+                                  size = 14),
+        plot.caption = element_text(margin = margin(t = 15),
+                                    size = 9),
+        axis.text.x = element_text(margin = margin(t = -3, r = 0, b = 0, l = 0),
+                                   angle = 40,
+                                   hjust = 1),
+        axis.title.x = element_text(margin = margin(t = 10),
+                                    hjust = 1),
+        axis.title.y = element_text(margin = margin(r = 15),
+                                    hjust = 1))
+
+ggsave(here("2020", "W12_TheOfficeCharacters.png"), width = 7, height = 6.5)
+```
