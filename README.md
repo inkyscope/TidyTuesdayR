@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://statquest.org/video-index/)|StatQuest |Josh Starmer |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Characters in THE OFFICE by [schrute](https://bradlindblad.github.io/schrute/index.html)
+![The Office](https://github.com/inkyscope/datavizRscope/blob/master/2020/W12_TheOfficeCharacters.png)
+
 ### Food's Carbon Footprints by [nu3](https://www.nu3.de/blogs/nutrition/food-carbon-footprint-index-2018)
 ![Food CO2](https://github.com/inkyscope/datavizRscope/blob/master/2020/W8_ContinentsFoodCo2.png)
 
