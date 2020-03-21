@@ -86,11 +86,14 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Number by college major and gender by [fivethirtyeight/ACS](https://github.com/fivethirtyeight/data/tree/master/college-majors)
 ![number by college major and gender](https://github.com/inkyscope/datavizRscope/blob/master/figures/NumberInCollegeMajorGender.png)
 
-### UFO Shapes by [NUFORC](http://www.nuforc.org/)
-![UFO Shapes](https://github.com/inkyscope/datavizRscope/blob/master/figures/UFO-Shapes.png)
-
 ### Ramen ratings by [the ramen rater](https://www.theramenrater.com/resources-2/the-list/)
 ![Categories for ramen ratings](https://github.com/inkyscope/datavizRscope/blob/master/figures/categories%20for%20ramen%20rating.png)
+
+### Meteorites Impacts by [NASA](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
+![Meteorites](https://github.com/inkyscope/datavizRscope/blob/master/figures/MeteoritesImpacts.png)
+
+### UFO Shapes by [NUFORC](http://www.nuforc.org/)
+![UFO Shapes](https://github.com/inkyscope/datavizRscope/blob/master/figures/UFO-Shapes.png)
 
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
@@ -118,9 +121,6 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 
 ### Global plastic wastes in 2010 by [Our World in Data](https://ourworldindata.org/plastic-pollution)
 ![Global plastic wastes in 2010](https://github.com/inkyscope/datavizRscope/blob/master/figures/GDP%20vs%20plastic%20wastes.png)
-
-### Global plastic wastes world map in 2010 by [Our World in Data](https://ourworldindata.org/plastic-pollution)
-![Global plastic wastes world map in 2010](https://github.com/inkyscope/datavizRscope/blob/master/figures/mismanaged%20plastic%20wastes_worldmap.png)
 
 ### Bike traffic in Seatle by [seatle.gov](http://www.seattle.gov/transportation/projects-and-programs/programs/bike-program/bike-counters)
 ![Weekly seasonal trend of bike traffic in Seatle](https://github.com/inkyscope/datavizRscope/blob/master/figures/bike-traffic-in-Seastle.png)
