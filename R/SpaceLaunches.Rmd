@@ -121,7 +121,7 @@ launch_life <- launches_count %>%
        y = "Percentage of Launches",
        title = "Status of Space Launches over Time",
        subtitle = "Back to Back trials and errors to success have been  building up persistently",
-       caption = "Source: JSR laumnch Vehicle Database | Graphic: Sung Inkyung") +
+       caption = "Source: JSR launch Vehicle Database | Graphic: Sung Inkyung") +
   theme_minimal() +
   theme(panel.grid = element_blank(),
         legend.position = "bottom",
