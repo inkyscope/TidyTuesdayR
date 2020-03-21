@@ -113,6 +113,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Cheese consumption in USA by [USDA](https://www.ers.usda.gov/data-products/dairy-data/documentation/#Loc3)
 ![Cheese consumption](https://github.com/inkyscope/datavizRscope/blob/master/figures/Cheese%20consumption%20in%20USA.png)
 
+### Space Launches by [JSR Launch Vehicle Database](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-01-15)
+![Space Launches](https://github.com/inkyscope/datavizRscope/blob/master/figures/SpaceLaunches.png)
+
 ### Global plastic wastes in 2010 by [Our World in Data](https://ourworldindata.org/plastic-pollution)
 ![Global plastic wastes in 2010](https://github.com/inkyscope/datavizRscope/blob/master/figures/GDP%20vs%20plastic%20wastes.png)
 
