@@ -25,7 +25,8 @@ launches %>%
   count(category, sort = T)
 
 ```
-
+### Source[tidytuesday by @perspectivalean] (https://github.com/JoseEchave/tidy-tuesdays/blob/master/2020/week_7_hotels/hotel%20bookings%20github.Rmd)
+### Source[tidytuesday by @RichyyL] (https://github.com/Richyyl/Tidy-Tuesday/blob/master/2019/Space%20Race_14_01_19/Space_race-14-01-19.Rmd)
 ```{r}
 agencies_processed <- agencies %>% 
   mutate(tstart = str_trim(word(tstart, 1), side = "both"),
@@ -36,9 +37,10 @@ agencies_processed <- agencies %>%
   select(tstart, tstop, agency_type, count) %>% 
   replace_na(list(tstart = " ")) %>% 
   filter(tstart != "na")
+
+## about to give up on this approach on the plot becasue I had hard time to grraphle with this way to extract year from as.character date. gave up getting help from Stackoverflow, moved on to #tidytuesday contributors on twitter!!! so lucky to come across @RichyyL
 ```
 
-                     
 ```{r}
 agency_life <- agencies_processed %>% 
   ggplot() +
