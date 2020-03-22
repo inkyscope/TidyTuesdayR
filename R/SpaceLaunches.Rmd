@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(lubridate)
 library(ggtext)
 library(here)
 ```
@@ -38,7 +39,7 @@ agencies_processed <- agencies %>%
   replace_na(list(tstart = " ")) %>% 
   filter(tstart != "na")
 
-## about to give up on this approach on the plot becasue I had hard time to grraphle with this way to extract year from as.character date. gave up getting help from Stackoverflow, moved on to #tidytuesday contributors on twitter!!! so lucky to come across @RichyyL
+## about to give up on this approach to the plot becasue I had (dxxx)hard time to grrapple with this to extract year from as.character date. gave up getting help from Stackoverflow, moved on to #tidytuesday contributors on twitter!!! so lucky to come across @RichyyL, thanks a ton*value
 ```
 
 ```{r}
@@ -51,7 +52,8 @@ agency_life <- agencies_processed %>%
   scale_color_manual(values = c("#b4005b", "#18d667", "#383b39" ),
                      labels = c("<span style = 'color: #b4005b'>Private</span>", 
                                 "<span style = 'color: #18d667'>StartUp</span>",
-                                "<span style = 'color: #383b39'>State</span>")) +
+                                "<span style = 'color: #383b39'>State</span>")) + 
+  # values = set_names(c("#b4005b", "#18d667", "#383b39"), c( "Private", "StartUp", "State)
   labs(x = "",
        y = "",
        title = "Life span of Space Agencies Run by State, Private and Start up",
