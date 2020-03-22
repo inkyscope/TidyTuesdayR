@@ -34,6 +34,15 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Machine Learning |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Meteorites Impacts by [NASA](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
+![Meteorites](https://github.com/inkyscope/datavizRscope/blob/master/figures/MeteoritesImpacts.png)
+
+### Space Launches by [JSR Launch Vehicle Database](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-01-15)
+![Space Launches](https://github.com/inkyscope/datavizRscope/blob/master/figures/SpaceLaunches.png)
+
+### UFO Shapes by [NUFORC](http://www.nuforc.org/)
+![UFO Shapes](https://github.com/inkyscope/datavizRscope/blob/master/figures/UFO-Shapes.png)
+
 ### Characters in THE OFFICE by [schrute](https://bradlindblad.github.io/schrute/index.html)
 ![The Office](https://github.com/inkyscope/datavizRscope/blob/master/2020/W12_TheOfficeCharacters.png)
 
@@ -83,17 +92,8 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Roman Emperors Dynasty Chronicles by [Wikipedia / Zonination](https://github.com/zonination/emperors/blob/master/README.md)
 ![Roman Emperors Dynasty Chronicles](https://github.com/inkyscope/datavizRscope/blob/master/figures/RomanEmperorsDynastyChronicles.png)
 
-### Number by college major and gender by [fivethirtyeight/ACS](https://github.com/fivethirtyeight/data/tree/master/college-majors)
-![number by college major and gender](https://github.com/inkyscope/datavizRscope/blob/master/figures/NumberInCollegeMajorGender.png)
-
 ### Ramen ratings by [the ramen rater](https://www.theramenrater.com/resources-2/the-list/)
 ![Categories for ramen ratings](https://github.com/inkyscope/datavizRscope/blob/master/figures/categories%20for%20ramen%20rating.png)
-
-### Meteorites Impacts by [NASA](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
-![Meteorites](https://github.com/inkyscope/datavizRscope/blob/master/figures/MeteoritesImpacts.png)
-
-### UFO Shapes by [NUFORC](http://www.nuforc.org/)
-![UFO Shapes](https://github.com/inkyscope/datavizRscope/blob/master/figures/UFO-Shapes.png)
 
 ### Wildlife strike time zone by [FAA](https://wildlife.faa.gov/home)
 ![Wildlife strike](https://github.com/inkyscope/datavizRscope/blob/master/figures/%20Wildlife-impacts-timezone.png)
@@ -115,9 +115,6 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 
 ### Cheese consumption in USA by [USDA](https://www.ers.usda.gov/data-products/dairy-data/documentation/#Loc3)
 ![Cheese consumption](https://github.com/inkyscope/datavizRscope/blob/master/figures/Cheese%20consumption%20in%20USA.png)
-
-### Space Launches by [JSR Launch Vehicle Database](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-01-15)
-![Space Launches](https://github.com/inkyscope/datavizRscope/blob/master/figures/SpaceLaunches.png)
 
 ### Global plastic wastes in 2010 by [Our World in Data](https://ourworldindata.org/plastic-pollution)
 ![Global plastic wastes in 2010](https://github.com/inkyscope/datavizRscope/blob/master/figures/GDP%20vs%20plastic%20wastes.png)
