@@ -1,7 +1,7 @@
 ---
 title: "MeteoritesImpacts"
 author: "Sung Inkyung"
-date: '2020 3 21 '
+date: '2020 3 22 '
 output: html_document
 ---
 
@@ -12,12 +12,17 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(ggthemes)
+library(ggforce)
+library(glue)
 library(here)
 ```
 
 
 ```{r}
 meteorites <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-11/meteorites.csv")
+
+meteorites %>% 
+  filter(mass == max(mass, na.rm = TRUE))
 
 ```
 
@@ -27,13 +32,18 @@ meteorites %>%
   count(mass, sort = T) %>% 
   arrange(-mass)
  
-top_10 <- meteorites %>% 
-  top_n(10, mass) %>% 
-  arrange(-mass)
+top <- meteorites %>% 
+  top_n(8, mass) %>% 
+  arrange(-mass) %>% 
+  select(mass, fall, year, name, lat, long) %>% 
+  pivot_wider(id_cols = c(name, mass, lat, long), names_from = fall, values_from = year)
 
 small_mass <-  meteorites %>% 
-  filter(mass < 16000000)
+  filter(mass < 24000000)
 
+annotations <- top_10 %>% 
+  filter(mass >= 50000000) %>% 
+  mutate(description = glue("Mass: {mass/1000000} tons\nFound: {Found}"))
 
 ```
 ### Source[NASA Color Codes] (https://nasa.github.io/nasawds-site/components/colors/) 
@@ -41,28 +51,37 @@ small_mass <-  meteorites %>%
 
 ```{r}
 world <- ggplot() +
-  borders("world", color = "#5b616b", fill = "#5b616b") +
+  borders("world", color = "#94bfa2", fill = "#2e8540") +
   coord_map(projection = "mollweid", 
             orientation = c(90, 0, 0)) +
-  geom_point(data = top_10, 
+  geom_point(data = top, 
              na.rm = T,
              color = "#99231b",
              aes(long, lat, size = mass),
              alpha = 1) +
-  geom_text(data = top_10,
+  geom_text(data = top,
              aes(x = long, y = lat,
                 label = name), 
             color = "white",
-             size = 3,
-            hjust = 1,
-            vjust = 1) +
+            fontface = "bold",
+             size = 4,
+            hjust = 1) +
+  geom_mark_circle(data = annotations, 
+                   aes(long +.22, lat+.22,
+                       label = toupper(name),
+                       description = description),
+                   expand = unit(2, "mm"), 
+                   label.fill = "#5b616b", 
+                   label.colour = "#aeb0b5", 
+                   con.colour = "#d6d7d9", 
+                   label.margin = margin(2, 3, 2, 3, "mm")) +
   geom_point(data = small_mass, 
              na.rm = T,
              color = "#e59892",
              aes(long, lat, size = mass),
              alpha = .1) +
   labs(title = "Meteorites Impacts on Earth",
-       subtitle = "Red dot represents top 10 meteorites impacts with a mass bigger than 16tons.\nHoba is the biggest meteorite ever found on earth. It weighs 60tons and found in 1920.",
+       subtitle = "Red dot represents meteorites impacts with a mass bigger than 24tons.",
        caption = "Source: NASA | Graphic: Sung Inkyung") +
   theme_map() +
   theme(legend.position = "none",
@@ -79,11 +98,11 @@ world <- ggplot() +
                                      color = "#a6e5d8",
                                      margin = margin(b = 20)),
         plot.caption = element_text(size = 9,
-                                    color = "#e1f3f8",
+                                    color = "#dce4ef",
                                     margin = margin(t = 10)),
         plot.margin = unit(c(1, 1, 1, 1), "cm"))
 
-ggsave(here("figures", "MeteoritesImpacts.png"), width = 9, height = 7)
+ggsave(here("figures", "MeteoritesImpacts.png"), width = 11, height = 10)
 
   
 ```
