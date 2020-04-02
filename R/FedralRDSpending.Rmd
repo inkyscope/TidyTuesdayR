@@ -1,0 +1,89 @@
+---
+title: "Federal R&D Spending"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(GGally)
+library(here)
+```
+
+
+```{r}
+fed_spendings <- read.csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-12/fed_r_d_spending.csv")
+
+fed_spendings %>% 
+  count(department, sort = T) %>% 
+  arrange(-n)
+```
+
+### Source[ggally::ggcorr] (https://briatte.github.io/ggcorr/#controlling-the-color-palette)
+```{r correlations}
+
+fed_spendings_wide <- fed_spendings %>% 
+  select(department, year, rd_budget) %>% 
+  pivot_wider(names_from = department, values_from = rd_budget)
+
+fed_spendings_wide %>% 
+  column_to_rownames("year") %>% 
+  cor() %>% 
+  round(2) %>% 
+  knitr::kable()
+
+fed_spendings_wide %>% 
+  ggcorr(label = T,
+         nbreaks = 7,
+         low = "steelblue",
+         mid = "white",
+         high = "darkred")
+
+
+fed_spendings_wide %>% 
+  ggcorr(label = T,
+         hjust = .75,
+         color = "gray50",
+         layout.exp = 1,
+         lable_size = 3,
+         label_color = "gray30",
+         label_alpha = T,
+         nbreaks = 7,
+         palette = "RdGy")
+
+fed_spendings_wide %>% 
+  ggcorr(geom = "circle",
+         nbreaks = 7,
+         palette = "RdGy")
+```
+
+
+```{r cluster anlysis}
+
+# scale each variable between 0 and 1
+
+feder_scale <- fed_spendings_wide %>% 
+  mutate_at(vars(-contains("year")),
+            ~scales::rescale(., to = c(0, 1),
+                             from = c(0, max(.))))
+
+feder_scale %>% 
+  head() %>% 
+  round(2) %>% 
+  knitr::kable()
+
+feder_clust <- feder_scale %>% 
+  column_to_rownames("year") %>% 
+  t()
+
+feder_hclust <- feder_clust %>% 
+  dist() %>% # Euclidean distance
+  hclust() # hierarchical cluster on dissimilarity
+
+feder_hclust %>% 
+  plot()
+
+```

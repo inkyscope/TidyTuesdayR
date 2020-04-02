@@ -1,0 +1,138 @@
+---
+title: "NZ_Birds"
+author: "Sung Inkyung"
+date: '2019 11 25 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(cowplot)
+library(here)
+```
+
+
+```{r}
+nz_bird <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-19/nz_bird.csv") %>%
+  drop_na()
+```
+
+
+```{r}
+nz_bird %>% 
+  count(bird_breed, sort = TRUE)
+```
+
+```{r}
+all_votes <- nz_bird %>% 
+  filter(!is.na(bird_breed)) %>% 
+  group_by(bird_breed) %>% 
+  mutate(n = row_number()) %>% 
+  ungroup() %>% 
+  mutate(bird_breed = fct_reorder(bird_breed, n))
+
+
+
+all_plot <- all_votes %>% 
+  ggplot() +
+  geom_bar(aes(bird_breed, fill = vote_rank), 
+           position = position_stack(reverse = T)) +
+  scale_fill_manual(values = c("#fcba03", "grey40", "grey35", "grey30", "grey25")) +
+  scale_y_continuous(breaks = seq(0, 12500, 2000),
+                     labels = scales::comma_format()) +
+  coord_flip() +
+  labs(x = "",
+       y= "",
+       title = "New Zealand Birds of the Year 2019") +
+  theme_minimal_vgrid() +
+  theme(axis.text.y = element_text(size = 11),
+        axis.text.x = element_text(size = 11),
+        legend.text = element_text(size = 9),
+        legend.title = element_text(size = 9))
+  
+
+```
+
+
+```{r}
+df <- nz_bird %>% 
+  group_by(date, hour, bird_breed) %>% 
+  summarize(n = n()) %>% 
+  arrange(date, hour) %>% 
+  group_by(bird_breed) %>% 
+  mutate(csum = cumsum(n)) %>% 
+  ungroup() %>% 
+  mutate(
+    timeline = make_datetime(
+    year(date),
+    month(date),
+    day(date),
+    hour,
+    0,
+    0
+  ))
+
+```
+
+
+```{r}
+top5 <- df %>% 
+  group_by(bird_breed) %>% 
+  summarize (end_vote = last(csum)) %>%
+  top_n(5, end_vote) %>%
+  arrange(desc(end_vote)) %>% 
+  pull(bird_breed)
+
+top_plot <-  df %>% 
+  ggplot() + 
+  geom_step(data = df, 
+            aes(x = timeline, y = csum, 
+            group = bird_breed),
+            color = "gray", direction = "hv") +
+  geom_step(data = df %>% 
+            filter(bird_breed %in% top5),
+            aes(x = timeline, y = csum, color = bird_breed),
+            direction = "hv", size = 1) +
+  geom_point(data = df %>% 
+             filter(bird_breed %in% top5) %>% 
+             group_by(bird_breed) %>% 
+             top_n(1, csum),
+             aes(x = timeline, y = csum, 
+                color = bird_breed), size= 2.5,
+             show.legend = F) +
+  geom_text(data = df %>% 
+              filter(bird_breed %in% top5) %>% 
+              group_by(bird_breed) %>% 
+              top_n(1, csum),
+            aes(
+              x = as_datetime("2019-11-10 20:00:00 UTC"),
+              y = csum, 
+              color = bird_breed, 
+              label = bird_breed),
+            hjust = 0, size = 4) +
+  labs(x = "",
+       y = "Cumulative Number of Votes",
+       title = "New Zealand Bird of the Year 2019",
+       subtitle = "Cumulative number of votes for the top 5 species in NZ Birds",
+       caption = "Source: New Zealand Forest and Bird Org | Graphic: Sung Inkyung")+
+  scale_color_manual(values = c("#2a4d69", 
+                                "#2a2d31", 
+                                "#ff0087",
+                                "#177245", 
+                                "#fcba03")) +
+  scale_x_datetime(#limits = c(as_datetime("2019-10-28 08:00:00 UTC"), as_datetime("2019-11-11 00:00:00 UTC")),
+                   #labels = scales::date_format("%b-%d"),
+                   expand = expand_scale(mult = c(0, 0.15))) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(vjust = 1),
+        plot.subtitle = element_text(vjust = 1),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_blank())
+
+```
