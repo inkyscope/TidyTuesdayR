@@ -1,0 +1,118 @@
+---
+title: "Christmas Birds Counts"
+author: "Sung Inkyung"
+date: '2020 4 5 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(glue)
+library(here)
+```
+
+```{r}
+bird_counts <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-18/bird_counts.csv")
+```
+
+```{r}
+total_count <- bird_counts %>% 
+  group_by(species) %>% 
+  summarise(total = sum(how_many_counted)) %>% 
+  arrange(desc(total)) %>% 
+  filter(total > 20000)
+
+```
+
+```{r}
+set.seed(123)
+
+packs_df <- 
+  bind_cols(total_count, packs) %>% 
+  select(x, y, radius, species) %>% 
+  mutate(id = 1 : n())
+
+packs_df %>% 
+  ggplot() +
+  geom_circle(aes(x0 = x,
+                  y0 = y,
+                  r = radius),
+              fill = "#cd0a39",
+              color = "#cd0a39") +
+  coord_equal() +
+  theme_minimal()
+  
+```
+
+```{r}
+
+
+bird_ranked <- bird_counts %>% 
+  group_by(species) %>% 
+  arrange(species, desc(how_many_counted)) %>% 
+  mutate(rank = 1:n(),
+         total = sum(how_many_counted),
+         total_ratio = how_many_counted / total) %>% 
+  arrange(species, how_many_counted) %>% 
+  mutate(cumul_ratio = cumsum(total_ratio))
+
+
+
+cols <-
+  c("#c4b49a", "#c4b49a", "#c4b49a", "#c4b49a",
+    "#c4b49a", "#ff9797", "#c4b49a", "#c4b49a",
+    "#c4b49a", "#779c74", "#a9eede", "#ebe20a",
+    "#c4b49a", "#a78cde", "#c4b49a", "#c4b49a",
+    "#c4b49a", "#c4b49a", "#c4b49a", "#c4b49a",
+    "#c4b49a", "#c4b49a", "#c4b49a", "#c4b49a",
+    "#c4b49a") 
+
+
+pack1 <- packs_df %>% 
+  left_join(bird_ranked %>% 
+              filter(rank == 1),
+            by = "species")
+
+
+top <- pack1 %>% 
+  select(x, y, species, total) %>% 
+  top_n(5)
+
+
+set.seed(123)
+
+p <-  pack1 %>% 
+  ggplot() +
+  geom_circle(aes(x0 = x,
+                  y0 = y, 
+                  r = radius,
+                  fill = species,
+                  colour = species),
+              size = .1) +
+   geom_text(data = top, 
+             aes(x = x, y = y, 
+                 label = glue("{str_wrap(species, 10)}\n{total}")),
+             lineheight = .9,
+             size = 4,
+             fontface = "bold",
+             color = "black") +
+  scale_fill_manual(values = cols) +
+  scale_color_manual(values = cols) +
+  coord_equal() +
+  labs(x = "",
+       y = "",
+       title = "Top 5 Bird Species Counted During Christmas in Canada",
+       subtitle = "Total counted 1950 - 2017",
+       caption = "Source: Bird Studies Canada | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "none",
+        axis.text = element_blank())
+  p
+  
+  ggsave(here("figures", "ChristmasBirdsCounts.png"))
+```
