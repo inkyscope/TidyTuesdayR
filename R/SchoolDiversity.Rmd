@@ -1,0 +1,107 @@
+---
+title: "SchoolDiversity"
+author: "Sung Inkyung"
+date: '2020 4 11 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(glue)
+library(here)
+```
+
+
+```{r}
+school_diversity <-
+  readr::read_csv(
+    "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-09-24/school_diversity.csv"
+  ) %>%
+  set_names(tolower)
+```
+
+
+```{r}
+asian <- school_diversity %>% 
+  select(leaid, st, school_year, asian)%>% 
+  group_by(leaid) %>% 
+  mutate(n = n()) %>% 
+  ungroup() %>% 
+  filter(n == 2) %>% 
+  pivot_wider(names_from = 'school_year', values_from = 'asian') %>% 
+  mutate(prc_diff = `2016-2017` - `1994-1995`)
+
+asian %>% 
+  select(st, '2016-2017', prc_diff) %>% 
+  top_n(10, prc_diff) %>% 
+  filter(prc_diff > 40)
+
+```
+
+
+```{r}
+asian_plot <- df %>% 
+  ggplot() +
+  geom_curve(aes(
+    x = -10,
+    y = `1994-1995`,
+    xend = `2016-2017`,
+    yend = -30,
+    color = prc_diff
+  ),
+  curvature = -0.4,
+  size = .1,
+  ncp = 10) +
+  scale_x_continuous(breaks = seq(0, 100, 25),
+                     labels = glue::glue("{seq(0, 100, 25)}%")) +
+  scale_y_continuous(breaks = seq(0, 100, 25),
+                     labels = glue::glue("{seq(0, 100, 25)}%")) +
+  scale_color_gradient2(low = "#137a63",
+                        mid = "#d0ad8d", 
+                        high = "#3b0056",
+                        breaks = seq(-100, 100, 50),
+                        limits = c(-100, 100),
+                        labels = glue::glue("{seq(-100, 100, 50)}%")) +
+  guides(color = guide_colorbar(title = "% of Change",
+                                title.position = "top",
+                                title.hjust = .5,
+                                barheight = unit(3, "mm"),
+                                barwidth = unit(70, "mm")))+
+  facet_wrap(~st, nrow = 5) +
+  labs(x = "2016 - 2017",
+       y = "1994 - 1995",
+       title = "Change in Proportion of Asian Students in Schools over States from 1994-95 to 2016-2017",
+       subtitle = "<span style = 'color: #3b0056'>AZ, CA, MT, NJ and NY</span> are the most popular states for <span style = 'color :#3b0056'> Asian students </span> in USA over 40% difference comparing to 1994 - 1995",
+       caption = "Source: The Washington Post / Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 7),
+        legend.direction = "horizontal",
+        legend.spacing.x = unit(0, units = "cm"),
+        panel.background = element_rect(fill = "#b0e0e6"),
+        panel.border = element_rect(color = "transparent",
+                                    fill = "transparent"),
+        plot.title = element_text(size = 16,
+                                  face = "bold",
+                                  hjust = .5),
+        plot.subtitle = element_markdown(size = 13,
+                                         hjust = .5,
+                                         margin = margin(b = 2, unit = "cm")),
+        plot.caption = element_text(size = 9,
+                                    margin = margin(t = 1, b = .5, unit = "cm")),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        plot.margin = margin(0, 1, 0, .5, unit = "cm"),
+        panel.spacing.y = unit(.5, "cm"))
+                     
+ggsave(here("figures", "SchoolDiversity.png"), width = 33, height = 23, units = "cm")
+             
+```
