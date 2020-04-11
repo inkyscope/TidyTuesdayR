@@ -31,7 +31,7 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://ratsgo.github.io/)|Textmining | Lee KiChang |
 |[:link:](https://nsgrantham.shinyapps.io/tidytuesdayrocks/)|Tidy Tuesday Shinyapp | Neal Grantham |
 |[:link:](https://https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/video-lectures/l)|MIT 18.06 Linear Algebra, Spring 2005| Gilbert Strang|
-|[:link:](https://youtu.be/HB9Nb0odPRs)|Machine Learning |Kim SungBeom |
+|[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
 ### School Diversity by [NCES](https://nces.ed.gov/ccd/pubschuniv.asp)
