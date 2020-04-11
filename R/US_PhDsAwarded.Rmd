@@ -1,0 +1,134 @@
+---
+title: "US_PHDsAwarded"
+author: "Sung Inkyung"
+date: '2020 3 22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(treemapify)
+library(treemap)
+```
+
+
+```{r}
+phd_field <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv") %>% 
+  mutate_all(~replace(., is.na(.), 0))
+
+phd_field %>% 
+  count(broad_field, sort = T)
+
+phd_field %>% 
+  count(n_phds, sort = T)
+```
+
+
+```{r}
+broad_phd <- phd_field %>% 
+  group_by(broad_field) %>% 
+  summarise(phd_num = sum(n_phds, na.rm = T)) %>% 
+  mutate(prc = phd_num / sum(phd_num) * 100,
+         prc = round(prc, 2)) %>% 
+  arrange(-prc) %>% 
+  ungroup() 
+
+plot <- broad_phd %>% 
+  ggplot(aes(fct_reorder(broad_field, prc), prc)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "",
+       y = "Percentage") +
+  theme_minimal()
+
+
+major_phd <- phd_field %>% 
+  group_by(major_field) %>% 
+  summarise(phd_num = sum(n_phds, na.rm = T)) %>% 
+  mutate(prc = phd_num / sum(phd_num) * 100,
+         prc = round(prc, 2)) %>% 
+  top_n(16) %>% 
+  arrange(-prc) %>% 
+  ungroup() 
+
+major_plot <- major_phd %>% 
+  ggplot(aes(fct_reorder(major_field, prc), prc)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "",
+       y = "Percentage") +
+  theme_minimal()
+
+
+field_phd <- phd_field %>% 
+  group_by(field) %>% 
+  summarise(phd_num = sum(n_phds, na.rm = T)) %>% 
+  mutate(prc = phd_num / sum(phd_num) * 100,
+         prc = round(prc, 2)) %>% 
+  top_n(16) %>% 
+  arrange(-prc) %>% 
+  ungroup() 
+
+field_plot <- field_phd %>% 
+  ggplot(aes(fct_reorder(field, prc), prc)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "",
+       y = "Percentage") +
+  theme_minimal()
+
+
+```
+
+```{r}
+
+phd_field %>% 
+  group_by(year, broad_field) %>% 
+  summarise(phd_number = sum(n_phds, na.rm = T)) %>% 
+  ggplot() +
+  geom_line(aes(year, phd_number, col = broad_field)) +
+  scale_y_continuous(labels = scales::comma_format()) +
+  guides(col = guide_legend(title = "")) + 
+  theme_minimal()
+```
+### Source[treemapify] (https://wilkox.org/treemapify/reference/treemapify.html)
+### Source[treemap] (https://www.r-graph-gallery.com/236-custom-your-treemap)
+```{r}
+
+phd_2008 <- phd_field %>%
+  filter(year == 2008) %>% 
+  select(field, n_phds)
+
+phd_2017 <- phd_field %>% 
+  filter(year == 2017) 
+
+```
+
+
+```{r}
+phd_tree <- phd_2017 %>% 
+  treemapify(area = "n_phds",
+             subgroup = "broad_field",
+             subgroup2 = "major_field",
+             subgroup3 = "field")
+
+phd_2017$broad_field <- toupper(phd_2017$broad_field)
+
+#Treemap
+treemap(phd_2017,
+        index = c("broad_field", "major_field", "field"),
+        vSize = "n_phds",
+        palette = "Pastel1",
+        fontsize.labels = c(16, 12, 9),
+        fontcolor.labels = c("white", "#3e4a49", "#432714"),
+        fontface.labels = c(2, 1),
+        overlap.labels = .5,
+        border.lwds = c(2, 1.2, .7),
+        bg.labels = c("transparent"),
+        title = "Breakdown by PhD Fields in USA",
+        inflate.labels = F)
+```
