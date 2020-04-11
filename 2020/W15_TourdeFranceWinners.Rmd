@@ -1,0 +1,82 @@
+---
+title: "Untitled"
+author: "Sung Inkyung"
+date: '2020 4 11 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(here)
+```
+
+
+```{r}
+tdf_winners <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-07/tdf_winners.csv') 
+```
+
+
+```{r}
+top_winners <- tdf_winners %>% 
+  count(winner_name, sort = T) %>% 
+  top_n(9) %>%
+  pull(winner_name)
+
+df <- tdf_winners %>% 
+  group_by(winner_name) %>% 
+  summarise(avg = mean(distance)) %>% 
+  mutate(winner_name = str_squish(winner_name)) %>%
+  mutate(winner_name = fct_reorder(winner_name, avg)) %>% 
+  mutate(color = case_when(winner_name == "Lance Armstrong" ~ "#ef4135",
+                           winner_name == "Bernard Hinault" ~ "#0055a4",
+                           winner_name == "Eddy Merckx" ~ "#0055a4",
+                           winner_name == "Jacques Anquetil"~ "#0055a4",
+                           winner_name == "Miguel Induráin" ~ "#0055a4",
+                           winner_name == "Chris Froome" ~ "#fedb9b",
+                           winner_name == "Greg LeMond" ~ "#fdda24",
+                           winner_name == "Louison Bobet" ~ "#fdda24",
+                           winner_name == "Philippe Thys"  ~ "#fdda24",
+                           TRUE ~ "#9bd4ff"))
+
+```
+### failed to detect Miguel Induráin for 4 times winners 
+### ?how to adjust distance between yaxis text and plot; margin() doesn't work while axis.x can be done with margin()
+
+```{r}
+df_plot <- df %>% 
+  ggplot() +
+  geom_col(aes(winner_name, avg, fill = color),
+           show.legend = F) +
+  scale_y_continuous(limits = c(0, 6000),
+                     breaks = seq(0, 6000, 1000),
+                     labels = scales::comma_format()) +
+  scale_fill_identity() +
+  coord_flip() +
+  labs(x = " ",
+       y = "Average of Distance(km)",
+       title = " Average Distances of Winners at the Tour de France ",
+       subtitle = "Color bar refers to riders with the most overall victories at the Tour de France from 1903 to 2017;<br><span style = 'color:#ef4135'> **7**</span>, <span style = 'color: #0055a4'> **5**</span>,<span style = 'color: #fedb9b'> **4**</span>,<span style = 'color: #fdda24'> **3**</span> and <span style = 'color: #9bd4ff'> **less than 3** </span>times of wins in Tour de France",
+       caption = "Source: tdf | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 18,
+                                  face = "bold"),
+        plot.subtitle = element_markdown(size = 15,
+                                         lineheight = 1.3,
+                                         margin = margin(b = 20)),
+        plot.caption = element_text(size = 11,
+                                    margin = margin(t = 1, b = .5, unit = "cm")),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.y = element_text(margin = margin(r = .01)),
+        plot.margin = margin(0, 1, 0, .5, unit = "cm"))
+
+ggsave(here("2020", "W15_TourdeFranceWinnders.png"), width = 27, height = 25, units = "cm")
+
+```
