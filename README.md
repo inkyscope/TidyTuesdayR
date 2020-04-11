@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Tour de France Winners by [tdf](https://github.com/alastairrushworth/tdf)
+![tdf](hhttps://github.com/inkyscope/datavizRscope/blob/master/2020/W15_TourdeFranceWinnders.png)
+
 ### School Diversity by [NCES](https://nces.ed.gov/ccd/pubschuniv.asp)
 ![Diversit](https://github.com/inkyscope/datavizRscope/blob/master/figures/SchoolDiversity.png)
 
@@ -81,7 +84,7 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ![DokgoTak](https://github.com/inkyscope/datavizRscope/blob/master/figures/DokgoTak.png)
 
 ### Review Rating Trend of Horror Moviews by [IMDB](https://www.kaggle.com/PromptCloudHQ/imdb-horror-movie-dataset)
-![Horror movies](https://github.com/inkyscope/datavizRscope/blob/master/figures/TrendofHorrorMovies.png)
+![Horror movies](https://github.com/inkyscope/datavizRscope/blob/master/2020/W15_TourdeFranceWinnders.png)
 
 ### Time for Horror Movies? by [IMDB](https://www.kaggle.com/PromptCloudHQ/imdb-horror-movie-dataset)
 ![Horror movies](https://github.com/inkyscope/datavizRscope/blob/master/figures/HorrorMovies.png)
