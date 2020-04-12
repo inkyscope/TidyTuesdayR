@@ -84,7 +84,7 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ![DokgoTak](https://github.com/inkyscope/datavizRscope/blob/master/figures/DokgoTak.png)
 
 ### Review Rating Trend of Horror Moviews by [IMDB](https://www.kaggle.com/PromptCloudHQ/imdb-horror-movie-dataset)
-![Horror movies](https://github.com/inkyscope/datavizRscope/blob/master/2020/W15_TourdeFranceWinnders.png)
+![Horror movies](https://github.com/inkyscope/datavizRscope/blob/master/figures/TrendofHorrorMovies.png)
 
 ### Time for Horror Movies? by [IMDB](https://www.kaggle.com/PromptCloudHQ/imdb-horror-movie-dataset)
 ![Horror movies](https://github.com/inkyscope/datavizRscope/blob/master/figures/HorrorMovies.png)
