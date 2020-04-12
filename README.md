@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Tour de France Winners by [tdf](https://github.com/alastairrushworth/tdf)
+![tdf](https://github.com/inkyscope/datavizRscope/blob/master/2020/W15_TourdeFranceWinnders.png)
+
 ### School Diversity by [NCES](https://nces.ed.gov/ccd/pubschuniv.asp)
 ![Diversit](https://github.com/inkyscope/datavizRscope/blob/master/figures/SchoolDiversity.png)
 
