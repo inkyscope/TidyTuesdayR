@@ -1,0 +1,88 @@
+---
+title: "MediaFranchise"
+author: "Sung Inkyung"
+date: '2020 4 14 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(scales)
+```
+
+
+```{r}
+media_franchises <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-07-02/media_franchises.csv")
+```
+
+
+```{r}
+media_franchises %>% 
+  count(revenue_category, sort = T)
+
+media_franchises %>% 
+  count(original_media, sort = T)
+```
+
+
+```{r}
+top_franchise <- media_franchises %>% 
+  dplyr::filter(original_media == "Video game") %>% 
+  group_by(franchise) %>% 
+  summarise(total = sum(revenue)) %>% 
+  top_n(7) %>% 
+  ungroup() %>%   
+  mutate(franchise = fct_reorder(franchise, total),
+         highlight = if_else(franchise == "Pokemon", TRUE, FALSE)) # not working
+
+plot <- top_franchise %>% 
+  ggplot(aes(total, franchise)) +
+  geom_point(aes(color = highlight), size = 7)  +
+  geom_segment(aes(x = 0, xend = total, yend = franchise),
+               color = "gray50",
+               size = 3) +
+  scale_color_manual(values = c("#ffcb05", "#003a70")) +
+  scale_x_continuous(labels = scales::dollar_format(prefix = "$", suffix = "bn")) +
+  labs(x = "Revenue",
+       y = " ",
+       title = "Top 7 Viedo Game by Revenue",
+       subtile = "Pokeman is for the win",
+       caption = "Source: Wikipedia | Graphic: Sung Inkyung") +
+  theme_minimal()
+  
+```
+```{r}
+franchise <- media_franchises %>% 
+  group_by(franchise) %>% 
+  mutate(prc = round(revenue / sum(revenue)*100, 1)) %>% 
+  select(franchise, revenue_category, revenue, prc) %>% 
+  arrange(franchise, -prc) %>% 
+  mutate(id = row_number()) %>% 
+  ungroup()
+
+circle_plot <- franchise %>% 
+  mutate(franchise = str_replace(franchise, "/", "\n")) %>%
+  ggplot() +
+  geom_col(aes(x = id, y = prc, fill = revenue_category)) +
+  facet_wrap(~franchise, ncol = 10) +
+  scale_x_reverse() +
+  scale_fill_brewer(palette = "Paired") +
+  coord_polar(theta = "y") +
+  labs(title = "Proportion of Revenue by Media Franchises",
+       caption = "Source: Wikipedia | Grahpic: Sunginkyung") +
+  theme_void() +
+  theme(legend.position = "bottom",
+        plot.background = element_rect(fill = "#eae39f", color = "#eae39f"),
+        plot.title = element_text(size = 16,
+                                  hjust = .5,
+                                  margin = margin(20, 0, 5, 0)),
+        plot.caption = element_text(size = 9,
+                                    margin = margin(20, 0, 20, 0)),
+        strip.text.x = element_text(size = 3))
+  
+```
+
