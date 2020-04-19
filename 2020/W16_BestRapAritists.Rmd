@@ -1,0 +1,115 @@
+---
+title: "BestRapArtists"
+author: "Sung Inkyung"
+date: '2020 4 19 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(packcircles)
+library(ggtext)
+library(patchwork)
+library(here)
+```
+
+```{r}
+polls <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/polls.csv')
+
+rankings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/rankings.csv')
+
+rankings %>% 
+  filter(!is.na(gender),
+    gender == "mixed") #m:268, f:23, m:20, total:311
+```
+
+```{r}
+df <- rankings %>% 
+  select(ID, title, artist, year, points, gender) %>% 
+  mutate(color = case_when(gender == "male" ~ "#000000",
+                           gender == "female" ~ "#b00000", 
+                           TRUE ~ "#ebff9a"))
+
+df_circles <- df %>% 
+  arrange(year) %>% 
+  circleProgressiveLayout(sizecol = "points", 
+                          sizetype = "area") %>% 
+  mutate(radius = radius * .85)
+
+plotdat <- circleLayoutVertices(df_circles, npoints = 120, 
+                                xysizecols = 1:3, 
+                                sizetype = c("radius", "area"), 
+                                idcol = NULL)
+
+labels_circle <- df %>% 
+  arrange(year) %>% 
+  select(ID, points) %>% 
+  bind_cols(df_circles)
+
+## Source[tidytuesday by @ysamano28] (https://github.com/ysamano/TidyTuesday/blob/master/2020/week_16/week_16_hip_hop.R)
+songs <- df %>% 
+  mutate(note = str_c(ID, ". ", title, " - ", artist),
+         axis_x = rep(1:4, each = 79, length = n()),
+         axis_y = rep(79:1, length = n()))
+
+```
+
+```{r}
+plot <- ggplot() +
+  geom_polygon(data = plotdat,
+               aes(x, y, group = id, 
+                   fill = factor(id)),
+               color = NA) +
+  geom_text(data = labels_circle,
+            aes(x, y, size = points, label = ID),
+            color = "#767cbf",
+            fontface = "bold") +
+  scale_size_continuous(range = c(1, 6)) +
+  scale_fill_manual(values = df$color) +
+  coord_equal() +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+```{r}
+songs_list <- songs[1:20, ] %>% 
+  ggplot(aes(axis_x, axis_y)) +
+  geom_text(aes(label = note),
+            size = 11, hjust = 0,
+            color = "#767c6f") +
+  xlim(1, 5) +
+  scale_y_continuous() +
+  theme_void()
+```
+### Source[patchwork package] (https://patchwork.data-imaginist.com/articles/guides/annotation.html)
+```{r}
+plot_combo <- ( plot | plot1 ) +
+  plot_layout(widths = c(1, .7)) +
+  plot_annotation(title = "The Best Hip-Hop Songs for 40 years",
+       subtitle = "<span style = 'color:#000000'>**Man** rappers: 268 songs</span><br>
+       <span style = 'color:#b00000'>**Woman** rappers: 23 songs</span><br>
+       <span style = 'color:#ebff9a'>**Mixed bands** rappers: 20 songs</span>",
+       caption = "Source: BBC Music | Graphic: Sung Inkyung") &
+  theme(plot.background = element_rect(fill = "#d8cdbe",
+                                       color = "transparent"),
+        plot.title = element_text(color = "#420420",
+                                  size = 16, 
+                                  face = "bold",
+                                  hjust = .5,
+                                  margin = margin(t = 20, b = 10)),
+        plot.subtitle = element_markdown(size = 11, 
+                                         lineheight = 1.1,
+                                         color = "white",
+                                         hjust = .5,
+                                         margin = margin(b = 15)),
+        plot.caption = element_text(size = 7,
+                                    color = "#ebff9a",
+                                    margin = margin(t = 10, b = 10)))
+
+ggsave(here("2020", "W16_BestRapArtists.png"), width = 18, height = 16, units = "cm")
+```
+
