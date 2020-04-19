@@ -1,0 +1,80 @@
+---
+title: "Untitled"
+author: "Sung Inkyung"
+date: '2020 4 19 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+```
+
+
+```{r}
+#Import Data
+wwc_outcomes <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-07-09/wwc_outcomes.csv")
+```
+
+
+```{r}
+wwc_outcomes %>% 
+  count(win_status, sort = T)
+
+wwc_outcomes %>% 
+  count(round, sort = T) 
+
+wwc_outcomes %>% 
+  count(year, sort = T) 
+```
+
+
+```{r}
+outcome <- wwc_outcomes %>% 
+  group_by(team) %>% 
+  mutate(game = row_number()) %>% 
+  mutate(status = case_when(win_status == "Lost" ~ -1,
+                            win_status == "Won" ~ 1,
+                            win_status == "Tie" ~ 0))
+  
+outcome %>% 
+  count(game, sort = T) %>% 
+  filter(game >= 40)
+
+
+
+top_wins_team <- outcome %>% 
+  count(status, sort = T) %>% 
+  filter(status == 1) %>% 
+  filter(n >= 10) 
+
+```
+
+```{r}
+outcome_plot <- outcome %>% 
+  filter(team %in% top_wins_team$team) %>% 
+  ggplot() +
+  geom_tile(aes(game, as.factor(status), 
+                fill = as.factor(status))) +
+  scale_fill_manual(values = c("#d6000a", "#fddb00", "#00b5ed"),
+                    labels = c("lost", "tie", "win")) +
+  scale_x_continuous(breaks = seq(10, 50, 10)) +
+  facet_wrap(~ team, ncol = 2) +
+  labs(x = "Number of games played in WWC",
+       y = "",
+       title = "Outcomes of Women WorldCup from 1991 to 2017",
+       caption = "Source: data.world | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.3, "line"),
+        legend.text = element_text(size = 7),
+        legend.title = element_blank(),
+        plot.title = element_text(size = 16),
+        plot.caption = element_text(size = 9))
+```
