@@ -1,0 +1,118 @@
+---
+title: "WomenInWorkplace"
+author: "Sung Inkyung"
+date: '2020 4 19 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+women_workplace <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-05/jobs_gender.csv") 
+
+women_workplace %>% 
+  count(year, sort = T)
+```
+
+
+```{r}
+women_workplace %>% 
+  count(major_category, sort = T)
+
+ww <- women_workplace %>% 
+  filter(!is.na(wage_percent_of_male)) %>% 
+  mutate(major_category = factor(major_category),
+         major_category = fct_rev(fct_reorder(major_category, wage_percent_of_male)))
+
+plot <- ww %>% 
+  ggplot(aes(percent_female, wage_percent_of_male,
+             color = major_category)) +
+  geom_point(size = 4, 
+             alpha = .3,
+             show.legend = F,
+             na.rm = T) +
+  labs(x = " Percent of female",
+       y = "Wage percentage of male",
+       title = "Female Share by Major Workplace Category",
+       caption = "Source: Census Bureau & Bureau of Labor | Graphic: Sung Inkyung") +
+  scale_x_continuous(limits = c(0, 100)) +
+  scale_y_continuous(limits = c(0, 100)) +
+  scale_color_brewer(palette = "Paired") +
+  facet_wrap(~ major_category, nrow = 8, scales = "free") +
+  theme_minimal()
+
+```
+
+
+```{r}
+male <- ww %>% 
+  group_by(major_category, year) %>% 
+  summarise(avg = mean(wage_percent_of_male))%>% 
+  group_by(year) %>% 
+  top_n(10, avg) %>% 
+  mutate(avg = round(avg, 1)) %>% 
+  ungroup() %>% 
+  group_by(major_category) %>% 
+  summarise(total_avg = mean(avg)) %>% 
+  ungroup() %>% 
+  mutate(major_category = fct_reorder(major_category, total_avg))
+
+plot_male <-male %>% 
+  ggplot(aes(total_avg, major_category, fill = major_category)) +
+  geom_col(size = 3,
+           alpha = .6,
+           show.legend = F) + 
+  scale_fill_brewer(palette = "Set2") +
+  labs(x = "Average of male wage percent",
+       y = "",
+       title = "Average of Male Wage Percent by Major Workplace Category from 2013 to 2016",
+       subtitle = "Out of 8 major workplace category, the average of major workplac ecategory is above 80% except the area of Production, Transportation, and Material Moving, which accounts for 79.1%",
+       caption = "Source: Census Bureau & Bureau of Labor | Graphic: Sung Inkyung") +
+  theme_minimal()
+
+
+plot1 <- ww %>% 
+  ggplot(aes(wage_percent_of_male, major_category, 
+             color = major_category)) +
+  geom_jitter(show.legend = F,
+              width = .15) +
+  geom_boxplot(width = .5, alpha = .7,
+               color = "#838691",
+               show.legend = F) +
+  geom_vline(xintercept = 79.1,
+             color = "#000000",
+             linetype = 2,
+             size = .7,
+             na.rm = F,
+             show.legend = F) +
+  annotate(geom = "curve", x = 79.4, xend = 101, y = 8, yend = 8.1, 
+           curvature = -.3, 
+           arrow = arrow(length = unit(2, "mm"))) +
+  annotate(geom = "text", 
+           x = 102, y = 8,
+           label = "Min. average of\nmale wage share\n(79.1%)",
+           size = 4.5,
+           hjust = "left") +
+  scale_color_manual(values = c("#ac6667", "#70a0be", "#6878a0", "#f1a12e", "#40e0d0", "#194052", "#f88f79", "#ee6aa7")) +
+  labs(x = "Wage percent of male",
+       y = " ",
+       title = " Male Earnings Share by Major Workplace Category",
+       subtitle = "Out of 8 major workplace category, the average of major workplac ecategory is above 80% except the area of Production, Transportation, and Material Moving, which accounts for 79.1%",
+       caption = "Source: Census Bureau & Bureau of Labor | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, 
+                                  face = "bold"),
+        panel.grid.major = element_line(size = .05,
+                                        color = "gray90"),
+        panel.grid.minor = element_blank()
+        )
+  
+```
+
