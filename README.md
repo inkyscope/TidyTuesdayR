@@ -27,7 +27,7 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://www.r-graph-gallery.com/)|R graph gallery | Yan Holtz |
 |[:link:](https://bbc.github.io/rcookbook/)|BBC Visual and Data Journalism cookbook for R graphics | BBC Data Team|
 |[:link:](https://www.tidytextmining.com/)|Tidy Text Mining with R | Julia Silge, David Robinson |
-|[:link:](https://youtu.be/nx5yhXAQLxw)|Tidy Tuesday screencast | David Robinson |
+|[:link:](https://youtu.be/nx5yhXAQLxw)|Tidy Tuesday Screencast | David Robinson |
 |[:link:](https://ratsgo.github.io/)|Textmining | Lee KiChang |
 |[:link:](https://nsgrantham.shinyapps.io/tidytuesdayrocks/)|Tidy Tuesday Shinyapp | Neal Grantham |
 |[:link:](https://https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/video-lectures/l)|MIT 18.06 Linear Algebra, Spring 2005| Gilbert Strang|
