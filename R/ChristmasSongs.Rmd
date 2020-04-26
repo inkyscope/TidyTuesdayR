@@ -32,7 +32,7 @@ songs_2000 <- christmas_songs %>%
 
 color_bells <- tibble(
   song = unique(songs_2000$song),
-  image = rep(c("C:/Users/inkyscope/Documents/projects/tidytuesday/image/green_ball.png", "C:/Users/inkyscope/Documents/projects/tidytuesday/image/red_ball.png"), length.out = length(unique(songs_2000$song)))
+  image = rep(c("C:/Users/inkyscope/Documents/projects/tidytuesday/image/gold_ball.png", "C:/Users/inkyscope/Documents/projects/tidytuesday/image/silver_ball.png"), length.out = length(unique(songs_2000$song)))
 )
   
 plot_data <- left_join(songs_2000, color_bells) %>% 
@@ -82,7 +82,7 @@ plot <- plot_data %>%
   theme_minimal_vgrid()
 
 
-ggsave(here("figures", "ChristmasSongsTop100.png"), width = 14, height = 11, units = "in")
+ggsave(here("figures", "ChristmasSongsTop100.png"), width = 35, height =35, units = "cm")
   
 ```
 `
