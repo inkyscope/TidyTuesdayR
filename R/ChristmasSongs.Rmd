@@ -23,7 +23,7 @@ christmas_songs <- readr::read_csv("https://raw.githubusercontent.com/rfordatasc
 
 ```{r}
 songs_2000 <- christmas_songs %>% 
-  filter(year >=2000) %>% 
+  filter(year >= 2000) %>% 
   count(song, year) %>% 
   mutate(song = str_to_title(song)) %>% 
   group_by(song) %>% 
@@ -32,8 +32,9 @@ songs_2000 <- christmas_songs %>%
 
 color_bells <- tibble(
   song = unique(songs_2000$song),
-  image = rep(c("C:/Users/inkyscope/Documents/projects/tidytuesday/image/gold_ball.png", "C:/Users/inkyscope/Documents/projects/tidytuesday/image/silver_ball.png"), length.out = length(unique(songs_2000$song)))
-)
+  image = rep(c("C:/Users/inkyscope/Documents/projects/tidytuesday/image/gold_ball.png",
+                "C:/Users/inkyscope/Documents/projects/tidytuesday/image/silver_ball.png"), 
+              length.out = length(unique(songs_2000$song))))
   
 plot_data <- left_join(songs_2000, color_bells) %>% 
   ungroup %>% 
@@ -52,15 +53,15 @@ plot <- plot_data %>%
            size = 4,
            hjust = 0,
            color = "#00b32c",
-           label= "Song by Mariah Carey made the Top 100 8 times from 2000 - 2017.") +
-  annotate("text", x = 2011.7, y = 10,
+           label= "Song by Mariah Carey made the Top 100 8 times from 2000 - 2017") +
+  annotate("text", x = 2011.7, y = 11,
            size = 4,
            hjust = 0, 
            color = "#b3000c",
-           label = "9 Xmas songs made \nthe Billboard Top 100\nin 2011.") +
+           label = "9 Xmas songs made the Top 100 in 2011") +
   geom_curve(x = 2001, xend = 2000.4, y = 32, yend = 32, 
              arrow = arrow(length = unit(0.1, "cm"))) +
-  geom_curve(x = 2010, xend = 2010.7, y = 31.7, yend = 31.7, 
+  geom_curve(x = 2010, xend = 2010.6, y = 31.7, yend = 31.7, 
              arrow = arrow(length = unit(0.1, "cm"))) +
   geom_curve(x = 2011.5, xend = 2011, y = 11, yend = 13, 
              arrow = arrow(length = unit(0.2, "cm")),
