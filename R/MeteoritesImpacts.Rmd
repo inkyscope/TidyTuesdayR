@@ -41,7 +41,7 @@ top <- meteorites %>%
 small_mass <-  meteorites %>% 
   filter(mass < 24000000)
 
-annotations <- top_10 %>% 
+annotations <- top %>% 
   filter(mass >= 50000000) %>% 
   mutate(description = glue("Mass: {mass/1000000} tons\nFound: {Found}"))
 
@@ -67,14 +67,14 @@ world <- ggplot() +
              size = 4,
             hjust = 1) +
   geom_mark_circle(data = annotations, 
-                   aes(long +.22, lat+.22,
+                   aes(long +.22, lat +.22,
                        label = toupper(name),
                        description = description),
                    expand = unit(2, "mm"), 
                    label.fill = "#5b616b", 
                    label.colour = "#aeb0b5", 
                    con.colour = "#d6d7d9", 
-                   label.margin = margin(2, 3, 2, 3, "mm")) +
+                   label.margin = margin(2, 3, 2, 15, "mm")) +
   geom_point(data = small_mass, 
              na.rm = T,
              color = "#e59892",
@@ -102,7 +102,7 @@ world <- ggplot() +
                                     margin = margin(t = 10)),
         plot.margin = unit(c(1, 1, 1, 1), "cm"))
 
-ggsave(here("figures", "MeteoritesImpacts.png"), width = 11, height = 10)
+ggsave(here("figures", "MeteoritesImpacts.png"), width = 15, height = 13)
 
   
 ```
