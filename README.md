@@ -92,15 +92,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Big EPA Cars by [EPA](https://openpowerlifting.org/data)
 ![Journey by cars](https://github.com/inkyscope/datavizRscope/blob/master/figures/TopSavingCarJourney.png)
 
-### Big EPA Cars by [EPA](https://openpowerlifting.org/data)
-![Journey by cars](https://github.com/inkyscope/datavizRscope/blob/master/figures/TopSavingRank.png)
-
 ### Roman Emperors Reign Duration by [Wikipedia / Zonination](https://github.com/zonination/emperors/blob/master/README.md)
 ![Roman Emperors Reign Duration](https://github.com/inkyscope/datavizRscope/blob/master/figures/RomanEmperorsReignDuration.png
 )
-
-### Roman Emperors Dynasty Chronicles by [Wikipedia / Zonination](https://github.com/zonination/emperors/blob/master/README.md)
-![Roman Emperors Dynasty Chronicles](https://github.com/inkyscope/datavizRscope/blob/master/figures/RomanEmperorsDynastyChronicles.png)
 
 ### Ramen ratings by [the ramen rater](https://www.theramenrater.com/resources-2/the-list/)
 ![Categories for ramen ratings](https://github.com/inkyscope/datavizRscope/blob/master/figures/categories%20for%20ramen%20rating.png)
