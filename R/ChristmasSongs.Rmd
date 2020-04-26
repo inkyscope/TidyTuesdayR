@@ -11,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ### Sourse[tidytuesday by julia watzek](https://github.com/jwatzek/tidytuesday/blob/master/scripts/2019-52_xmas_songs.R)
 ```{r}
 library(tidyverse)
-library(cowplot)
 library(ggimage) # new package
 library(here)
 ```
@@ -49,13 +48,13 @@ plot_data %>%
 plot <- plot_data %>% 
   ggplot(aes(year, song)) +
   geom_image(aes(image = image), size = 0.03) +
-  annotate("text", x = 2001.2, y = 32,
-           size = 4,
+  annotate("text", x = 2001.1, y = 32,
+           size = 4.5,
            hjust = 0,
            color = "#00b32c",
            label= "Song by Mariah Carey made the Top 100 8 times from 2000 - 2017") +
   annotate("text", x = 2011.7, y = 11,
-           size = 4,
+           size = 4.5,
            hjust = 0, 
            color = "#b3000c",
            label = "9 Xmas songs made the Top 100 in 2011") +
@@ -71,6 +70,7 @@ plot <- plot_data %>%
        title = "Christmas Songs in Billboard Top 100",
        subtitle = "Christmas ornaments(green and red) indicate that a song made the Billboard Top 100 in the corresponding year.",
        caption = "Source: Billboard Top 100") +
+  theme_minimal() +
   theme(
     plot.title = element_text(size = 16,
                               margin = margin(b = 10)),
@@ -78,9 +78,13 @@ plot <- plot_data %>%
                                  margin = margin(b = 25)),
     axis.ticks = element_blank(),
     axis.ticks.y = element_blank(),
-    axis.line = element_blank()
-    ) +
-  theme_minimal_vgrid()
+    panel.grid.major.x = element_line(size = .4,
+                                      color = "#00b32c"),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_line(size = .4,
+                                      color = "#b3000c"),
+    panel.grid.minor.y = element_blank()
+    ) 
 
 
 ggsave(here("figures", "ChristmasSongsTop100.png"), width = 35, height =35, units = "cm")
