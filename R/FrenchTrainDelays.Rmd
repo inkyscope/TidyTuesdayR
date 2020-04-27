@@ -1,0 +1,448 @@
+---
+title: "French Train Delays"
+author: "Sung Inkyung"
+date: '2020 4 28 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by @noccaea | LittlePinguin] (https://tender-curie-5b83bc.netlify.app/2019/02/12/exploration-of-french-high-speed-trains-delays-part-2/)
+### Source[weswenderson package] (https://github.com/karthik/wesanderson)
+```{r}
+library(tidyverse)
+library(ggtext)
+library(wesanderson)
+```
+
+
+```{r}
+tgv <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-26/full_trains.csv")
+```
+
+
+```{r}
+tgv$year_ordered = factor(tgv$year, ordered = T)
+
+tgv$month_english = factor(tgv$month, ordered = T)
+levels(tgv$month_english) <- c("January", "February", "March",
+                               "April", "May", "June", "July",
+                               "August", "September", "October",
+                               "November", "December")
+tgv <- mutate(tgv,
+              departure_station = str_to_title(departure_station),
+              arrival_station = str_to_title(arrival_station))
+```
+
+
+```{r}
+tgv <- tgv %>% 
+  mutate(nb_trains = total_num_trips - num_of_canceled_trains)
+
+tgv_departure <- tgv %>% 
+  select(year,
+         nb_trains,
+         month,
+         year_ordered,
+         month_english,
+         service,
+         departure_station,
+         journey_time_avg,
+         total_num_trips,
+         num_of_canceled_trains,
+         contains("departure"))
+
+tgv_arrival <- tgv %>% 
+  select(year,
+         nb_trains,
+         month,
+         year_ordered,
+         month_english,
+         service,
+         departure_station,
+         journey_time_avg,
+         total_num_trips,
+         num_of_canceled_trains,
+         contains("arrival"))
+
+
+```
+
+
+```{r cancelled trains}
+tgv %>% 
+  count(num_of_canceled_trains) %>% 
+  ggplot(aes(num_of_canceled_trains, n)) +
+  geom_col() +
+  labs(x = "Number of cancelled trains per month and link",
+       y = "",
+       title = "Distribution of the Number of Cancelled Trains per Link" ) + 
+  theme_minimal()
+
+```
+
+
+```{r cancellation rates per station across years}
+
+tgv_dep_year <- tgv_departure %>% 
+  group_by(departure_station, year_ordered) %>% 
+  summarise(total_trains = sum(total_num_trips, na.rm = T),
+            cancelled_trains = sum(num_of_canceled_trains, na.rm = T),
+            cancellation_rate = cancelled_trains / total_trains*100) %>% 
+  ungroup()
+
+tgv_dep_year %>% 
+  mutate(departure_station = fct_reorder(departure_station, cancellation_rate)) %>% 
+  ggplot(aes(year_ordered, departure_station)) +
+  geom_tile(aes(fill = cancellation_rate)) +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1", 
+                                            100, 
+                                            type = "continuous")) +
+  labs(x = "",
+       y = "Departure station",
+       fill = "Cancellation\nrate(%)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90,
+                                   vjust = .5))
+```
+```{r trip length and cancellation rates}
+
+tgv %>% 
+  mutate(cancellation_rate = num_of_canceled_trains/total_num_trips*100) %>% 
+  ggplot(aes(journey_time_avg, cancellation_rate)) +
+  geom_point(alpha = .4, size = 2, color = "#f7347a") +
+  geom_smooth(color = "#ffc0cb") +
+  facet_wrap(~year_ordered) +
+  labs(x = "Average of Jouney time",
+       y = "Cancelation rate",
+       title = "Cancelation Rate and Journey time of TGV") +
+  theme_minimal()
+```
+
+
+```{r worst departure station}
+tgv_dep <- tgv_departure %>% 
+  group_by(departure_station) %>% 
+  summarise(total_trains = sum(total_num_trips, na.rm = T),
+            cancelled_trains = sum(num_of_canceled_trains, na.rm = T),
+            cancellation_rate = cancelled_trains / total_trains*100) %>% 
+  ungroup() %>% 
+  mutate(departure_station = fct_reorder(departure_station, cancellation_rate))
+
+tgv_dep %>% 
+  ggplot(aes(cancellation_rate, departure_station,
+             fill = total_trains)) +
+  geom_col() +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1", 
+                                            100, 
+                                            type = "continuous")) +
+  labs(x = "Cancelation rate(%)",
+       y = "Departure station",
+       title = "Cancellation Rate of TGV per station from 2016 to 2018",
+       fill = "# of Total trips") +
+  theme_minimal()
+  
+```
+
+
+```{r}
+tgv_departure %>% 
+  filter(year != 2018) %>% 
+  group_by(departure_station) %>% 
+  summarise(total_trains = sum(total_num_trips, na.rm = T),
+            cancelled_trains = sum(num_of_canceled_trains, na.rm = T),
+            cancellation_rate = cancelled_trains / total_trains*100) %>% 
+  ungroup() %>% 
+  mutate(departure_station = fct_reorder(departure_station, cancellation_rate)) %>% 
+  ggplot(aes(cancellation_rate, departure_station,
+             fill = total_trains)) +
+  geom_col() +
+  geom_vline(xintercept = 1,
+             linetype = "dashed",
+             color = "#d00c3d",
+             size = .7) +
+  geom_vline(xintercept = 2,
+             linetype = "dashed",
+             color = "#d00c3d",
+             size = .7) +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1", 100, 
+                                            type = "continuous")) +
+  labs(x = "Cancelation rate(%)",
+       y = "Departure station",
+       title = "Cancellation Rate of TGV per station between 2016 and 2017",
+       fill = "# of Total trips") +
+  theme_minimal()
+```
+
+
+```{r}
+tgv_departure %>% 
+  filter(year != 2018) %>% 
+  group_by(departure_station) %>% 
+  summarise(total_trains = sum(total_num_trips, na.rm = T),
+            cancelled_trains = sum(num_of_canceled_trains, na.rm = T),
+            cancellation_rate = cancelled_trains / total_trains*100) %>% 
+  ungroup() %>% 
+  filter(cancellation_rate >= 1) %>% 
+  mutate(departure_station = fct_reorder(departure_station, cancellation_rate)) %>% 
+  ggplot(aes(cancellation_rate, departure_station,
+             fill = total_trains)) +
+  geom_col() +
+  geom_vline(xintercept = 1,
+             linetype = "dashed",
+             color = "#d00c3d",
+             size = .7) +
+  geom_vline(xintercept = 2,
+             linetype = "dashed",
+             color = "#d00c3d",
+             size = .7) +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1", 100, 
+                                            type = "continuous")) +
+  labs(x = "Cancelation rate(%)",
+       y = "Departure station",
+       fill = "# of Total trips") +
+  theme_minimal()
+```
+
+
+```{r Comparison 2017 and 2016 per station}
+
+tgv_departure %>% 
+  filter(year %in% c(2017, 2018)) %>% 
+  group_by(departure_station, year_ordered, month_english) %>% 
+  summarise(total_trains = sum(total_num_trips, na.rm = T),
+            cancelled_trains = sum(num_of_canceled_trains, na.rm = T),
+            cancellation_rate = cancelled_trains / total_trains*100) %>% 
+  select(-total_trains, -cancelled_trains) %>% 
+  ggplot(aes(cancellation_rate, departure_station,
+             group = departure_station,
+             color = year_ordered)) +
+  geom_line(size = .7,
+            color = "#141824",
+            alpha = .4) +
+  geom_point(size = 2,
+             show.legend = F) +
+  geom_vline(xintercept = 20,
+             linetype = "dashed",
+             color = "#ccdaff",
+             size = .5) +
+  geom_vline(xintercept = 60,
+             linetype = "dashed",
+             color = "#ccdaff",
+             size = .5) +
+  annotate(geom = "text",
+           x = 21, y = 67,
+           label = "20%",
+           color = "black") +
+  annotate(geom = "text",
+           x = 61, y =67,
+           label = "60%",
+           color = "black") +
+  scale_color_manual(values = c("#003366", "#f7347a")) +
+  facet_wrap(~ month_english) +
+  labs(x = "Cancellation rate(%)",
+       y = "",
+       titel = "TGV Cencellation Rate between 2017 and 2018 per Departure Station") +
+  theme_minimal()
+    
+  
+  
+
+```
+```{r}
+tgv_departure %>% 
+  group_by(departure_station) %>% 
+  summarise(delayed = sum(num_late_at_departure, na.rm = T),
+            trains = sum(total_num_trips),
+            delay_rate = delayed / trains*100) %>% 
+  ungroup() %>% 
+  mutate(departure_station = fct_reorder(departure_station, delay_rate)) %>% 
+  filter(delay_rate >= 10) %>% 
+  ggplot(aes(delay_rate, departure_station, fill =trains)) +
+  geom_col() +
+  geom_vline(xintercept = 20,
+             linetype = "dashed",
+             color = "#d00c3d",
+             size = .7) +
+  geom_vline(xintercept = 40,
+             linetype = "dashed",
+             color = "#d00c3d",
+             size = .7) +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1", 100, 
+                                            type = "continuous")) +
+  labs(x = "Delay rate",
+       y = "",
+       title = "TGV Delay Rate per Station from 2015 to 2018",
+       fill = "# of Trains") +
+  theme_minimal()
+         
+  
+  
+  
+```
+```{r}
+tgv_departure %>% 
+  filter(year != 2018) %>% 
+  group_by(departure_station) %>% 
+  summarise(delayed = sum(num_late_at_departure, na.rm = T),
+            trains = sum(total_num_trips),
+            delay_rate = delayed / trains*100) %>% 
+  ungroup() %>% 
+  mutate(departure_station = fct_reorder(departure_station, delay_rate)) %>% 
+  filter(delay_rate >= 10) %>% 
+  ggplot(aes(delay_rate, departure_station, fill =trains)) +
+  geom_col() +
+  geom_vline(xintercept = 20,
+             linetype = "dashed",
+             color = "#d00c3d",
+             size = .7) +
+  geom_vline(xintercept = 40,
+             linetype = "dashed",
+             color = "#d00c3d",
+             size = .7) +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1", 100, 
+                                            type = "continuous")) +
+  labs(x = "Delay rate",
+       y = "",
+       title = "TGV Delay Rate per Departure Station from 2015 to 2017",
+       fill = "# of Trains") +
+  theme_minimal()
+```
+```{r}
+tgv_departure %>% 
+  mutate(delay_rate = num_late_at_departure /total_num_trips) %>% 
+  ggplot(aes(month_english, departure_station,
+             fill = delay_rate)) +
+  geom_tile() +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1", 100, 
+                                            type = "continuous")) +
+  facet_wrap(~year_ordered, ncol = 4) +
+  labs(x = "",
+       y = "",
+       titel = "TGV Monthly Delay Rate per Departure Station from 2015 to 2018") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+```{r Delay at departure and arrival}
+
+df <- tgv %>% 
+  mutate(link = paste(departure_station, arrival_station,
+                      sep = "-"),
+         link = str_to_title(link)) %>% 
+  group_by(link) %>% 
+  summarise(delayed_departure = sum(num_late_at_departure, na.rm = T),
+            delayed_arrival = sum(num_arriving_late, na.rm = T),
+            trains = sum(total_num_trips)) %>% 
+  ungroup() %>% 
+  mutate(rate_delayed_departure = delayed_departure / trains*100,
+         rate_delayed_arrival = delayed_arrival / trains*100,
+         diff = rate_delayed_departure - rate_delayed_arrival,
+         link = fct_reorder(link, diff)) 
+
+plot <- df %>% 
+  filter(diff > 0) %>% 
+  ggplot(aes(rate_delayed_departure, link)) +
+  geom_segment(aes(x = rate_delayed_departure, 
+                   xend = rate_delayed_arrival - .2,
+                   y = link,
+                   yend = link),
+               arrow = arrow(length = unit(1, "mm")),
+               size = .7,
+               color = "#f7347a") +
+  geom_point(size = 2,
+             color = "#f7347a") +
+  geom_point(aes(x = rate_delayed_arrival),
+             size = 2,
+             color = "#003366") +
+  labs(x = "Rate of delayed departure",
+       y = "Departure to Arriaval",
+       title = "TGV Delay Rate in <span style = 'color:#003366'>**Departure**</span> and <span style = 'color:#f7347a'>**'Arrival**</span> by Station") +
+  theme_minimal() +
+  theme(plot.title = element_markdown(size = 16))
+
+
+  
+```
+
+
+```{r}
+df1 <- tgv %>% 
+  mutate(link = paste(departure_station, arrival_station,
+                      sep = "-"),
+         link = str_to_title(link)) %>% 
+  group_by(link) %>% 
+  summarise(delayed_departure = sum(num_late_at_departure, na.rm = T),
+            delayed_arrival = sum(num_arriving_late, na.rm = T),
+            trains = sum(total_num_trips)) %>% 
+  ungroup() %>% 
+  mutate(rate_delayed_departure = delayed_departure / trains*100,
+         rate_delayed_arrival = delayed_arrival / trains*100,
+         diff = rate_delayed_arrival - rate_delayed_departure,
+         link = fct_reorder(link, diff)) 
+
+
+plot1 <- df1 %>% 
+  filter(diff < 0) %>% 
+  ggplot(aes(rate_delayed_departure, link)) +
+  geom_segment(aes(x = rate_delayed_departure, 
+                   xend = rate_delayed_arrival + .2,
+                   y = link,
+                   yend = link),
+               arrow = arrow(length = unit(1, "mm")),
+               size = .7,
+               color = "#f7347a") +
+  geom_point(size = 2,
+             color = "#f7347a") +
+  geom_point(aes(x = rate_delayed_arrival),
+             size = 2,
+             color = "#003366") +
+  labs(x = "Rate of delayed departure",
+       y = "Departure to Arriaval",
+       title = "TGV Delay Rate in <span style = 'color:#003366'>**Departure**</span> and <span style = 'color:#f7347a'>**'Arrival**</span> by Station") +
+  theme_minimal() +
+  theme(plot.title = element_markdown(size = 16))
+
+```
+```{r}
+tgv %>% 
+  mutate(link = paste(departure_station, arrival_station,
+                      sep = "-")) %>% 
+  ggplot(aes(month_english, link)) +
+  geom_tile(aes(fill = avg_delay_late_at_departure)) +
+  facet_wrap(~year_ordered, nrow = 1) +
+  labs(x = "Average of delayed departure",
+       y = "Departure-Arrival sation",
+       title = "TGV Average Delay at Departure by Station",
+       fill = "Avg of Delay") +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1",
+                                            100,
+                                            type = "continuous")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90,
+                                  vjust = .5))
+```
+
+
+```{r}
+tgv %>% 
+  filter(departure_station != "Italie") %>% 
+  filter(departure_station != "Francfort") %>% 
+  mutate(link = paste(departure_station, arrival_station,
+                      sep = "-")) %>% 
+  ggplot(aes(month_english, link)) +
+  geom_tile(aes(fill = avg_delay_late_at_departure)) +
+  facet_wrap(~year_ordered, nrow = 1) +
+  labs(x = "Average of delayed departure",
+       y = "Departure-Arrival sation",
+       title = "TGV Average Delay at Departure by Station",
+       fill = "Avg of Delay") +
+  scale_fill_gradientn(colors = wes_palette("Rushmore1",
+                                            100,
+                                            type = "continuous")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90,
+                                  vjust = .5))
+```
+
