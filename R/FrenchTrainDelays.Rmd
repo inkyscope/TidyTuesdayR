@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ### Source[tidytuesday by @noccaea | LittlePinguin] (https://tender-curie-5b83bc.netlify.app/2019/02/12/exploration-of-french-high-speed-trains-delays-part-2/)
-### Source[weswenderson package] (https://github.com/karthik/wesanderson)
+### Source[wesanderson package] (https://github.com/karthik/wesanderson)
 ```{r}
 library(tidyverse)
 library(ggtext)
