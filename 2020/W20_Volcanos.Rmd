@@ -1,0 +1,61 @@
+---
+title: "Untitled"
+author: "Sung Inkyung"
+date: '2020 5 18 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+
+```{r}
+volcano <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-12/volcano.csv') %>% 
+  mutate(last_eruption_year = as.numeric(last_eruption_year)) %>% 
+  mutate(primary_volcano_type = str_remove(primary_volcano_type, "\\(.+\\)|\\?"),
+         primary_volcano_type = fct_lump(primary_volcano_type, 10))
+```
+
+
+```{r}
+volcano %>% 
+  count(evidence_category, sort = T)
+
+volcano %>% 
+  count(region, sort = T)
+
+volcano %>% 
+  count(primary_volcano_type, sort = T)
+```
+
+
+```{r}
+world_map <- map_data("world")
+
+volcano_map <- volcano %>% 
+  ggplot() +
+  geom_polygon(data = world_map, 
+               aes(long, lat, group = group),
+               fill = "gray30", color = "gray45", size = .1) +
+  geom_point(aes(longitude, latitude, color = primary_volcano_type), size = .5, alpha = .8) +
+  scale_color_viridis_d(option = "magma") +
+  labs(title = "Volcanoes of the World",
+       color = "Type",
+       caption = "Source: The Smithsonian Institute | Graphic: Sung Inkyung") +
+  coord_fixed() +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "gray45"),
+        plot.caption = element_text(color = "#e3dbc8",
+                                    size = 7, hjust = .5),
+        plot.margin = margin(20, 20, 20, 20))
+  
+ggsave(here("2020", "W20_Volcanos.png"))
+
+```
+
