@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Animals Crossing by [Villager DB](https://github.com/jefflomacy/villagerdb)
+![Villager DB](https://github.com/inkyscope/datavizRscope/blob/master/2020/W19_AnimalCrossing.png)
+
 ### Tour de France Winners by [tdf](https://github.com/alastairrushworth/tdf)
 ![tdf](https://github.com/inkyscope/datavizRscope/blob/master/2020/W15_TourdeFranceWinnders.png)
 
