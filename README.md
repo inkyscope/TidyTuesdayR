@@ -34,6 +34,10 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Broadway Musicals by [Playbill](https://www.playbill.com/grosses)
+![BroadwayMusicals](https://github.com/inkyscope/datavizRscope/blob/master/2020/W18_BroadwayMusicals_1.png)
+
+
 ### Animals Crossing by [Villager DB](https://github.com/jefflomacy/villagerdb)
 ![Villager DB](https://github.com/inkyscope/datavizRscope/blob/master/2020/W19_AnimalCrossing.png)
 
