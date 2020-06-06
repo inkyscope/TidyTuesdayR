@@ -38,7 +38,7 @@ group_by(show) %>%
                        label = show, 
                        description = "The most seats sold in January, 2017", 
                        filter = seats_sold > 23000),
-                   label.fontsize = 6, 
+                   label.fontsize = 11, 
                    label.fill = "#5b616b", 
                    label.colour = "#aeb0b5", 
                    label.margin = margin(1, 1, 1, 3, "mm"),
@@ -50,7 +50,7 @@ group_by(show) %>%
                        label = show, 
                        description = "The most expensive ticket show", 
                        filter = avg_ticket_price > 500),
-                   label.fontsize = 6, 
+                   label.fontsize = 11, 
                    label.fill = "#5b616b", 
                    label.colour = "#aeb0b5", 
                    label.margin = margin(1, 1, 1, 3, "mm"),
@@ -74,6 +74,6 @@ group_by(show) %>%
         axis.title.x = element_text(color = "gray90"),
         axis.title.y = element_text(color = "gray90"))
 
-ggsave(here("2020", "W18_BroadwayMusicals.png"), width = 23, height = 20, units = "cm")
+ggsave(here("2020", "W18_BroadwayMusicals.png"), width = 18, height = 18, units = "cm")
 ```
 
