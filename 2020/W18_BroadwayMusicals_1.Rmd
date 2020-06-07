@@ -73,8 +73,7 @@ bumplot <- shows %>%
     fontface = "bold",
     color = "gray20",
     size = 87) +
-  geom_point(data = subset(shows, 
-                           year = 2019),
+  geom_point(data = shows %>% filter(year == 2019),
              size = 4,
              shape = 21,
              fill = "black",
@@ -128,6 +127,7 @@ bumplot <- shows %>%
                                    color = "gray95"),
     plot.title = element_text(size = 44, 
                               color = "gray95",
+                              face = "bold",
                               margin = margin(b = 10)),
     plot.subtitle = element_markdown(size = 32,
                                      color = "gray95",
