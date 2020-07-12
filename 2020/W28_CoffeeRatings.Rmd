@@ -32,7 +32,7 @@ coffee %>%
 library(ggthemes)
 library(paletteer)
 
-coffee_metrics <- coffee_ratings %>%
+coffee_metrics <- coffee %>%
   select(total_cup_points, variety,
          country_of_origin,
          aroma:moisture) %>%
@@ -66,7 +66,7 @@ plot <- coffee_metrics %>%
   labs(x = "",
        y = "",
        title = "Coffee Ratings by Country",
-       subtitle = "Countries of origin with 20 or more tested beans are shown.\nThe coffee bean from Guatemala got the lowest rating(59.8).\nCoffee beans with minimum rating above 80 are from Ethiopia, Uganda and\nTanzania.The best coffee bean is from Ethiopia,the only bean above median 85 with minimum rating 80.3",
+       subtitle = "Countries of origin with 20 or more tested beans are shown.\nThe coffee bean from Guatemala got the lowest rating(59.8).\nCoffee beans with minimum rating above 80 are from Ethiopia,\nUganda and Tanzania. The best coffee bean is from Ethiopia,\nthe only bean above median 85 with minimum rating 80.3",
        caption = "Source: Coffee Quality Institute | Graphic: Sung Inkyung") +
   theme(panel.grid = element_blank(),
         panel.background = element_rect(fill = "#f3ebe0"),
