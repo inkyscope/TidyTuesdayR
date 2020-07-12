@@ -69,9 +69,9 @@ plot <- coffee_metrics %>%
        subtitle = "Countries of origin with 20 or more tested beans are shown.\nThe coffee bean from Guatemala got the lowest rating(59.8).\nCoffee beans with minimum rating above 80 are from Ethiopia,\nUganda and Tanzania. The best coffee bean is from Ethiopia,\nthe only bean above median 85 with minimum rating 80.3",
        caption = "Source: James LeDoux & Coffee Quality Database | Graphic: Sung Inkyung") +
   theme(panel.grid = element_blank(),
-        panel.background = element_rect(fill = "#f3ebe0"),
+        panel.background = element_rect(fill = "#f3ebe0", color = NA),
         panel.spacing = unit(.5, "lines"),
-        strip.background = element_rect(fill = "#63270d"),
+        strip.background = element_rect(fill = "#63270d", color = NA),
         strip.text = element_text(color = "white"),
         plot.title = element_text(size = 20,
                                   face = "bold",
