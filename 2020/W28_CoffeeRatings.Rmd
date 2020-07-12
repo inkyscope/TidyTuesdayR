@@ -19,7 +19,7 @@ library(pdftools)
 
 theme_set(theme_minimal())
 ```
-### Source[tidytuesday by Z3tt] (https://github.com/Z3tt/TidyTuesday/blob/master/R/2020_28_CoffeeRatings.Rmd)
+
 
 ```{r}
 coffee <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
@@ -28,6 +28,68 @@ coffee %>%
   count(country_of_origin, sort = T)
 ```
 
+```{r}
+library(ggthemes)
+library(paletteer)
+
+coffee_metrics <- coffee_ratings %>%
+  select(total_cup_points, variety,
+         country_of_origin,
+         aroma:moisture) %>%
+  mutate(
+    country_of_origin = case_when(country_of_origin == "Tanzania, United Republic Of" ~ "Tanzania",
+                                  str_detect(country_of_origin, "United States") ~ "United States",
+                                  TRUE ~ country_of_origin)) %>% 
+  pivot_longer(aroma:uniformity, names_to = "metric", values_to = "value") %>% 
+  filter(!is.na(variety)) 
+
+
+
+plot <- coffee_metrics %>% 
+  filter(country_of_origin %in% c("Ethiopia", "Kenya", "Colombia", "Uganda", "Costa Rica", 
+                                  "El Salvador", "United States", "Indonesia", "Guatemala", "Brazil", 
+                                  "Tanzania", "Taiwan", "Hondura", "Mexico", "Nicaragua", "Vietnam")) %>% 
+  ggplot(aes(factor(metric), value, group = 1)) + 
+  geom_polygon(aes(fill = value), color = NA) +
+  coord_polar() + 
+  facet_wrap(~ country_of_origin, ncol = 5) +
+  scale_fill_paletteer_c("gameofthrones::martell") +
+  scale_y_continuous(limits = c(0, 10),
+                     breaks = seq(0, 10, 2.5)) +
+  expand_limits(y=0) +
+  guides(fill = guide_colorbar(barheight = unit(3, units = "mm"),  
+                                 barwidth = unit(60, units = "mm"),
+                                 direction = "horizontal",
+                                 ticks.colour = "#e8d8c3",
+                                 title.position = "top",
+                                 title.hjust = 0.5)) +
+  labs(x = "",
+       y = "",
+       title = "Coffee Ratings by Country",
+       subtitle = "Countries of origin with 20 or more tested beans are shown.\nThe coffee bean from Guatemala got the lowest rating(59.8).\nCoffee beans with minimum rating above 80 are from Ethiopia, Uganda and\nTanzania.The best coffee bean is from Ethiopia,the only bean above median 85 with minimum rating 80.3",
+       caption = "Source: Coffee Quality Institute | Graphic: Sung Inkyung") +
+  theme(panel.grid = element_blank(),
+        panel.background = element_rect(fill = "#f3ebe0"),
+        panel.spacing = unit(.5, "lines"),
+        strip.background = element_rect(fill = "#63270d"),
+        strip.text = element_text(color = "white"),
+        plot.title = element_text(size = 20,
+                                  face = "bold",
+                                  margin = margin(t = 20,
+                                                  b = 10)),
+        plot.subtitle = element_text(size = 13,
+                                     margin = margin(b = 20)),
+        plot.caption = element_text(size = 9,
+                                    color = "gray30"),
+        legend.position = "bottom",
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggsave(here::here("2020", "W28_CoffeeRatingsRadar.png"), width = 18, height = 18, units = "cm")
+```
+
+### Source[tidytuesday by Z3tt] (https://github.com/Z3tt/TidyTuesday/blob/master/R/2020_28_CoffeeRatings.Rmd)
 ```{r}
 df <- coffee %>% 
   filter(total_cup_points != 0) %>% 
