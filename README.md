@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Coffee Ratings by [James LeDoux & Coffee Quality Database](https://github.com/jldbc/coffee-quality-database)
+![CoffeeRatings](https://github.com/inkyscope/datavizRscope/blob/master/2020/W28_CoffeeRatingsRadar.png)
+
 ### Broadway Musicals by [Playbill](https://www.playbill.com/grosses)
 ![BroadwayMusicals](https://github.com/inkyscope/datavizRscope/blob/master/2020/W18_BroadwayMusicals_1.png)
 
