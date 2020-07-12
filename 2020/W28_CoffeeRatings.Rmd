@@ -83,10 +83,11 @@ plot <- coffee_metrics %>%
                                     color = "gray30"),
         legend.position = "bottom",
         axis.title.x = element_blank(),
-        axis.text.x = element_text(size = 6),
+        axis.text.x = element_text(size = 4,
+                                   margin = margin(5, 5, 5, 5)),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  ggsave(here::here("2020", "W28_CoffeeRatingsRadar.png"), width = 18, height = 18, units = "cm")
+  ggsave(here::here("2020", "W28_CoffeeRatingsRadar.png"), width = 20, height = 18, units = "cm")
 ```
 
 ### Source[tidytuesday by Z3tt] (https://github.com/Z3tt/TidyTuesday/blob/master/R/2020_28_CoffeeRatings.Rmd)
