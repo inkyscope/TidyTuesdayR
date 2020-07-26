@@ -11,8 +11,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(geofacet)
 ```
-
+### Source:[geofacet package] (https://github.com/hafen/geofacet)
 
 ```{r}
 animal_outcomes <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-21/animal_outcomes.csv')
@@ -65,10 +66,10 @@ df <- animal_outcomes %>%
 
 
 ```
-### Source:[geofacet package] (https://github.com/hafen/geofacet)
+
 
 ```{r}
-library(geofacet)
+
 
 plot <- df %>% 
   ggplot(aes(year, pct, fill = outcome)) +
@@ -98,8 +99,10 @@ plot <- df %>%
         legend.text = element_text(size = 7),
         plot.background = element_rect(fill = "#91a6b4",
                                        colour = NA),
-        plot.title = element_text(face = "bold"),
-        plot.subtitle = element_text(margin = margin(b = 15)),
+        plot.title = element_text(size = 16,
+                                  face = "bold"),
+        plot.subtitle = element_text(size = 12,
+                                     margin = margin(b = 15)),
         panel.grid.major = element_line(color = "#636466",
                                         size = .3),
         panel.grid.minor = element_blank(),
