@@ -1,0 +1,102 @@
+---
+title: "Claremont Run"
+author: "Sung Inkyung"
+date: '2020 8 1 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+
+```
+### Source[tidymodels by julia silge] (https://juliasilge.com/blog/uncanny-xmen/)
+
+```{r}
+character_visualization <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-30/character_visualization.csv")
+
+per_issue <- character_visualization %>% 
+  group_by(issue) %>% 
+  summarise(across(speech:depicted, sum)) %>% 
+  ungroup()
+```
+
+
+```{r}
+locations <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-30/locations.csv")
+
+x_mansion <- locations %>% 
+  group_by(issue) %>% 
+  summarize(mansion = "X-Mansion" %in% location)
+
+locations_joined <- per_issue %>% 
+  inner_join(x_mansion)
+
+locations_joined %>% 
+  mutate(mansion = if_else(mansion, "X-Mansion", "No mansion")) %>% 
+  pivot_longer(speech:depicted, names_to = "visualization") %>% 
+  mutate(visualization = fct_inorder(visualization)) %>% 
+  ggplot(aes(mansion, value, fill = visualization)) +
+  geom_dotplot(binaxis = "y",
+               stackdir = "center",
+               binpositions = "all",
+               show.legend = F) +
+  facet_wrap(~ visualization, scales = "free_y") +
+  scale_fill_manual(values = c("#af739a", "#739aaf", "#9aaf73", "#ff619b")) +
+  labs(x = "",
+       y = "",
+       title = "Which issues contain the  X - Mansions a location?",
+       subtitle = "Comparing the top 25 characters' speech bubble, thought bubble, narrative statements,\nand total depictions in the corresponding issue",
+       caption = "Source: Claremont Run | Graphic: Sung Inkyung") +
+  theme_minimal()
+```
+
+
+```{r logistic regression model}
+set.seed(123)
+
+x_boots <- bootstraps(locations_joined, times = 1000, apparent = T)
+
+boot_models <- x_boots %>% 
+   mutate(
+    model = map(
+      splits,
+      ~ glm(mansion ~ speech + thought + narrative + depicted,
+        family = "binomial", data = analysis(.)
+      )
+    ),
+    coef_info = map(model, tidy)
+  )
+
+boot_coefs <- boot_models %>% 
+  unnest(coef_info)
+
+int_pctl(boot_models, coef_info)
+
+## How are the parameters distributed?
+
+boot_coefs %>% 
+  filter(term != "(Intercept)") %>% 
+  mutate(term = fct_inorder(term)) %>% 
+  ggplot(aes(estimate, fill = term)) +
+  geom_vline(
+    xintercept = 0, color = "gray50",
+    alpha = .5, lty = 2, size = .7) +
+  geom_histogram(alpha = .8, 
+                 show.legend = F) +
+  facet_wrap(~ term, scales = "free") +
+  scale_y_continuous(limits = c(0, 120),
+                     breaks = seq(0, 120, 30)) +
+  scale_fill_manual(values = c("#af739a", "#739aaf", "#9aaf73", "#ff619b")) +
+  labs(x = "",
+       y = "",
+       title = "Which issues contain the  X - Mansions as a location?",
+       subtitle = "Comparing the top 25 characters' speech bubble, thought bubble, narrative statements,\nand total depictions in the corresponding issue",
+       caption = "Source: Claremont Run | Graphic: Sung Inkyung") +
+  theme_minimal()
+```
+
