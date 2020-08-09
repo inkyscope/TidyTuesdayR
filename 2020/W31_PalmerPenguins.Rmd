@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "PalmerPenguins"
 author: "Sung Inkyung"
 date: '2020 8 1 '
 output: html_document
@@ -38,8 +38,7 @@ penguins %>%
 df <- penguins %>% 
   filter(!is.na(sex)) %>% 
   select(-year, -island) %>% 
-  mutate(species = factor(species),
-         sex = factor(sex))
+  mutate_if(is.character, factor)
 ```
 ### Source[machine learning by KimSungBum] (https://youtu.be/lIT5-piVtRw)
 
@@ -111,6 +110,9 @@ collect_metrics(glm_rs)
 
 ```{r}
 glm_rs %>% 
+  conf_mat_resampled()
+
+rf_rs %>% 
   conf_mat_resampled()
 ```
 

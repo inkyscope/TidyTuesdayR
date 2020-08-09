@@ -1,0 +1,164 @@
+---
+title: "EuropeanEnergy"
+author: "Sung Inkyung"
+date: '2020 8 9 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse) 
+library(tidymodels)
+library(ggdendro)
+library(dendextend)
+```
+
+
+```{r}
+energy_types <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-04/energy_types.csv')
+
+```
+
+
+```{r}
+energy_types %>% 
+  count(country_name, sort = T)
+
+energy_types %>% 
+  count(type, level,  sort = T)
+
+energy_types %>% 
+  count(level, sort = T)
+
+energy_types %>% 
+  pivot_longer(cols = c('2016':'2018'), names_to = "year") %>% 
+  filter(level != "Level2") %>% 
+  na.omit() %>% 
+  group_by(country_name, type) %>% 
+  summarize(total = sum(value)) %>% 
+  ungroup() %>% 
+  top_n(10)
+  
+
+
+```
+
+
+```{r Hierarchical clustering}
+energy_types_wide <- energy_types %>% 
+  filter(country != "EL",
+         !is.na(country_name),
+         level != "Level 2") %>% 
+  select(country_name, type, "2016") %>% 
+  pivot_wider(names_from = type, values_from = '2016', 
+              id_cols = country_name) %>% 
+  rowwise() %>% 
+  mutate(total = rowSums(across('Conventional thermal':Other)),
+         across('Conventional thermal':Other, ~ . / total))
+
+props <- energy_types_wide %>% 
+  select(-total) %>% 
+  column_to_rownames("country_name") %>% 
+  as.matrix() %>% 
+  scale()
+
+totals <- energy_types_wide %>% 
+  select(name = country_name, total)
+
+## Hierarchical clustering
+hc1 <- hclust(dist(props), method = "ward.D2")
+sub_group <- cutree(hc1, k = 5)
+
+## plot
+
+plot <- hc1 %>% 
+  as.dendrogram %>% 
+  set("branches_k_color",
+      value = c("#0e7fa7", "#7b2b80", "#563812", "#fdd66d", "#87d21d"),
+        k = 5) %>% 
+  set("labels_col",
+      c("#563812", "#7b2b80", "#0e7fa7", "#fdd66d", "#00cc33"),
+        k = 5) %>% 
+  set("labels_cex" = .8) %>% 
+  set("branches_lwd" = 3) %>% 
+  as.ggdend() %>% 
+  ggplot(horiz = T) +
+  theme_void()
+  
+```
+
+
+```{r Principal Component Analysis}
+
+df <- energy_types_wide %>% 
+  select(-total)
+
+pca_rec <- recipe(~., data = df) %>% 
+  update_role(country_name, new_role = "id") %>% 
+  step_normalize(all_predictors()) %>% 
+  step_pca(all_predictors())
+
+pca_prep <- prep(pca_rec)
+
+pca_prep
+```
+```{r}
+tidied_pca <- tidy(pca_prep, 2)
+
+tidied_pca %>%
+  filter(component %in% paste0("PC", 1:5)) %>%
+  mutate(component = fct_inorder(component)) %>%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = NULL) +
+  theme_minimal()
+```
+
+
+```{r}
+library(tidytext)
+
+tidied_pca %>% 
+  filter(component %in% paste0("PC", 1:4)) %>% 
+  group_by(component) %>% 
+  top_n(7, abs(value)) %>% 
+  ungroup() %>% 
+  mutate(terms = reorder_within(terms, abs(value), component)) %>% 
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  facet_wrap(~ component, scales = "free_y") +
+  scale_y_reordered() +
+  labs( x = "Absolute value of contribution",
+        y = "",
+        fill = "Positive?") +
+  theme_minimal()
+
+```
+
+
+```{r}
+juice(pca_prep) %>% 
+  ggplot(aes(PC1, PC2, label = country_name)) +
+  geom_point(aes(color = country_name), alpha = .7, size = 2,
+             show.legend = F) +
+  geom_text(check_overlap = T, 
+            hjust = "inward") +
+  theme_minimal()
+
+```
+
+
+```{r}
+juice(pca_prep) %>% 
+  ggplot(aes(PC2, PC4, label = country_name)) +
+  geom_point(aes(color = country_name), alpha = .7, size = 2,
+             show.legend = F) +
+  geom_text(check_overlap = T, 
+            hjust = "inward") +
+  theme_minimal()
+```
+
