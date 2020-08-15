@@ -61,11 +61,13 @@ plot_tile <- df %>%
        caption = "Source: appa by Avery Robbins | Graphics: Sung Inkyung") +
   theme_minimal() +
   theme(panel.grid = element_blank(),
-        plot.title = element_text(size = 28,
+        plot.title = element_text(size = 26,
                                   margin = margin(b = 20)),
         axis.text.y = element_markdown(size = 20, 
                                        color = pal, 
                                        hjust = .12, 
                                        margin = margin(r = 10))) 
+
+ggsave(here::here("2020", "W33_Avatar-TheLastAirbender.png"), width = 28, height = 24, units = "cm")
 ```
 
