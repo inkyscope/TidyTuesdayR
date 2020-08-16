@@ -11,7 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
-library(ggstream)
 library(ggtext)
 library(paletteer)
 ```
@@ -20,12 +19,10 @@ library(paletteer)
 ```{r}
 avatar <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/avatar.csv')
 
-scene_description <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/scene_description.csv')
 ```
 
 
 ```{r}
-
 
 df <- avatar %>% 
   filter(character != "Scene Description") %>% 
@@ -34,7 +31,7 @@ df <- avatar %>%
   distinct(book, book_num, chapter, chapter_num, imdb_rating)
 
 
-pal <- c("#9a6642", "#e25822", "#73b6fe")
+pal <- c("#c2261f", "#e1a95f", "#73b6fe")
 
 plot_tile <- df %>% 
   ggplot(aes(chapter_num, book, label = imdb_rating)) +
@@ -47,9 +44,9 @@ plot_tile <- df %>%
             color = "black") +
   scale_y_discrete(
       labels = c(
-        '<span style="font-size:11pt">Book 3:</span><br>**Fire**<br><br><br>', 
-        '<span style="font-size:11pt">Book 2:</span><br>**Earth**<br><br><br>', 
-        '<span style="font-size:11pt">Book 1:</span><br>**Water**<br><br><br>'
+        '<span style="font-size:11pt">Book 3</span><br>**Fire**<br><br><br>', 
+        '<span style="font-size:11pt">Book 2</span><br>**Earth**<br><br><br>', 
+        '<span style="font-size:11pt">Book 1</span><br>**Water**<br><br><br>'
       ),
       expand = c(.05, .05)
     ) +
