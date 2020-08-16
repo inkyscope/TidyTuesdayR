@@ -1,0 +1,79 @@
+---
+title: "Avatar: The Last Airbender"
+author: "Sung Inkyung"
+date: '2020 8 16 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(paletteer)
+
+```
+
+### Source[tidytuesday by @ysamano28] (https://github.com/ysamano/TidyTuesday/blob/master/2018/week_12/week_12.R)
+```{r}
+avatar <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-11/avatar.csv')
+```
+
+```{r}
+
+avatar_character <- avatar %>% 
+  filter(character != "Scene Description") %>% 
+  mutate(imdb_rating = if_else(book_num == 1 & chapter_num == 20, 9.7, imdb_rating)) %>% 
+  select(book, chapter, chapter_num, character, character_words, imdb_rating) %>% 
+  group_by(book) %>% 
+  mutate(line_num = row_number()) %>% 
+  ungroup() %>% 
+  unnest_tokens(word, character_words) %>% 
+  anti_join(stop_words)
+
+avatar_words <- avatar_character %>% 
+  filter(character %in% main_character) %>% 
+  count(book, chapter, chapter_num, character, imdb_rating) %>% 
+  add_count(character, wt = n, name = "count") 
+
+```
+
+
+```{r}
+main_character <-  c("Aang", "Katara", "Sokka", "Zuko", "Toph",
+                     "Iroh", "Azula")
+
+plot_character <- avatar_words %>% 
+  mutate(character = factor(character,
+                           levels = c("Aang", "Katara", "Sokka",
+                                      "Zuko", "Toph", "Iroh",
+                                      "Azula"))) %>% 
+  ggplot(aes(chapter_num, character, color = character)) +
+  geom_point(aes(size = count), alpha = .7) +
+  scale_size_area(max_size = 10) +
+  guides(color = F,
+         size = guide_legend(title = "Lines \nper Chapter")) +
+  scale_color_paletteer_d("khroma::bright") +
+ # scale_color_paletteer_d("ggsci::default_jama") +
+ # scale_color_paletteer_d("nord::baie_mouton") +
+  scale_x_continuous(breaks = seq(1, 21, 1)) +
+  labs(title = "Number of Lines Mentioning in Each Chapter by Book Elements",
+       subtitle = "Word counts tell that Sokka, Aang and Katara are main characters through all the episodes", 
+       caption = "Source: appa | Graphic: Sung Inkyung") +
+  facet_wrap(~ book, ncol = 1, scales = "free_y") +
+  ggthemes::theme_fivethirtyeight(base_size = 10) +
+  theme(strip.text.x = element_text(size = 11,
+                                    hjust = 0,
+                                    face = "bold"),
+        panel.grid.minor = element_blank(), 
+        axis.title = element_blank(), 
+        panel.grid.major.y = element_line(colour = "gray60"),
+        legend.title = element_text(size = 8), 
+        plot.caption = element_text(size = 8))
+
+ggsave(here::here("2020", "W33_Avatar-TheLastAirbender_1.png"), width = 27, height = 25, units = "cm")
+  
+```
+
