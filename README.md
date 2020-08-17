@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Avatar:The Last Airbender by [appa](https://github.com/averyrobbins1/appa)
+![Avatar](https://github.com/inkyscope/datavizRscope/blob/master/2020/W33_Avatar-TheLastAirbender_1.png)
+
 ### Australian Dogs Outcome by [RSPCA](https://www.rspca.org.au/what-we-do/our-role-caring-animals/annual-statistics)
 ![Australian Pets](https://github.com/inkyscope/datavizRscope/blob/master/2020/W30_AustralianPets.png)
 
