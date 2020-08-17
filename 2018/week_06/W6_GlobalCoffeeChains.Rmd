@@ -1,0 +1,39 @@
+---
+title: "GlobalCoffeeChains"
+author: "Sung Inkyung"
+date: '2020 8 17 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(waffle)
+```
+
+
+```{r}
+starbucks <- read_csv("2018/week_06/Starbucks.csv")
+timhorton <- read_csv("2018/week_06/Timhorton.csv")
+dunkin <- read_csv("2018/week_06/Dunkin.csv")
+```
+
+
+```{r}
+num_location <- c(Starbucks = nrow(starbucks),
+                  'Timhortons' = nrow(timhorton),
+                  'Dunkin Donuts\n(only USA)' = nrow(dunkin))
+
+plot_caffe <- waffle(num_location / 30,
+                     rows = 25,
+                     colors = c("#036635", "#dc0f2d", "#ff671f"), #Dunkin #DA1884(magenta), #653819(brown)
+                     legend_pos = "bottom",
+                     title = "Number of Coffee Stores in the World",
+                     xlab = "1 square is 30 places")
+
+ggsave(here::here("2018", "week_06", "W6_GlobalCoffeeChains.png"), width = 20, height = 12, units = "cm" )
+```
+
