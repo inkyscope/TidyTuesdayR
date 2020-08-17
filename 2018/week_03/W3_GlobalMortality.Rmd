@@ -76,7 +76,7 @@ plot <- group_1 %>%
             aes(x = 1989, 
                 y = rank,
                 label = rank),
-            size = 4, 
+            size = 5.5, 
             hjust = 1, 
             family = "Roboto Condensed") +
   geom_text(data = group_1 %>% 
@@ -84,7 +84,7 @@ plot <- group_1 %>%
             aes(x = 2016.5, 
                 y = rank, 
                 label = cause),
-            size = 4, 
+            size = 5.5, 
             hjust = 0,
             family = "Roboto Condensed") +
   geom_bump(data = group_2,
@@ -104,7 +104,7 @@ plot <- group_1 %>%
             aes(x = 1989, 
                 y = rank,
                 label = rank),
-            size = 5.5, 
+            size = 7, 
             hjust = 1, 
             family = "Roboto Condensed",
             fontface = "bold") +
@@ -113,7 +113,7 @@ plot <- group_1 %>%
             aes(x = 2016.5, 
                 y = rank, 
                 label = cause),
-            size = 5.5, 
+            size = 7, 
             hjust = 0,
             family = "Roboto Condensed",
             fontface = "bold") +
@@ -130,16 +130,17 @@ plot <- group_1 %>%
   theme_minimal(base_size = 9) +
   theme(legend.position = "none",
         panel.grid = element_blank(),
-        plot.title = element_text(size = 26,
+        plot.title = element_text(size = 32,
                                   family = "Roboto Condensed",
                                   face = "bold",
                                   margin = margin(b = 5)),
-        plot.subtitle = element_text(size = 18,
+        plot.subtitle = element_text(size = 28,
                                   family = "Roboto Condensed",
                                   margin = margin(b = 10)),
-        plot.caption = element_text(size = 13,
+        plot.caption = element_text(size = 16,
                                     margin = margin(t = 5,
                                                     b = 10)),
+        axis.text.x = element_text(size = 13),
         axis.text.y = element_blank())
   
 ggsave(here::here("2018", "week_03", "W3_GlobalMortality.png"), width = 20, height = 13, units = "cm")
