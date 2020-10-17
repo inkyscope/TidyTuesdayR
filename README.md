@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### DatasuRus Dozen by [Alberto Cairo](http://www.thefunctionalart.com/2016/08/download-datasaurus-never-trust-summary.html)
+![DatasaRus](https://github.com/inkyscope/datavizRscope/blob/master/2020/W42_Datasaurus.gif)
+
 ### Avatar:The Last Airbender by [appa](https://github.com/averyrobbins1/appa)
 ![Avatar](https://github.com/inkyscope/datavizRscope/blob/master/2020/W33_Avatar-TheLastAirbender_1.png)
 
