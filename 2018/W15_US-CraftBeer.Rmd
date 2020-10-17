@@ -1,0 +1,129 @@
+---
+title: "BeerTypes"
+author: "Sung Inkyung"
+date: '2019 11 30 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(tidytext)
+library(ggrepel)
+```
+
+
+```{r}
+beers <- read_excel("C:/Users/inkyscope/Documents/projects/data/beers.xlsx", sheet = "beers") %>% 
+  left_join(read_excel("C:/Users/inkyscope/Documents/projects/data/beers.xlsx", sheet = "breweries"), by = c("brewery_id" = "id"))
+  
+```
+
+
+```{r beer name word}
+## IBU is an abbreviation for the International Bitterness Units scale, a gauge of beer's bitterness
+## ABU(alchohol by volume), a standard measure of how much alcohol is contained in a given volume of an alchol beverage
+
+
+beer_name <- beers %>% 
+  filter(!is.na(ibu)) %>% 
+  select(abv, ibu, name = name.x) %>% 
+  mutate(name = gsub("[[:digit:]]", "", name)) %>% 
+  unnest_tokens(word, name) %>% 
+  anti_join(stop_words) %>% 
+  group_by(word) %>% 
+  summarise(beers = n(),
+            min_ibu = min(ibu),
+            max_ibu = max(ibu),
+            min_abv = min(abv),
+            max_abv = max(abv),
+            avg_ibu = mean(ibu),
+            avg_abv = mean(abv)) %>% 
+  top_n(50, beers)
+
+p <- beer_name %>% 
+  ggplot(aes(avg_ibu, round(avg_abv))) +
+  geom_point(
+             size = 3,
+             na.rm = TRUE,
+             show.legend = FALSE) +
+  geom_text_repel(aes(avg_ibu, avg_abv,
+                               label = word),
+                           na.rm = TRUE,
+                           show.legend = FALSE) +
+  scale_y_continuous(limits = c(0.04, 0.09),
+                     breaks = seq(0.04, 0.09, 0.01),
+                     labels = scales::percent_format()) +
+  labs(x = "Average International Bitterness Units",
+       y = "Average Alcohol by Volume", 
+       title = "A helpful guide for choosing a beer by its name",
+       caption = "Source: data.world") +
+  theme_minimal()
+  p
+```
+
+
+```{r beers style}
+beers_style <- beers %>% 
+  group_by(style) %>% 
+  summarise(n = n(),
+            avg_ibu = mean(na.omit(ibu)),
+            avg_abv = mean(na.omit(abv))) %>% 
+  ggplot(aes(avg_abv, avg_ibu)) +
+  geom_point(color = "#fe9500",
+             aes(size = n),
+             na.rm = TRUE) +
+  ggrepel::geom_text_repel(aes(label = ifelse(n >= 50, style, "")),
+                           size = 3.5,
+                           box.padding = unit(0.7, "lines"),
+                           na.rm = TRUE) +
+ # geom_smooth(method = "lm", se = FALSE, show.legend = FALSE) +
+  scale_x_continuous(breaks = seq(0, .1, 0.02),
+                     labels = scales::percent_format()) +
+  scale_y_continuous(breaks = seq(0, 100, 25)) +
+  labs(x = "Average Alcohol by Volume",
+       y = "Average International bitterness units",
+       title = "US Beer styles by ABU and IBU",
+       caption = "Source: data.world") +
+  theme_minimal() +
+  theme(legend.position = "top")
+            
+```
+
+```{r beer brewery}
+
+beers_brewery <- beers %>% 
+  select(abv, name = name.x, style, ounces, brewery = name.y, city, state)
+
+
+top_brewery <- beers_brewery %>% 
+  group_by(brewery, state, city) %>% 
+  summarise(n = n(),
+            avg_abv = mean(abv)) %>% 
+  arrange(desc(avg_abv)) %>% 
+  filter(n >= 5) %>% 
+  head(10) %>% 
+  ungroup() %>% 
+  mutate(avg_abv = round(avg_abv, 3),
+         brewery = str_replace(brewery, "\\(.*", ""),
+         brewery_state = paste0(brewery, " (", state, ")")) %>% 
+  mutate(brewery = fct_reorder(brewery, avg_abv)) %>%
+  ggplot(aes(brewery, avg_abv, fill = avg_abv)) +
+  geom_bar(stat= "identity",
+           show.legend = FALSE) +
+  scale_y_continuous(breaks = seq(0, .1, 0.02),
+                     labels = scales::percent_format()) +
+  scale_fill_gradient(low = "#fe9500", high = "#6e1601") +
+  coord_flip() +
+  labs(x = "",
+       y = "Average of alchohol volume",
+       title = "Top 10 breweries with highest average of ABV in US")+
+  theme(legend.position = "none") +
+  theme_minimal()
+           
+```
+
