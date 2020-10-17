@@ -1,0 +1,150 @@
+---
+title: "HimalayanClimbers"
+author: "Sung Inkyung"
+date: '2020 10 17 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(streamgraph)
+library(scales)
+```
+
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 39)
+```
+
+
+```{r}
+peaks <- tuesdata$peaks %>% 
+  rename(height_meters = height_metres)
+
+peaks_climbed <- peaks %>% 
+  arrange(desc(height_meters)) %>% 
+  filter(climbing_status == "Climbed") %>% 
+  head(50) %>% 
+  mutate(peak_name = fct_reorder(peak_name, height_meters)) %>% 
+  filter(!is.na(first_ascent_year)) %>% 
+  group_by(year = first_ascent_year, peak_name) %>% 
+  tally(wt = n) %>% 
+  streamgraph("peak_name", "n", "year",
+              offset = "zero", interpolate = "cardinal") %>% 
+  sg_fill_brewer("Blues")
+ 
+```
+
+```{r}
+height_expedition <- expeditions %>% 
+  left_join(peaks, by = "peak_name") %>% 
+  select(peak_name, year, height = height_meters) %>% 
+  arrange(-height) %>% 
+  mutate(height_group = fct_inorder(
+    case_when(peak_name == "Everest" ~ "Mt. Everest (8850)",
+              between(height, 8000, 8849) ~ ">8000",
+              between(height, 7000, 7999) ~ "7999 ~ 7000",
+              between(height, 6000, 6999) ~ "6999 ~ 6000",
+              TRUE ~ "<6000"))
+  ) %>% 
+  mutate(decade = pmax(10*(year %/% 10), 1910))
+ 
+
+plot <- height_expedition %>% 
+  count(decade, height_group) %>% 
+  group_by(decade) %>% 
+  mutate(prc = n / sum(n)) %>% 
+  ungroup() %>% 
+  complete(decade, height_group, fill = list(prc = 0)) %>% 
+  ggplot(aes(decade, prc)) +
+  geom_area(aes(fill = height_group)) +
+  scale_fill_brewer(palette = "Blues") +
+  scale_x_continuous(breaks = scales :: pretty_breaks(11)) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "",
+       y = "",
+       fill = "",
+       title = "Himalayan Expeditions Since 1910") +
+  theme_classic()
+
+  
+
+climbs_plot <- height_expedition %>% 
+  group_by(decade, peak_name) %>% 
+  tally(wt = n) %>% 
+  streamgraph("peak_name", "n", "decade", 
+              offset="silhouette", 
+              interpolate="step")  %>% 
+  sg_fill_brewer("Blues") 
+
+```
+
+ 
+```{r}
+na_reasons <- c("Did not attempt climb", "Unknown", "Did not reach base camp", "Attempt rumoured")
+
+expeditions <- expeditions %>% 
+  mutate(success = case_when(str_detect(termination_reason,
+                                        "Success") ~ "Success",
+                             termination_reason %in% na_reasons ~ "Other", 
+                             TRUE ~ "Failure")) %>% 
+  mutate(days_to_highpoint = as.integer(highpoint_date - basecamp_date))
+
+
+Shortest_peaks <- expeditions %>% 
+  filter(success == "Success") %>% 
+  group_by(peak_name) %>% 
+  slice_min(days_to_highpoint, n = 1) %>% 
+  select(peak_name, year, value = days_to_highpoint) %>% 
+  group_by(year, peak_name) %>% 
+  tally(wt = value) %>% 
+  ungroup() %>% 
+  streamgraph("peak_name", "n", "year") %>% 
+  sg_fill_tableau(palette = "tableau20") %>% 
+  sg_title(title = "The Shortest Summits Expedition in Hymalaya") %>% 
+  sg_legend(show = T,
+            label = "Peaks")
+```
+
+```{r}
+first_peaks <- expeditions %>% 
+  filter(success == "Success") %>% 
+  group_by(peak_name) %>% 
+  mutate(year = min(year)) %>% 
+  select(peak_name, year) %>% 
+  group_by(year, peak_name) %>% 
+  tally(wt = n) %>% 
+  ungroup() %>% 
+  streamgraph("peak_name", "n", "year") %>% 
+  sg_fill_tableau(palette = "cyclic") %>% 
+  sg_title(title = "Peaks with First Expedition Year")
+
+
+```
+
+
+```{r}
+members <- tuesdata$members
+
+outcome_everest <- members %>% 
+  filter(peak_name == "Everest") %>% 
+  group_by(year = 10*(year%/%10)) %>% 
+  summarize(n_climbers = n(),
+            died = mean(died),
+            success = mean(success)) %>% 
+  pivot_longer(died:success,
+               names_to = "outcome", values_to = "value") %>% 
+  group_by(year, outcome) %>% 
+  tally(wt = value) %>% 
+  ungroup() %>% 
+  streamgraph("outcome", "n", "year") %>% 
+  sg_axis_x(10) %>% 
+  sg_title(title = "Died or Survived toward Everest") %>% 
+  sg_fill_brewer("Accent") %>% 
+  sg_legend(show = T, label = "outcome")
+```
