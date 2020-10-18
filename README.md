@@ -37,6 +37,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### DatasauRus Dozen by [Alberto Cairo](http://www.thefunctionalart.com/2016/08/download-datasaurus-never-trust-summary.html)
 ![DatasaRus](https://github.com/inkyscope/datavizRscope/blob/master/2020/W42_Datasaurus.gif)
 
+### Friends Pair by [friends R Package](https://github.com/EmilHvitfeldt/friends)
+![Friends](https://github.com/inkyscope/datavizRscope/blob/master/2020/W37_Friends.png)
+
 ### Avatar:The Last Airbender by [appa](https://github.com/averyrobbins1/appa)
 ![Avatar](https://github.com/inkyscope/datavizRscope/blob/master/2020/W33_Avatar-TheLastAirbender_1.png)
 
