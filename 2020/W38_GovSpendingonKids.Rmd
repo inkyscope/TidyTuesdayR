@@ -1,0 +1,107 @@
+---
+title: "Gov Spending on Kids"
+author: "Sung Inkyung"
+date: '2020 11 10 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source [tidytuesday by Kaustav sen] (https://github.com/kaustavSen/tidytuesday/blob/master/2020/week_38_govt_spending.Rmd)
+```{r}
+library(tidyverse)
+library(geofacet)
+library(showtext)
+library(ggtext)
+```
+
+
+```{r}
+font_add_google("Schoolbell")
+font_add_google("Raleway")
+
+showtext_auto()
+```
+
+
+```{r}
+kids <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-15/kids.csv')
+
+```
+
+
+```{r}
+kids_pk12ed <- kids %>% 
+  filter(variable == "PK12ed")
+
+kids_years <- kids_pk12ed %>% 
+  filter(year %in% c(2008, 2016)) %>% 
+  select(state, year, inf_adj) %>% 
+  pivot_wider(names_from = year, values_from = inf_adj) %>% 
+  mutate(diff = if_else(`2008` < `2016`, "gain", "decline"))  
+
+df <- kids_pk12ed %>% 
+  left_join(kids_years)
+
+df %>% 
+  count(diff, sort = T)
+
+```
+
+
+```{r}
+plot <- df %>% 
+  ggplot(aes(year, inf_adj, color = diff, fill = diff)) +
+  geom_line(size = .7) +
+  geom_area(data = df %>% 
+              filter(year <= 2008),
+            alpha = .3) +
+  geom_area(data = df %>% 
+              filter(year >= 2008),
+            alpha = .5) +
+  scale_fill_manual(values = c("#FF7F41FF", "#79C000FF")) +
+  scale_color_manual(values = c("#FF7F41FF", "#79C000FF")) +
+  scale_x_continuous(limits = c(1996, 2018), 
+                     breaks = c(2000, 2008, 2016)) +
+  facet_geo(~state, grid = "us_state_grid2",
+            scales = "free_y",
+            labeller = label_wrap_gen(width = 5)) +
+  labs(x = "",
+       y = "") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "#EFEFE8FF",
+                                       color = "#EFEFE8FF"),
+        strip.text = element_text(size = 8.5,
+                                  color = "gray40"),
+        legend.position = "none",
+        panel.grid = element_blank(),
+        axis.text = element_blank(),)
+
+plot_Grob <- ggplotGrob(plot)
+
+
+```
+
+```{r}
+plot_final <- 
+  ggplot() +
+  annotation_custom(plot_Grob) +
+  annotate("text", x = -4, y = 5, 
+           label = "US Government Budget on PK12 between 1997 and 2016 by US States", 
+           size = 10, hjust = 0) +
+  annotate("richtext", x = -4, y = 4.6, 
+           hjust = 0, 
+           label = "States are divided based on allocation <span style='color:#79C000FF'>gained</span> or <span style='color:#FF7F41FF'>declined</span> between 2008(recession) to 2016.",
+           fill = NA,
+           label.color = NA,
+           size = 8) + 
+  scale_x_continuous(limits = c(-5, 5)) +
+  scale_y_continuous(limits = c(-5, 5)) +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "#EFEFE8FF",
+                                       color = "#EFEFE8FF"))
+
+ggsave(here::here("2020", "W38_GovSpendingonKids.png"), width = 25, height = 17, units = "cm")
+```
+
