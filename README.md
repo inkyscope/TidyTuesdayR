@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### IKEA Furniture by [Kaggle](https://www.kaggle.com/ahmedkallam/ikea-sa-furniture-web-scraping)
+![IKEA](https://github.com/inkyscope/datavizRscope/blob/master/2020/W45_IKEA.png)
+
 ### DatasauRus Dozen by [Alberto Cairo](http://www.thefunctionalart.com/2016/08/download-datasaurus-never-trust-summary.html)
 ![DatasaRus](https://github.com/inkyscope/datavizRscope/blob/master/2020/W42_Datasaurus.gif)
 
