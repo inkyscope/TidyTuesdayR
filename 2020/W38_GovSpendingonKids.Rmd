@@ -12,16 +12,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(geofacet)
-library(showtext)
 library(ggtext)
-```
-
-
-```{r}
-font_add_google("Schoolbell")
-font_add_google("Raleway")
-
-showtext_auto()
+library(here)
 ```
 
 
@@ -64,44 +56,42 @@ plot <- df %>%
   scale_color_manual(values = c("#FF7F41FF", "#79C000FF")) +
   scale_x_continuous(limits = c(1996, 2018), 
                      breaks = c(2000, 2008, 2016)) +
-  facet_geo(~state, grid = "us_state_grid2",
+  facet_geo(~state, 
+            grid = "us_state_grid2",
             scales = "free_y",
             labeller = label_wrap_gen(width = 5)) +
   labs(x = "",
-       y = "") +
-  theme_minimal() +
+       y = "",
+       title = "US Government Budget on PK12 between 1997 and 2016 by US States", 
+       subtitle = "States are divided based on allocation <span style='color:#79C000FF'>gained</span> or <span style='color:#FF7F41FF'>declined</span> between 2008(recession) to 2016.",
+       caption = "Data: opne.canada.ca | **Graphic**: Sung Inkyung") +
+  theme_void() +
   theme(plot.background = element_rect(fill = "#EFEFE8FF",
                                        color = "#EFEFE8FF"),
+        plot.title = element_text(size = 12, 
+                                  hjust = .5,
+                                  margin = margin(b = 5)),
+        plot.subtitle = element_markdown(hjust = .5, 
+                                         fill = NA,
+                                         size = 9,
+                                         margin = margin(b = 30)),
+        plot.caption = element_markdown(hjust = .5,
+                                        size = 7,
+                                        color = "gray60"),
         strip.text = element_text(size = 8.5,
                                   color = "gray40"),
         legend.position = "none",
         panel.grid = element_blank(),
-        axis.text = element_blank(),)
+        axis.text = element_blank(),
+        plot.margin =  margin(20, 20, 20, 20))
 
-plot_Grob <- ggplotGrob(plot)
 
+ggsave(filename = "W38_GovSpendingonKids.png", 
+       plot = plot, 
+       width = 25, 
+       height = 17, 
+       units = "cm")
 
 ```
 
-```{r}
-plot_final <- 
-  ggplot() +
-  annotation_custom(plot_Grob) +
-  annotate("text", x = -4, y = 5, 
-           label = "US Government Budget on PK12 between 1997 and 2016 by US States", 
-           size = 10, hjust = 0) +
-  annotate("richtext", x = -4, y = 4.6, 
-           hjust = 0, 
-           label = "States are divided based on allocation <span style='color:#79C000FF'>gained</span> or <span style='color:#FF7F41FF'>declined</span> between 2008(recession) to 2016.",
-           fill = NA,
-           label.color = NA,
-           size = 8) + 
-  scale_x_continuous(limits = c(-5, 5)) +
-  scale_y_continuous(limits = c(-5, 5)) +
-  theme_void() +
-  theme(plot.background = element_rect(fill = "#EFEFE8FF",
-                                       color = "#EFEFE8FF"))
-
-ggsave(here::here("2020", "W38_GovSpendingonKids.png"), width = 25, height = 17, units = "cm")
-```
 
