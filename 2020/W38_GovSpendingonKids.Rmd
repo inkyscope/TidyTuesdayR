@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ### Source [tidytuesday by Kaustav sen] (https://github.com/kaustavSen/tidytuesday/blob/master/2020/week_38_govt_spending.Rmd)
+### Source [tidytuesday by ysamano] (https://github.com/ysamano/TidyTuesday/blob/master/2020/week_46/week_46.R)
 ```{r}
 library(tidyverse)
 library(geofacet)
@@ -64,7 +65,7 @@ plot <- df %>%
        y = "",
        title = "US Government Budget on PK12 between 1997 and 2016 by US States", 
        subtitle = "States are divided based on allocation <span style='color:#79C000FF'>gained</span> or <span style='color:#FF7F41FF'>declined</span> between 2008(recession) to 2016.",
-       caption = "Data: opne.canada.ca | **Graphic**: Sung Inkyung") +
+       caption = "Data: Urban Institute | **Graphic**: Sung Inkyung") +
   theme_void() +
   theme(plot.background = element_rect(fill = "#EFEFE8FF",
                                        color = "#EFEFE8FF"),
