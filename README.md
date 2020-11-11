@@ -40,6 +40,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### DatasauRus Dozen by [Alberto Cairo](http://www.thefunctionalart.com/2016/08/download-datasaurus-never-trust-summary.html)
 ![DatasaRus](https://github.com/inkyscope/datavizRscope/blob/master/2020/W42_Datasaurus.gif)
 
+### US Budget on PK12 by [Urban Institute](https://datacatalog.urban.org/dataset/state-state-spending-kids-dataset)
+![PK12](https://github.com/inkyscope/datavizRscope/blob/master/2020/W38_GovSpendingonKids.png)
+
 ### Friends Pair by [friends R Package](https://github.com/EmilHvitfeldt/friends)
 ![Friends](https://github.com/inkyscope/datavizRscope/blob/master/2020/W37_Friends.png)
 
