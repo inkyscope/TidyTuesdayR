@@ -1,0 +1,149 @@
+---
+title: "Chopped"
+author: "Sung Inkyung"
+date: '2020 11 11 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggfittext)
+library(ragg)
+```
+
+
+```{r}
+chopped <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-25/chopped.tsv')
+
+chopped %>% 
+  count(series_episode, sort = T)
+```
+```{r}
+ingredients <- chopped %>% 
+  select(appetizer, entree, dessert) %>% 
+  pivot_longer(everything(),
+               names_to = "type",
+               values_to = "ingredients") %>% 
+  separate_rows(ingredients, sep = ", ")
+
+top_ingredients <- ingredients %>% 
+  group_by(type) %>% 
+  count(ingredients, name = "count") %>% 
+  slice_max(n = 5, count) %>% 
+  mutate(type = factor(type,, levels = c("appetizer", "entree", "dessert"))) %>% 
+  arrange(type, -count) %>% 
+  mutate(rank = factor(row_number()),
+         type = str_to_title(type),
+         type = as.factor(type),
+         ingredients = str_wrap(ingredients, width = 10),
+         ingredients = str_to_sentence(ingredients))
+
+plot <- top_ingredients %>% 
+  ggplot(aes(rank, 5)) +
+  geom_point(aes(size = count),
+             color = "#E0C568FF",
+             alpha = .75) +
+  geom_text(aes(y = 4, label = ingredients),
+            size = 3,
+            color = "#FCF6F5FF") +
+  scale_y_continuous(limits = c(3, 6)) +
+  scale_size_continuous(range = c(6, 12)) +
+  facet_wrap(~type, ncol = 1, 
+             strip.position = "left") +
+  labs(x = "",
+       y = "",
+       title = "Top ingredients through all seasons") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#1c1a19"),
+        plot.title = element_text(face = "bold",
+                                  margin = margin(t = 20),
+                                  color = "#2BAE66FF"),
+        strip.text.y.left = element_text(face = "bold",
+                                         color = "#D198C5FF",
+                                         vjust = .5,
+                                         hjust = .5,
+                                         size = 11,
+                                         margin = margin(l = 10)))
+  
+```
+
+
+```{r}
+chopped <- chopped %>% 
+  filter(season <= 5) %>% 
+  group_by(season) %>% 
+  mutate(avg = mean(episode_rating),
+         above_below = if_else(episode_rating > avg, "above", "below"),
+         season_start = min(series_episode),
+         season_end = max(series_episode),
+         season_num = case_when(season == 1 ~ "One",
+                                season == 2 ~ "Two",
+                                season == 3 ~ "Three",
+                                season == 4 ~ "Four",
+                                season == 5 ~ "Five"))
+```
+
+
+```{r}
+plot <- chopped %>% 
+  ggplot(aes(series_episode, episode_rating)) +
+  geom_rect(aes(xmin = season_start - .5,
+                xmax = season_end + 1,
+                ymin = 7.5,
+                ymax = 10, 
+                fill = season)) +
+  geom_rect(aes(xmin = -5,
+                xmax = 1.1,
+                ymin = 7.5,
+                ymax = 10),
+                fill = "#132B43")+
+  geom_line(aes(series_episode, avg, 
+                group = season), 
+            color = "#8ABAD3FF",
+            size = 1.5) +
+  geom_segment(aes(x = series_episode,
+                   xend = series_episode,
+                   y = avg,
+                   yend = episode_rating),
+               linetype = "dotted",
+               color = "white") +
+  geom_point(aes(color = above_below),
+             size = 1.2) +
+  geom_fit_text(aes(xmin = season_start - 1,
+                    xmax = season_end,
+                    ymin = 7.7, 
+                    ymax = 8,
+                    label = season_num),
+                color = "#FFA351FF",
+                size = 30) +
+  scale_x_continuous(limits = c(-5, 66)) +
+  scale_y_continuous(breaks = seq(8, 9.4, 0.2),
+                     expand = expansion(add = 1)) +
+  scale_color_manual(values = c(above = "#EED971FF",
+                                below = "#FFBE7BFF")) +
+  geom_segment(x = -1 , xend =-1, 
+               y = 8.0, yend = 9.4,
+               color = "#ABD6DFFF") +
+  annotate("segment", x = -1.2, xend = -1.01,
+           y = seq(8,9.4,0.2), yend = seq(8,9.4,0.2),
+           color = "#ABD6DFFF") +
+  annotate("text", x = 20, y = 9.8, 
+           label = "Chopped: IMDB average ratings by season 1 to 5",
+           color = "#FCF6F5FF",
+           size = 10) +
+  theme(legend.position = "none",
+        panel.background = element_blank(),
+        axis.line = element_blank(),
+        axis.title = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(margin = margin(r = -75, 
+                                                   l = 10), 
+                                   color = "white"),
+        axis.ticks = element_blank(),
+        plot.margin = grid::unit(c(-6,-1.4,-6,0), "cm"))
+```
