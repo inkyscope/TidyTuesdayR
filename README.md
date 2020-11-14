@@ -46,6 +46,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Friends Pair by [friends R Package](https://github.com/EmilHvitfeldt/friends)
 ![Friends](https://github.com/inkyscope/datavizRscope/blob/master/2020/W37_Friends.png)
 
+### Chopped by [kaggle](https://www.kaggle.com/jeffreybraun/chopped-10-years-of-episode-data)
+![Chopped](https://github.com/inkyscope/datavizRscope/blob/master/2020/W35_Chopped.png)
+
 ### Avatar:The Last Airbender by [appa](https://github.com/averyrobbins1/appa)
 ![Avatar](https://github.com/inkyscope/datavizRscope/blob/master/2020/W33_Avatar-TheLastAirbender_1.png)
 
