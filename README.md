@@ -49,6 +49,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Chopped by [kaggle](https://www.kaggle.com/jeffreybraun/chopped-10-years-of-episode-data)
 ![Chopped](https://github.com/inkyscope/datavizRscope/blob/master/2020/W35_Chopped.png)
 
+### Extinct Plants in Asia by [IUCN Red List](https://www.iucnredlist.org/)
+![Extinct Plants in Asia](https://github.com/inkyscope/datavizRscope/blob/master/2020/W34_ExtinctPlants_Asia.png)
+
 ### Avatar:The Last Airbender by [appa](https://github.com/averyrobbins1/appa)
 ![Avatar](https://github.com/inkyscope/datavizRscope/blob/master/2020/W33_Avatar-TheLastAirbender_1.png)
 
@@ -61,7 +64,6 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Broadway Musicals by [Playbill](https://www.playbill.com/grosses)
 ![BroadwayMusicals](https://github.com/inkyscope/datavizRscope/blob/master/2020/W18_BroadwayMusicals_1.png)
 
-
 ### Animals Crossing by [Villager DB](https://github.com/jefflomacy/villagerdb)
 ![Villager DB](https://github.com/inkyscope/datavizRscope/blob/master/2020/W19_AnimalCrossing.png)
 
@@ -70,7 +72,6 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 
 ### School Diversity by [NCES](https://nces.ed.gov/ccd/pubschuniv.asp)
 ![Diversit](https://github.com/inkyscope/datavizRscope/blob/master/figures/SchoolDiversity.png)
-
 
 ### Chrismas Birds Count by [Bird Studies Canada](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
 ![Birds](https://github.com/inkyscope/datavizRscope/blob/master/figures/ChristmasBirdsCounts.png)
