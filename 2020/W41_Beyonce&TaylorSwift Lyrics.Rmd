@@ -1,0 +1,76 @@
+---
+title: "BeyonceTaylor"
+author: "Sung Inkyung"
+date: '2020 11 17 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(textdata)
+```
+
+
+```{r}
+beyonce_lyrics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/beyonce_lyrics.csv')
+
+taylor_swift_lyrics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-29/taylor_swift_lyrics.csv') 
+```
+
+
+```{r}
+word_beyonce <- beyonce_lyrics %>% 
+  unnest_tokens(word, line) %>% 
+  anti_join(stop_words, by = "word") %>% 
+  filter(!word %in%
+           c("ooh", "yeah", "hey", "uh", "ya", "na", "em", "yo")) %>% 
+  select(artist = artist_name,
+         title = song_name,
+         word = word)
+
+word_taylor <- taylor_swift_lyrics %>% 
+  unnest_tokens(word, Lyrics) %>% 
+  anti_join(stop_words, by = "word") %>% 
+  filter(!word %in%
+           c("ooh", "yeah", "hey", "uh", "ya", "na", "em", "yo")) %>% 
+  select(artist = Artist,
+         title = Title,
+         word = word) 
+
+
+emotions <- rbind(word_beyonce, word_taylor) %>% 
+  inner_join(get_sentiments("nrc"), by = "word") %>% 
+  group_by(artist) %>% 
+  filter(!(sentiment %in% c('positive', 'negative'))) %>% 
+  mutate(no_songs = length(unique(title))) %>%  
+  group_by(artist, no_songs) %>% 
+  count(sentiment) %>% 
+  mutate(prop = n/no_songs)
+
+```
+
+
+```{r}
+plot <- emotions %>% 
+  ggplot(aes(x = prop,
+             y = reorder(sentiment, prop))) +
+  geom_col(aes(fill = artist)) +
+  scale_fill_manual(values = c("#eb40e7","#ce2929")) +
+  scale_x_continuous() +
+  labs(x = "Proportion of lyrics sentiments",
+       y = "",
+       title = "Sentiment Lyrics Analysis of Beyonce & Taylor Swift") +
+  facet_wrap(~ artist, nrow = 1) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#deddf1",
+                                        color = NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
