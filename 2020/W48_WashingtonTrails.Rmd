@@ -1,0 +1,237 @@
+---
+title: "Washington Trails"
+author: "Sung Inkyung"
+date: '2020 12 6'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(broom)
+library(janitor)
+```
+
+### Source[lasso model: titdmodels by julia silge] (https://juliasilge.com/blog/lasso-the-office/)
+
+```{r}
+hike_data <-  readr::read_rds(url('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-11-24/hike_data.rds')) %>% 
+   mutate(across(c(length, gain, highpoint, rating), parse_number)) %>% 
+  unnest(features)
+
+```
+
+```{r}
+hikes <- hike_data %>% 
+  mutate(hike_id = row_number(),
+         number = 1) %>% 
+  filter(rating > 0) %>%
+  select(hike_id, name, length:rating, number, features) %>% 
+  pivot_wider(names_from = features,
+              values_from = number, 
+              values_fill = 0) %>% 
+  janitor::clean_names() %>% 
+  select(-hike_id)
+
+
+hikes_split <- initial_split(hikes, strata = rating)
+hikes_train <- training(hikes_split)
+hikes_test <- testing(hikes_split)
+
+hikes_rec <- recipe(rating~., data = hikes_train) %>% 
+  update_role(name, new_role = "ID") %>% 
+  step_zv(all_numeric(), -all_outcomes()) %>% 
+  step_normalize(all_numeric(), -all_outcomes())
+
+hikes_prep <- hikes_rec %>% 
+  prep(strings_as_factors = F)
+
+```
+
+
+```{r}
+lasso_spec <- linear_reg(penalty = 0.1, mixture = 1) %>%
+  set_engine("glmnet")
+
+wf <- workflow() %>%
+  add_recipe(hikes_rec)
+
+lasso_fit <- wf %>%
+  add_model(lasso_spec) %>%
+  fit(data = hikes_train)
+
+lasso_fit %>%
+  pull_workflow_fit() %>%
+  tidy()
+```
+
+
+```{r}
+set.seed(1234)
+hikes_boot <- bootstraps(hikes_train, strata = rating)
+
+tune_spec <- linear_reg(penalty = tune(), mixture = 1) %>%
+  set_engine("glmnet")
+
+lambda_grid <- grid_regular(penalty(), levels = 50)
+
+
+doParallel::registerDoParallel()
+
+set.seed(2020)
+
+lasso_grid <- tune_grid(
+  wf %>% add_model(tune_spec),
+  resamples = hikes_boot,
+  grid = lambda_grid
+)
+
+lasso_grid %>%
+  collect_metrics()
+```
+
+
+```{r}
+lasso_grid %>%
+  collect_metrics() %>%
+  ggplot(aes(penalty, mean, color = .metric)) +
+  geom_errorbar(aes(
+    ymin = mean - std_err,
+    ymax = mean + std_err
+  ),
+  alpha = 0.5
+  ) +
+  geom_line(size = 1.5,
+            na.rm = T,
+            show.legend = F) +
+  facet_wrap(~.metric, scales = "free", nrow = 2) +
+  scale_x_log10() +
+  theme(legend.position = "none") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+```{r}
+lowest_rmse <- lasso_grid %>%
+  select_best("rmse", maximize = FALSE)
+
+final_lasso <- finalize_workflow(
+  wf %>% add_model(tune_spec),
+  lowest_rmse
+)
+```
+
+
+```{r}
+library(vip)
+
+plot_lass <- final_lasso %>%
+  fit(hikes_train) %>%
+  pull_workflow_fit() %>%
+  vi(lambda = lowest_rmse$penalty) %>%
+  mutate(
+    Importance = abs(Importance),
+    Variable = fct_reorder(Variable, Importance)
+  ) %>%
+  ggplot(aes(x = Importance, y = Variable, fill = Sign)) +
+  geom_col() +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_fill_manual(values = c( "#8d1111", "#144100")) +
+  labs(x = "Importance",
+       y = "",
+       title = "Which Attributes Affect to Ratings on Washington Hike Trails",
+       subtitle = "Using a lasso regression model",
+       caption = "Source: Washington Trails Association | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "top",
+        plot.caption = element_text(size = 7,
+                                    margin = margin(t = 30)))
+
+ggsave(here::here("2020", "W48_Washington Trails.png"), width = 18, height = 13, units = "cm")
+```
+
+
+```{r}
+last_fit(
+  final_lasso,
+  hikes_split
+) %>%
+  collect_metrics()
+```
+### Source[tidytuesday by @sathviknishanth] (https://twitter.com/sathviknishanth/status/1331560656223367168)
+```{r}
+ratings_features <- hike_data %>% 
+  mutate(hike_id = row_number(),
+         number = 1) %>% 
+  filter(rating > 0) %>% 
+  select(hike_id, name, location, number, rating, features) %>% 
+  pivot_wider(names_from = features,
+              values_from = number, values_fill = 0
+              ) %>% 
+  janitor::clean_names() %>% 
+  select(rating:summits)
+
+lm_summary <- lm(rating ~., data = ratings_features) %>% 
+  tidy(conf.int = T) %>% 
+  arrange(p.value) %>% 
+  filter(term != "(Intercept)")
+
+plot_summary <- lm_summary %>% 
+  mutate(term = str_replace_all(term, "-", " ")) %>% 
+  mutate(term = fct_reorder(term, estimate)) %>% 
+  filter(p.value != "NA") %>% 
+  ggplot(aes(estimate, term)) +
+  geom_point(aes(color = p.value > .05)) +
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_vline(aes(xintercept = 0), 
+             linetype = "dashed",
+             color = "gray60") +
+  labs(x = "Estimate",
+       y = "",
+       title = "Which Attributes Affect to Ratings on Washington Hike Trails",
+       subtitle = "Coast, waterfall, dogs not allowed, ridges passes and campsites avalilability are attractive attributes to people consistantly",
+       caption = "Source: Washington Trails Association | Graphic: Sung Inkyung") +
+  scale_color_manual(values = c("#8d1111","#144100"),
+                     labels = c("pvalue < 0.05", "pvalue > 0.05"),
+                     name = "") +
+  theme_minimal() +
+  theme(legend.position = "top")
+```
+
+```{r}
+plot_lm <- hike_data %>% 
+  ggplot(aes(length, rating)) +
+  geom_point(alpha = .1) +
+  geom_smooth(method = "lm") +
+  scale_x_log10()
+
+summary(lm(rating ~ length, hike_data))
+```
+
+
+```{r}
+model <- hike_data %>% 
+  filter(length > .1) %>%
+  select(length, gain, highpoint, rating, features) %>% 
+  unnest(features) %>% 
+  mutate(features = fct_lump(features, 6)) %>% 
+  filter(features != "Other") %>% 
+  lm(rating ~ log10(length) + gain + highpoint + features, data = .)
+
+plot_model <- model %>% 
+  tidy(conf.int = T) %>% 
+  filter(term != "(Intercept)") %>% 
+  mutate(term = fct_reorder(term, estimate),
+         term = str_replace(term, "features", "Feature: ")) %>% 
+  ggplot(aes(estimate, term)) +
+  geom_point() +
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high)) +
+  labs(x = "Estimate",
+       y = "") +
+  theme_minimal()
+
+```
