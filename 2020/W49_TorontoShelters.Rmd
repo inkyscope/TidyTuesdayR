@@ -1,0 +1,88 @@
+---
+title: "TotontoShelters"
+author: "Sung Inkyung"
+date: '2020 12 6'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggTimeSeries)
+library(ggtext)
+```
+
+
+```{r}
+shelters <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-12-01/shelters.csv')
+
+shelters_year <- shelters %>% 
+  separate(occupancy_date, c("year", "month", "day"), sep = "-", remove = F) %>% 
+  filter(capacity != 0) %>%  
+  mutate(rate = (occupancy / capacity) * 100,
+         year = as.numeric(year)) %>% 
+  group_by(occupancy_date, year) %>% 
+  summarise(rate = round(mean(rate), 2))
+```
+
+```{r}
+yearl_avg <- shelters_year %>% 
+  group_by(year) %>% 
+  summarise(total_avg = round(mean(rate), 2))
+
+```
+
+
+```{r}
+plot <- shelters_year %>% 
+  ggplot_calendar_heatmap(cDateColumnName = "occupancy_date",
+                          cValueColumnName = "rate",
+                          dayBorderSize = .03,
+                          monthBorderSize = .5) +
+  scale_fill_viridis_c(option = "cividis") +
+  facet_wrap(~ year, ncol = 1) +
+  labs(title = "Monthly Occupancy of Toronto Homeless Shelters (2017-2019)",
+       subtitle = "Yearly aveage of occupancy is around 95% for 3 consecutive years",
+       fill = "Occupancy rate(%)",
+       caption = "Source: opendatatoronto | Graphic: Sung Inkyung") +
+  theme(legend.position = "bottom",
+        legend.background = element_rect(fill = "#192072"), ###1f1e1b
+        legend.title = element_text(color = "#e0dbcc"),
+        legend.text = element_text(color = "#e0dbcc"),
+        strip.background = element_rect(fill = alpha("#cea912", .7),
+                                        color = "transparent"),
+        strip.text.x = element_text(size = 14,
+                                    color = "#f5f1e6"),
+        plot.background = element_rect(fill = "#192072",
+                                       color = "#192072"),
+        panel.background = element_rect(fill = "#192072",
+                                       color = "#192072"),
+        plot.title = element_text(size = 24, 
+                                  color = "#cea912",
+                                  margin = margin(t = 20, b = 7)),
+        plot.subtitle = element_text(size = 18, 
+                                  color = "#cea912",
+                                  margin = margin(b = 25)),
+        plot.caption = element_text(size = 11, 
+                                  color = "gray60",
+                                  margin = margin(t = 30, b = 20, r = 20)),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_text(size = 11,
+                                   colour = "#f5f1e6"),
+        axis.text.y = element_text(size = 9,
+                                   colour = "#f5f1e6"),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2020", "W49_TorontoShelters.png"), width = 34, height = 22, units = "cm")
+        
+
+```
+
