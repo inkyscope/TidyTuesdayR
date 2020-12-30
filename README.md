@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### 100 Women of 2020 [BBC](https://www.bbc.com/news/world-55042935)
+![WOMEN](https://github.com/inkyscope/datavizRscope/blob/master/2020/W50_WomenOf2020.png)
+
 ### IKEA Furniture by [Kaggle](https://www.kaggle.com/ahmedkallam/ikea-sa-furniture-web-scraping)
 ![IKEA](https://github.com/inkyscope/datavizRscope/blob/master/2020/W45_IKEA.png)
 
