@@ -1,0 +1,116 @@
+---
+title: "Ninja Warrior"
+author: "Sung Inkyung"
+date: '2020 12 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggtext)
+library(widyr)
+library(tidygraph)
+library(ggraph)
+library(igraph)
+
+```
+### Source[tidytuesday by ceder sherer] (https://github.com/Z3tt/TidyTuesday/blob/master/R/2020_51_NinjaWarrior.Rmd)
+```{r}
+ninja_warrior <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-12-15/ninja_warrior.csv') 
+
+ninja_warrior %>% 
+  count(season, sort = T)
+
+ninja_warrior %>% 
+  count(round_stage, sort = T)
+```
+
+
+```{r practice 1}
+ninja_similarity <- ninja_warrior %>% 
+  group_by(location, round_stage, season) %>% 
+  filter(n() > 3) %>% 
+  filter(season > 3) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = obstacle_order,
+              values_from = obstacle_name,
+              names_prefix = "obstacle_no_") %>% 
+  unite("obstacles",
+        starts_with("obstacle_no_"),
+        sep = " - ") %>% 
+  mutate(obstacles = str_remove_all(obstacles, "-\\sNA"),
+         obstacles = str_squish(obstacles),
+         id = row_number(),
+         name = glue::glue("S{season}|{round_stage}")) %>% 
+  unnest_tokens(word, obstacles) %>% 
+  anti_join(stop_words, by = "word") %>% 
+  count(name, word) %>% 
+  pairwise_similarity(name, word, n, upper = F, sort = T)
+
+graph_tbl <- ninja_similarity %>% 
+  as_tbl_graph()
+
+
+```
+
+
+```{r}
+set.seed(123)
+
+plot_main <- graph_tbl %>% 
+  ggraph(layout = "star") +
+  geom_edge_link(aes(edge_alpha = ..index..,
+                     edge_color = similarity),
+                show.legend = F) +
+  coord_fixed(clip = "off") + 
+  labs(title = "Came Across Data-Based Accidental Art",
+       subtitle = "Credit to Cedric Scherer to make this approach doable",
+       caption = "Source: Data.World | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(plot.title = element_text(hjust = .5),
+        plot.subtitle = element_text(hjust = .5),
+        plot.caption = element_text(hjust = .5)) 
+```
+
+### Source[tidytuesda by Julia Silge] (https://gist.github.com/juliasilge/1ca5bcc988d568d84a323cfd042c63db)
+
+```{r practice 2}
+
+library(tidylo)
+
+ninja_warrior <- ninja_warrior %>%
+    mutate(round_stage = case_when(str_detect(round_stage, "National Finals") ~ "National Finals",
+                                   str_detect(round_stage, "Semi-Finals") ~ "Semi Finals",
+                                   str_detect(round_stage, "Finals") ~ "Finals",
+                                   str_detect(round_stage, "Qualifying") ~ "Qualifying"))
+
+
+df <- ninja_warrior  %>%
+  count(round_stage, obstacle_name, sort = TRUE) %>%
+    bind_log_odds(round_stage, obstacle_name, n) %>%
+    group_by(round_stage) %>%
+    slice_max(log_odds_weighted, n = 10, with_ties = FALSE) %>%
+    ungroup() %>%
+    mutate(obstacle_name = reorder_within(obstacle_name, log_odds_weighted, round_stage),
+           round_stage = fct_relevel(round_stage, "Qualifying", "Semi-Finals"))
+  
+  
+
+plot <- df %>% 
+  ggplot(aes(log_odds_weighted, obstacle_name, 
+             fill = round_stage)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~round_stage, scales = "free") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_reordered() +
+  labs(x = "Weighted log odds",
+       y = "",
+       title = "Ninja Warrior Obstacles by Round Stage") +
+  theme_minimal()
+
+```
