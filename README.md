@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Big Mac Index [TheEconomist](https://github.com/TheEconomist/big-mac-data)
+![Big Mac](https://github.com/inkyscope/datavizRscope/blob/master/2020/W52_BigMacIndex.png)
+
 ### 100 Women of 2020 [BBC](https://www.bbc.com/news/world-55042935)
 ![WOMEN](https://github.com/inkyscope/datavizRscope/blob/master/2020/W50_WomenOf2020.png)
 
