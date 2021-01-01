@@ -50,7 +50,8 @@ plot <- nfl %>%
   facet_wrap(~location) +
   labs(x = "",
        y = "",
-       title = "NFL Attendance by Location") +
+       title = "NFL Attendance by Location",
+       fill = "Attendance") +
   theme_minimal() +
   theme(panel.grid = element_blank(),
         strip.text = element_text(size = 11,
