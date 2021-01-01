@@ -1,0 +1,59 @@
+---
+title: "NFL Attendance"
+author: "Sung Inkyung"
+date: '2020 12 31'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by jwatzek] (https://github.com/jwatzek/tidytuesday/blob/master/scripts/2020-06_nfl_attendance.R)
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+attendance <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-04/attendance.csv')
+
+```
+```{r}
+nfl <- attendance %>% 
+  group_by(team_name, year) %>% 
+  filter(row_number() == 1) %>% 
+  ungroup() %>% 
+  mutate(name = glue::glue("{team} {team_name}")) %>% 
+  pivot_longer(home:away, names_to = "location", values_to = "attendance") %>% 
+  mutate(attendance = attendance/1e3, 
+         location = factor(toupper(location), 
+                           levels = c("HOME", "AWAY"))) %>% 
+  complete(name, year, location)
+
+```
+
+
+```{r}
+plot <- nfl %>% 
+  ggplot(aes(year, fct_rev(name))) +
+  geom_tile(aes(fill = attendance), col = "black", size = .04, alpha = .8) +
+  scale_x_continuous(expand = c(.005, .005),
+                     limits = c(2000, 2019),
+                     breaks = seq(2000, 2019, by = 5)) +
+  scale_color_identity() +
+  scale_fill_gradientn(limits = c(300, 700),
+                       breaks = seq(300, 700, 100),
+                       labels = unit_format(unit = "k"),
+                       colors = terrain.colors(100),
+                       na.value = 'gray75') +
+  coord_equal() +
+  facet_wrap(~location) +
+  labs(x = "",
+       y = "",
+       title = "NFL Attendance by Location") +
+  theme_minimal() +
+  theme(panel.grid = element_blank(),
+        strip.text = element_text(size = 11,
+                                  face = "bold"))
+  
+```
