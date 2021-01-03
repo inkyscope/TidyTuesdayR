@@ -34,10 +34,13 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
-### Big Mac Index [TheEconomist](https://github.com/TheEconomist/big-mac-data)
+### The Office by [schrute](https://bradlindblad.github.io/schrute/index.html)
+![The Office](https://github.com/inkyscope/datavizRscope/blob/master/2020/W12_TheOffice_Characters.png)
+
+### Big Mac Index by [TheEconomist](https://github.com/TheEconomist/big-mac-data)
 ![Big Mac](https://github.com/inkyscope/datavizRscope/blob/master/2020/W52_BigMacIndex.png)
 
-### 100 Women of 2020 [BBC](https://www.bbc.com/news/world-55042935)
+### 100 Women of 2020 by [BBC](https://www.bbc.com/news/world-55042935)
 ![WOMEN](https://github.com/inkyscope/datavizRscope/blob/master/2020/W50_WomenOf2020.png)
 
 ### IKEA Furniture by [Kaggle](https://www.kaggle.com/ahmedkallam/ikea-sa-furniture-web-scraping)
