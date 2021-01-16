@@ -46,7 +46,7 @@ artwork_artist$fraction <-  artwork_artist$total / sum(artwork_artist$total)
 
 artwork_artist$ymax <-  cumsum(artwork_artist$fraction)
 
-artwork_artist$ymin <- c(0, head(artwork_artist$ymax, n = -1))
+artwork_artist$ymin <- c(0, head(artwork_artist$ymax, n = -.5))
 ```
 
 
@@ -61,7 +61,7 @@ plot_artwork <- artwork_artist %>%
             color="white", 
             size=.25, 
             alpha=0.7) +
-  scale_fill_manual(values = as.vector(watlington(8)),
+  scale_fill_manual(values = as.vector(alphabet(8)),
                     guide=guide_legend(title="Acquisition Year",
                                        order=3)) +
   new_scale_fill() +
@@ -73,7 +73,7 @@ plot_artwork <- artwork_artist %>%
             color = "white", 
             size = .25, 
             alpha = 0.75) +
-  scale_fill_manual(values = as.vector(kelly(8)),
+  scale_fill_manual(values = as.vector(tol(8)),
                     guide=guide_legend(title="Artist", 
                                        order = 2)) +
   new_scale_fill() +
