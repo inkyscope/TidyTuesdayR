@@ -59,7 +59,7 @@ plot_artwork <- artwork_artist %>%
                 xmax = 5, 
                 xmin = 4), 
             color="white", 
-            size=.5, 
+            size=.25, 
             alpha=0.7) +
   scale_fill_manual(values = as.vector(watlington(8)),
                     guide=guide_legend(title="Acquisition Year",
@@ -71,7 +71,7 @@ plot_artwork <- artwork_artist %>%
                 xmax = 4, 
                 xmin = 3), 
             color = "white", 
-            size = .5, 
+            size = .25, 
             alpha = 0.75) +
   scale_fill_manual(values = as.vector(kelly(8)),
                     guide=guide_legend(title="Artist", 
@@ -83,9 +83,9 @@ plot_artwork <- artwork_artist %>%
                 xmax = 3, 
                 xmin = 2), 
             color = "white", 
-            size = .5, 
+            size = .25, 
             alpha = 0.8) +
-  scale_fill_manual(values = c("#222233"), #bb0077
+  scale_fill_manual(values = c("#02122b"), ## female: "#bb0077"
                     guide=guide_legend(title = "Gender",
                                        order = 1)) +
   xlim(c(0, 5)) + 
