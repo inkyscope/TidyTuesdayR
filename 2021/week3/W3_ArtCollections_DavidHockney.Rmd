@@ -1,0 +1,139 @@
+---
+title: "Tate Art Museum"
+author: "Sung Inkyung"
+date: '2021 1 20'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+###Source[tidytuesday by jenn schilling] (https://github.com/jennschilling/tidytuesday-2021/blob/main/2021-01-12/2021-01-12.R)
+```{r}
+library(tidyverse)
+library(magick)
+library(imager)
+library(scales)
+
+```
+
+
+```{r}
+artwork <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-12/artwork.csv')
+
+artists <- readr::read_csv("https://github.com/tategallery/collection/raw/master/artist_data.csv")
+
+artists %>% 
+  filter(str_detect(name, "Hockney"))
+```
+```{r}
+hockney <- artists %>% 
+  filter(str_detect(name, "Hockney, David"))
+
+hockney_canvas <- artwork %>% 
+  right_join(., hockney , by = c("artistId" = "id"))
+
+
+get_colorPal <- function(url, n=8, cs="RGB"){
+  
+  im <- image_read(url) # added to read the image inside the function
+  
+  tmp <-im %>% 
+    image_quantize(max = n, colorspace = cs) %>%  ## reduce colors 
+    magick2cimg() %>%  ## prep for making data frame
+    RGBtoHSV() %>% # to get hue
+    as.data.frame(wide="c") %>%  ## making it wide 
+    mutate(hex=hsv(rescale(c.1, from=c(0,360)),c.2,c.3),
+           hue = c.1) %>%
+    count(hex, hue, sort=T) %>% 
+    mutate(colorspace = cs)
+  
+  return(tmp %>% 
+         select(hex, hue, n) %>% 
+           mutate(url = url)) 
+  
+}
+
+
+
+# Test
+get_colorPal(hockney_canvas$thumbnailUrl[1])
+```
+
+
+```{r}
+hockney_canvas_input <- hockney_canvas %>% 
+  arrange(year) %>% 
+  select(thumbnailUrl) %>% 
+  rename(url = thumbnailUrl) %>% 
+  mutate(n = 5, 
+         cs = "RGB") %>% 
+  filter(!is.na(url)) %>% 
+  filter(url != "http://www.tate.org.uk/art/images/work/T/T01/T01515_8.jpg")
+
+hockney_canvas_output <- pmap_df(hockney_canvas_input, get_colorPal)
+```
+
+
+```{r}
+hockney_canvas_output <- hockney_canvas_output %>% 
+  left_join(.,
+            artwork %>% 
+              select(thumbnailUrl, year, title),
+            by = c("url" = "thumbnailUrl"))
+
+```
+
+
+```{r}
+plot <- hockney_canvas_output %>% 
+  group_by(year) %>% 
+  mutate(ypos = row_number(hue)) %>% 
+  ggplot(aes(year, ypos, fill = hex)) +
+  geom_tile() +
+  scale_fill_identity() +
+  labs(x = "",
+       y = "",
+       title = "David Hockney's Colors",
+       subtitle = "For each work, the top five colors are extracted.\nThe colors are stacked by year the work was produced and organized by hue.",
+       caption = "Source: Tate Art Museum | Graphic: Sung Inkyung") +
+  theme_classic() +
+  theme(axis.line = element_blank())
+  
+  
+```
+
+```{r}
+# Make a circular plot
+
+plot_polar <- hockney_canvas_output %>% 
+  group_by(url) %>% 
+  mutate(ypos = row_number(hue)) %>% 
+  ggplot(aes(url, ypos, fill = hex)) +
+  geom_tile() +
+  annotate("text", x = -3, y = -3, 
+           label = "T H E\nT A T E\nA  R  T\nM U S E U M", 
+           fontface = "bold",
+           size = 4.5) +
+  scale_fill_identity() +
+  expand_limits(y = -.05) +
+  coord_polar() +
+  labs(x = "",
+       y = "",
+       title = "David Hockney's Colors",
+       subtitle = "(from 478 works between 1954 and 2007)\nFor each work, the top five colors are extracted.",
+       caption = "Source: Tate Art Museum | Graphic: Sung Inkyung") +
+  theme_void() +
+    theme(plot.title = element_text(size = 18,
+                                    hjust = .5),
+          plot.subtitle = element_text(size = 12,
+                                       hjust = .5),
+          plot.caption = element_text(size = 8,
+                                      hjust = .5))
+  
+ggsave(here::here("2021", "week3", "W3_ArtCollections_DavidHockney.png"), width = 15, height = 15.5, units = "cm")
+  
+```
+
+
+
