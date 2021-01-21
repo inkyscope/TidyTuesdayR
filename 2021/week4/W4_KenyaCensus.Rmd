@@ -1,0 +1,74 @@
+---
+title: "KenyaCensus"
+author: "Sung Inkyung"
+date: '2021 1 21 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[Bivariate Mapping with ggplot2] (https://cran.r-project.org/web/packages/biscale/vignettes/biscale.html)
+
+```{r}
+library(tidyverse)
+library(rKenyaCensus)
+library(biscale)
+library(scales)
+library(janitor)
+library(cowplot)
+```
+
+
+```{r}
+gender <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-19/gender.csv')
+
+```
+
+
+```{r}
+map <- rKenyaCensus::KenyaCounties_SHP %>% 
+  sf::st_as_sf()
+
+gender <- gender %>% 
+  janitor::clean_names() %>% 
+  filter(county != "Total") %>% 
+  mutate(ratio = male / female,
+         County = toupper(county)) %>% 
+  bi_class(x = ratio, 
+           y = total, 
+           style = "quantile",
+           dim = 3)
+
+legend <- bi_legend(pal = "DkCyan",
+                    dim = 3, 
+                    xlab = "Total Population",
+                    ylab = "Ratio of Male / Female",
+                    size = 8)
+
+
+map_biscale <- map %>% 
+  left_join(gender) %>% 
+  ggplot() +
+  geom_sf(aes(fill = bi_class), 
+          color = "white", 
+          show.legend = F) +
+  bi_theme()+
+  bi_scale_fill("DkCyan", dim = 3) +
+  labs(title = "Kenya Population Census",
+       subtitle = "Gender Distribution in Kenya",
+       caption = "Source: Keny Census | Graphic: Sung Inkyung") +
+  theme(plot.title = element_text(size = 18, 
+                                  hjust = .5),
+        plot.subtitle = element_text(size = 13,
+                                     hjust = .5),
+        plot.caption = element_text(size = 9,
+                                    hjust = .5))
+
+# combine map with legend
+finalPlot <- ggdraw() +
+  draw_plot(map_biscale, 0, 0, 1, 1) +
+  draw_plot(legend, 0.15, .07, 0.2, 0.2)
+
+ggsave(here::here("2021", "week4", "W4_KenyaCensus.png"), width = 17, height = 17, units = "cm")
+```
