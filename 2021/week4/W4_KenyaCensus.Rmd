@@ -1,7 +1,7 @@
 ---
 title: "KenyaCensus"
 author: "Sung Inkyung"
-date: '2021 1 21 '
+date: '2021 1 21'
 output: html_document
 ---
 
@@ -57,7 +57,7 @@ map_biscale <- map %>%
   bi_scale_fill("DkCyan", dim = 3) +
   labs(title = "Kenya Population Census",
        subtitle = "Gender Distribution in Kenya",
-       caption = "Source: Keny Census | Graphic: Sung Inkyung") +
+       caption = "Source: Kenya Census | Graphic: Sung Inkyung") +
   theme(plot.title = element_text(size = 18, 
                                   hjust = .5),
         plot.subtitle = element_text(size = 13,
