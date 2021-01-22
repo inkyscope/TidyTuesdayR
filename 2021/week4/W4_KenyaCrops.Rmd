@@ -1,0 +1,98 @@
+---
+title: "KenyaCrops"
+author: "Sung Inkyung"
+date: '2021 1 22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(rKenyaCensus)
+library(scales)
+```
+
+
+```{r}
+crops <- rKenyaCensus::V4_T2.21 %>% 
+  clean_names()
+
+df_crops <- crops %>% 
+  ungroup() %>% 
+  mutate(county = str_to_title(sub_county)) %>% 
+  pivot_longer(cols = tea:khat_miraa,
+               names_to = "type",
+               values_to = "value") %>% 
+  filter(!is.na(value)) %>% 
+  mutate(type = str_replace_all(str_to_title(type), "_", " "))
+
+
+pals <- c( "Avocado" = "#568203", "Citrus" = "#9fb70a", 
+           "Coffee" = "#6f4e37",  "Macadamia" = "#dfcf88",
+           "Mango" = "#ffc324", "Tea" = "#923c01",
+           "Cashew nut" = "#d4b797", "Coconut" = "#f6ead1",
+           "Khat miraa" = "#5fbf00")
+
+```
+
+
+```{r}
+map <- rKenyaCensus::KenyaCounties_SHP %>% 
+  sf::st_as_sf() %>% 
+  clean_names() %>% 
+  mutate(county = str_to_title(county))
+
+map_crops <- df_crops %>% 
+  group_by(type) %>% 
+  slice_max(n = 10, order_by = value) 
+
+type_list <- map_crops %>% 
+  select(type) %>% 
+  arrange() %>% 
+  pull() %>% 
+  unique()
+
+plot_map <- ggplot() +
+  geom_sf(data = map, 
+          fill = "#c3c2b2",
+          size = .2, 
+          alpha = .3, 
+          color = "#b2c3ae") +
+  geom_sf(data = map %>% 
+            right_join(map_crops) %>% 
+            filter(type %in% type_list),
+          aes(fill = type),
+          size = .3, 
+          color = "#ffffb2") +
+  scale_fill_manual(values = pals) +
+  guides(fill = F) +
+  facet_wrap(~ type, 
+             nrow = 2,
+             strip.position = "top") +
+  labs(title = "Distribution of Crops For Each County in Kenya",
+       subtitle = "The maps represent 10 counties with the highest values for each crop type",
+       caption = "Source: rKenyaCensus | Graphic: Sung Inkyung" ) +
+  theme_void() +
+  theme(plot.title = element_text(size = 22, 
+                                  hjust = 0.5,
+                                  margin = margin(t = 10, b = 7)),
+        plot.subtitle = element_text(size = 14,
+                                     hjust = 0.5,
+                                    margin = margin(b = 40)),
+        plot.caption = element_text(size = 9,
+                                    hjust = 0.5,
+                                    margin = margin(t = 20)),
+        panel.spacing.x = unit(2, "lines"),
+        strip.text.x = element_text(size = 12, 
+                                    face = "bold",
+                                    margin = margin(0, 0, 5, 0)))
+
+ggsave(here::here("2021", "week4", "W4_KenyaCrops.png"))
+```
+
+
+
