@@ -1,0 +1,116 @@
+---
+title: "W.E.B. Du Bois Challenge"
+author: "Sung Inkyung"
+date: '2021 2 28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by jennschilling] (https://github.com/jennschilling/tidytuesday-2021/blob/main/2021-02-16/2021-02-16.R)
+```{r}
+library(tidyverse)
+library(ggforce)
+library(grid)
+library(patchwork)
+library(pBrackets)
+```
+
+
+```{r}
+georgia_pop <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-16/georgia_pop.csv')
+```
+
+
+```{r}
+georgia_pop %>% 
+  count(Year, sort = T)
+
+df_pop <- georgia_pop %>% 
+  pivot_longer(cols = Colored:White,
+               names_to = "race",
+               values_to = "percent") %>% 
+  mutate(year = Year)
+
+plot <- df_pop %>% 
+  ggplot(aes(percent, year, linetype = toupper(race))) +
+  geom_path() +
+  coord_cartesian(clip = "off") +
+  scale_x_reverse(limits = c(100, 0),
+                  breaks = seq(0, 100, 5),
+                  expand = c(0, 0)) +
+  scale_y_continuous(limits = c(1790, 1890),
+                     breaks = seq(1790, 1890, 10),
+                     expand = c(0, 0)) +
+  scale_linetype_manual(values = c("solid", "dashed"),
+                        labels = c("= COLORED", "= WHITE")) +
+  labs(title = "COMPARATIVE INCREASE OF WHITE AND COLORED\nPOPULATION OF GEORGIA. \n\n",
+       x = " ",
+       y = " ",
+       linetype = "") +
+  theme(legend.background = element_rect(fill = "#edd4b9",
+                                  color = NA),
+        legend.key = element_rect(fill = "#edd4b9"),
+        legend.key.width = unit(2, unit = "cm"),
+        legend.text = element_text(size = 7,
+                                   color ="gray60",
+                                   margin = margin(r = 4, unit = "cm")),
+        legend.box.margin = margin(l = 3, 
+                                   t = 0.5, unit = "cm"),
+        legend.position = "bottom",
+        plot.background = element_rect(fill = "#edd4b9",
+                                       color = NA),
+        panel.background = element_rect(fill = "#edd4b9",
+                                        color = NA),
+        panel.border = element_rect(fill = NA, 
+                                    color = "gray60"),
+        plot.title = element_text(size = 12,
+                                  face = "bold",
+                                  hjust = .5),
+        plot.title.position = "plot",
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(color = "gray60"),
+        axis.text.y = element_text(size = 7,
+                                   color = "gray60"),
+        panel.grid.major.x = element_line(color = "#e69b7a"),
+        panel.grid.major.y = element_line(color = "#e69b7a"),
+        panel.grid.minor = element_blank(),
+        plot.margin = margin(t = 10, r = 25, b = 10, l = 25))
+
+# Add Curly Brace
+# Source: https://stackoverflow.com/questions/35633239/add-curly-braces-to-ggplot2-and-then-use-ggsave
+
+bracketsGrob <- function(...){
+  l <- list(...)
+  e <- new.env()
+  e$l <- l
+  grid:::recordGrob(  {
+    do.call(grid.brackets, l)
+  }, e)
+}
+
+
+bracket <- bracketsGrob(1.01, -0.03, -0.01, -0.03, 
+                        h = 0.05, 
+                        lwd = .7, 
+                  col = "gray60")
+
+text <- textGrob("PERCENTS",
+                 x = 0.5, y = -0.1,
+              gp = gpar(fontsize = 7,
+                        col = "gray60"))
+
+plot_final <- plot + 
+  annotation_custom(bracket) +
+  annotation_custom(text)
+
+ggsave("W8_DuBoisChallenge_Population.png",
+       plot = plot_final,
+       device = "png",
+       width = 5,
+       height = 7,
+       dpi = 300,
+       type = "cairo")
+        
+```
