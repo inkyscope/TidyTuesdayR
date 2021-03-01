@@ -1,0 +1,57 @@
+---
+title: "Employment and Earnings"
+author: "Sung Inkyung"
+date: '2021 3 1'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(scales)
+library(lubridate)
+library(ggtext)
+```
+
+
+```{r}
+employed <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/employed.csv')
+
+earn <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-23/earn.csv')
+```
+
+
+```{r}
+plot <- earn %>% 
+  filter(sex != "Both Sexes") %>% 
+  filter(age %in% c("16 to 19 years", "20 to 24 years", "25 to 34 years","35 to 44 years", "45 to 54 years", 
+                    "55 to 64 years", "65 years and over")) %>% 
+  group_by(age, sex, year, quarter) %>% 
+  ggplot(aes(year, median_weekly_earn, color = sex)) +
+  geom_jitter(size = 2.5, alpha = .7) +
+  scale_color_manual(values = c("#0477c2", "#f71297"))+
+  facet_wrap(~ age, nrow = 1) +
+  labs(x = "",
+       y = "",
+       title = "Median Weekly Earnings for <span style = 'color: #f71297'>**Women**</span> and <span style = 'color:#0477c2'>**Men**</span>by Age Group in USA",
+       caption = "Source: BLS | Graphic: Sung Inkyung",
+       color = "") +
+  scale_x_continuous(limits = c(2012, 2021),
+                     breaks = seq(2012, 2021, 3)) +
+  scale_y_continuous(labels = scales::dollar_format()) +
+  theme_light() +
+  theme(legend.position = "none",
+        strip.background = element_rect(fill = "#383227"),
+        strip.text.x = element_text(color = "#f8f8ff",
+                                    face = "bold"),
+        plot.title = element_markdown(size = 22,
+                                      margin = margin(b = 10)),
+        plot.caption = element_text(size = 9),
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 7.5))
+
+ggsave(here::here("2021", "week9", "W9_Employment and Earnings.png"), width = 32, height = 24, units = "cm")
+```
