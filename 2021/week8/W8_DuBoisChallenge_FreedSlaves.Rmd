@@ -1,0 +1,90 @@
+---
+title: "FreedSlaves"
+author: "Sung Inkyung"
+date: '2021 3 1'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+### Source[tidytuesday by Kaustav Sen] (https://github.com/kaustavSen/tidytuesday/blob/master/2021/week_08.R)
+```{r}
+freed_slaves <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-02-16/freed_slaves.csv')
+```
+
+```{r}
+df<- freed_slaves %>% 
+  pivot_longer(cols = Slave:Free,
+               names_to = "slave_free",
+               values_to = "proportion")
+
+label <- df %>% 
+  filter(slave_free == "Free") %>% 
+  mutate(position = 100 - if_else(Year == 1870, 11, proportion) + 1.35,
+         line = position,
+         label = glue::glue("{proportion}%"))
+
+plot <- df %>% 
+  ggplot(aes(Year, proportion, fill = slave_free)) +
+  geom_area(show.legend = F) +
+  geom_text(data = label,
+            aes(x = Year, 
+                y = position, 
+                label = label),
+            fontface = "bold",
+            size = 16) +
+  geom_segment(data = label %>% 
+                 filter(Year != c(1790, 1870)),
+              aes(x = Year, xend = Year, 
+               y = 100, yend = position),
+              color = "#1e2422",
+               size = .3) +
+  geom_label(aes(x = 1830, y = 95.5,
+                 label = "FREE = LIBRE"),
+             fontface = "bold",
+             size = 20, 
+             label.size = NA,
+             show.legend = F) +
+  geom_text(aes(x = 1830,
+                y = 57,
+                label = "SLAVES\nENCLAVES"),
+            family = "Public Sans",
+            fontface = "bold",
+            size = 35, color = "white",
+            lineheight = .3) +
+  scale_x_continuous(breaks = seq(1790, 1870, 10),
+                     position = "top",
+                     expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_manual(values = c("#00a260","#0a0a0a")) +
+  labs(x = " ",
+       y = " ",
+    title = "PROPORTION OF FREEMEN AND SLAVES AMONG AMERICAN NEGROES .\nPROPORTION DES NÈGRES LIBRES ET DES ESCLAVES EN AMÉRIQUE .",
+    subtitle = "DONE BY ATLANTA UNIVERSITY .") +
+  coord_cartesian(clip = "off") +
+  theme(plot.background = element_rect(fill = "#e8dccf", 
+                                       color = "#e8dccf"), ##cbcbcb
+    plot.title = element_text(face = "bold", size = 39, 
+                              hjust = 0.5, 
+                              lineheight = .7,
+                              margin = margin(t = 20)),
+    plot.subtitle = element_text(face = "bold", 
+                                 size = 30, 
+                                 hjust = 0.5, 
+                                 margin = margin(t = 20, b = 55)),
+    plot.title.position = "plot",
+    axis.ticks = element_blank(),
+    axis.text.x = element_text(face = "bold", 
+                               size = 49),
+    axis.text.y = element_blank(),
+    plot.margin = margin(l = 20, r = 30)) 
+  
+ggsave(here::here("2021", "week8", "W8_DuBoisChallenge_FreedSlaves.png"), width = 23, height = 27, units = "cm")
+```
+
