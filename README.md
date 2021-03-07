@@ -34,6 +34,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 |[:link:](https://youtu.be/HB9Nb0odPRs)|Statistics |Kim SungBeom |
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Du Bois Challenge by [Du Bois Data Challenge](https://github.com/ajstarks/dubois-data-portraits/tree/master/challenge)
+![Freed Slaves](https://github.com/inkyscope/datavizRscope/blob/master/2021/week8/W8_DuBoisChallenge_FreedSlaves.png)
+
 ### Plastic Pollution by [Break Free from Plastic](https://www.breakfreefromplastic.org/)
 ![Plastic](https://github.com/inkyscope/datavizRscope/blob/master/2021/week5/W5_PlasticPollution.png)
 
