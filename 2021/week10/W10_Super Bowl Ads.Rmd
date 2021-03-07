@@ -1,0 +1,109 @@
+---
+title: "Super Bowl Ads"
+author: "Sung Inkyung"
+date: '2021 3 7'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+youtube <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-02/youtube.csv')
+
+youtube %>% 
+  count(year, sort = T) %>% 
+  arrange(-year)
+
+```
+
+
+```{r}
+pal <-  c("#a71930", #Atlanta Falcon
+          "#241773", #Baltimore Ravens
+          "#0085ca", #Carolina Blue
+          "#fb4f14", #Cincinnati Bengals
+          "#b3995d", #San Francisco 49ers
+          "#4f2683", #Minnesota Vikings
+          "#125740") #New York Jets
+
+youtube %>% 
+  select(year, funny:use_sex) %>% 
+  pivot_longer(funny:use_sex) %>% 
+  group_by(year, name) %>% 
+  summarise(prop = mean(value)) %>% 
+  ungroup() %>% 
+  ggplot(aes(year, prop, color = name)) +
+  geom_line(size = 1.2, show.legend = F) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_color_manual(values = pal) +
+  labs(x = " ",
+       y = " % of Commercials",
+       title = "Preference of Super Bowl Ads Across Years") +
+  facet_wrap(~name, nrow = 3) +
+  ggthemes::theme_few()
+```
+
+
+```{r}
+simple_mod <- lm(year ~ funny + show_product_quickly + patriotic + celebrity + danger + animals + use_sex,
+                 data = youtube)
+
+summary(simple_mod)
+```
+```{r}
+library(rsample)
+
+bootstraps(youtube, times = 1e3)
+
+set.seed(123)
+youtube_intervals <- reg_intervals(year ~ funny + show_product_quickly +
+  patriotic + celebrity + danger + animals + use_sex,
+data = youtube,
+type = "percentile",
+keep_reps = TRUE
+)
+
+youtube_intervals
+
+plot <- youtube_intervals %>% 
+  mutate(term = str_remove(term, "TRUE"),
+         term = fct_reorder(term, .estimate)) %>% 
+  ggplot(aes(.estimate, term)) +
+  geom_vline(xintercept = 0, 
+             size = .7, 
+             lty = 2, 
+             color = "#acc0c6") +
+  geom_errorbarh(aes(xmin = .lower,
+                 xmax = .upper),
+                 size = 1.5, alpha = .6, 
+                 color = "#004c54") + # Philadelphia Eagles
+  geom_point(size = 3.5, 
+             color = "#a5acaf") +
+  labs(x = "Estimate",
+       y = "",
+       title = "7 Defining Characteristics of Super Bowl Ads",
+       subtitle = "Celebrity and patriotic apeals in commercials are gaining a popularity from 2000 to 2020",
+       caption = "Source: FiveThirtyEight | Graphic: Sung Inkyung") +
+  ggthemes::theme_calc() +
+  theme(plot.background = element_rect(color = NA, fill = NA),
+        plot.title = element_text(size = 18,
+                                  color = "#565a5c"),
+        plot.subtitle = element_text(size = 13,
+                                  color = "#565a5c",
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(size = 9,
+                                    color = "#acc0c6",
+                                    margin = margin(t = 20)),
+        axis.text.y = element_text(size = 12),
+        axis.text.x = element_text(size = 9))
+
+ggsave(here::here("2021", "week10", "W10_Super Bowl Ads.png"), width = 30, height = 17, units = "cm")
+```
+
