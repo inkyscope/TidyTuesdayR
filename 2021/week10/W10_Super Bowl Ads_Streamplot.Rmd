@@ -1,0 +1,86 @@
+---
+title: "Super Bowl Ads"
+author: "Sung Inkyung"
+date: '2021 3 7'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+###[source: ggstream package] (https://github.com/davidsjoberg/ggstream)
+```{r}
+library(tidyverse)
+library(ggstream)
+library(scales)
+
+youtube <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-02/youtube.csv')
+```
+
+
+```{r}
+df <- youtube %>% 
+  select(1, 5:11) %>% 
+  pivot_longer(funny:use_sex) %>% 
+  group_by(year, name) %>% 
+  summarize(prc = round(mean(value),2))
+  
+
+pal <-  c("#a71930", #Atlanta Falcon
+          "#241773", #Baltimore Ravens
+          "#0085ca", #Carolina Blue
+          "#fb4f14", #Cincinnati Bengals
+          "#b3995d", #San Francisco 49ers
+          "#4f2683", #Minnesota Vikings
+          "#125740", #New York Jets
+          "#d3bc8d") #New Orleans Saints
+
+lines <- df %>%
+  filter(year %in% c(2000,2005,2010,2015,2020))
+
+plot <- df %>% 
+  ggplot(aes(year, prc, fill = name, color = name, label = name)) +
+  geom_stream(color = "#b0b7bc", 
+              extra_span = .15, 
+              true_range = "none",
+              type = "mirror",) +
+  geom_stream_label(aes(label = name, 
+                        size = 3,
+                        color = "#b0b7bc",
+                        type = "mirror",
+                        extra_span = .15)) + 
+  geom_vline(data = lines,
+           aes(xintercept = year),
+             lty = 2, 
+             color = "#b0b7bc",
+             size = .4) +
+  scale_color_manual(values = pal) +
+  scale_fill_manual(values = pal) +
+  scale_x_continuous(position = "top") +
+  labs(x = " ",
+       y = " ",
+       title = "Super Bowl Ad Characteristics",
+       subtitle = "Proportion of attributes featured in commercials of Super Bowl for last 20 years",
+       caption = "Source: FiveThirtyEight | Graphic: Sung Inkyung") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#002244"),
+        plot.background = element_rect(fill = "#002244"),
+        plot.title = element_text(size = 20,
+                                  hjust = .5,
+                                  color = "#b0b7bc",
+                                  face = "bold",
+                                  margin = margin(t = 20, b= 15)),
+        plot.subtitle = element_text(size = 16, 
+                                     hjust = .5,
+                                     color = "#b0b7bc",
+                                     margin = margin(b = 20)),
+        plot.caption = element_text(size = 9,
+                                    color = "#b0b7bc",
+                                    margin = margin(t = 20, b = 20, r = 20)),
+        panel.grid = element_blank(),
+        axis.text.x = element_text(color = "#b0b7bc"),
+        axis.text.y = element_blank())
+
+ggsave(here::here("2021", "week10", "W10_SuperBowlAds_Streamplot.png"), width = 30, height = 18, units = "cm")
+```
+
