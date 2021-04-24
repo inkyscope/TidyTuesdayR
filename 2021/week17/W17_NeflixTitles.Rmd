@@ -11,8 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
-library(tidytext)
+library(ggtext)
 library(treemapify)
+library(glue)
+library(stringr)
 ```
 
 ### Source[treemapify] (https://wilkox.org/treemapify/reference/treemapify.html)
@@ -29,7 +31,8 @@ netflix_countries <- netflix_titles %>%
   summarise(total = n()) %>% 
   ungroup() %>% 
   mutate(id_tree = row_number(),
-         label = str_glue("{country}\n({comma(total, accuracy = 1)})"))
+         label = glue("{country}\n{(total)}"))
+
 
 
 
@@ -65,10 +68,13 @@ p1 <- netflix_countries %>%
                                     margin = margin(t = 10, b = 10)))
            
            
-ggsave(here::here("2021", "week14", "W14_NeflixTitles.png"), width = 30, height = 18, units = "cm")
+ggsave(here::here("2021", "week17", "W17_NeflixTitles.png"), width = 30, height = 18, units = "cm")
 ```
 
 ```{r}
+library(treemap)
+library(scales)
+
 netflix <- netflix_titles %>% 
   filter(!is.na(country)) %>% 
   group_by(country, type) %>% 
