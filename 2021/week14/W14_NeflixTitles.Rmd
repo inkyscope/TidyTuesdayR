@@ -1,0 +1,137 @@
+---
+title: "Netflix Titles"
+author: "Sung Inkyung"
+date: '2021 4 24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(treemapify)
+```
+
+### Source[treemapify] (https://wilkox.org/treemapify/reference/treemapify.html)
+```{r}
+netflix_titles <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-20/netflix_titles.csv')
+
+```
+
+
+```{r}
+netflix_countries <- netflix_titles %>% 
+  filter(!is.na(country)) %>% 
+  group_by(country, type) %>% 
+  summarise(total = n()) %>% 
+  ungroup() %>% 
+  mutate(id_tree = row_number(),
+         label = str_glue("{country}\n({comma(total, accuracy = 1)})"))
+
+
+
+p1 <- netflix_countries %>% 
+  filter(total > 30) %>% 
+  ggplot(aes(area = total, fill = type, label = label)) +
+  geom_treemap(alayout = "srow",
+               size = .7, 
+               color = "#faf7f7") +
+  geom_treemap_text(aes(label = label),
+                    place = "center",
+                    min.size = 0,
+                    color = "#faf7f7",
+                    reflow  = T) +
+  labs(title = "Popular Country on Netflix by Type",
+       subtitle = "The color represents a type of streaming sources, consisting of <span style = 'color:#e50914'>**movies**</span> and <span style = 'color: #c36902'>**TV shows**</span><br>available on Netflix out of 7787 releases as of 2019",
+       caption = "Source: Kaggle | Graphic: Sung Inkyung") +
+  scale_fill_manual(values = c("#e50914", "#c36902")) +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#1f1e1e",
+                                       colour = "#1f1e1e"),
+        text = element_text(color ="#faf7f7"),
+        plot.title = element_text(size = 25,
+                                  hjust = 0.5,
+                                  margin = margin(t = 20, b = 7)),
+        plot.subtitle = element_markdown(size = 16,
+                                         hjust = 0.5,
+                                         margin = margin(b = 12)),
+        plot.caption = element_text(size = 9,
+                                    color = "#32a852",
+                                    hjust = 0.5,
+                                    margin = margin(t = 10, b = 10)))
+           
+           
+ggsave(here::here("2021", "week14", "W14_NeflixTitles.png"), width = 30, height = 18, units = "cm")
+```
+
+```{r}
+netflix <- netflix_titles %>% 
+  filter(!is.na(country)) %>% 
+  group_by(country, type) %>% 
+  summarise(total = n()) %>% 
+  ungroup() %>% 
+  mutate(id_tree = row_number())
+
+df_tree <- treemap(netflix,
+                   index = c("country"),
+                   vSize = "total",
+                   type = "categorical",
+                   vColor = "type",
+                   algorithm = "pivotSize",
+                   sortID = "id_tree",
+                   mirror.y = T,
+                   mirror.x = T,
+                   border.lwds = 0.7,
+                   aspRatio = 5/3)
+
+plot_treemap <- df_tree[["tm"]] %>% 
+  as_tibble() %>% 
+  arrange(desc(vSize)) %>% 
+  mutate(rank = row_number(),
+         xmax = x0 + w,
+         ymax = y0 + h,
+         label = str_glue("{country}\n({comma(vSize, 
+                                 accuracy = 1)})"))
+
+p2 <- ggplot(plot_treemap) +
+  geom_rect(aes(xmin = x0,
+                ymin = y0,
+                xmax = xmax,
+                ymax= ymax,
+                fill = vColor),
+            size = 0.1,
+            colour = "#faf7f7",
+            alpha = 0.9) +
+  geom_fit_text(data = plot_treemap%>% filter(rank <= 300),
+                aes(xmin = x0, 
+                    xmax = xmax, 
+                    ymin = y0,
+                    ymax = ymax,
+                    label = label),
+                colour = "#faf7f7",
+                min.size = 4,
+                reflow = TRUE) +
+  labs(title = "Popular Country on Netflix by Type",
+       subtitle = "The color represents a type of streaming sources, consisting of <span style = 'color:#e50914'>**movies**</span> and <span style = 'color: #c36902'>**TV shows**.</span><br>available on Netflix out of 7787 releases as of 2019",
+       caption = "Source: Kaggle) | Graphic: Sung Inkyung") +
+  scale_fill_manual(values = c("#e50914", "#c36902")) +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#1f1e1e",
+                                       colour = "#1f1e1e"),
+        text = element_text(color ="#faf7f7"),
+        plot.title = element_text(size = 25,
+                                  hjust = 0.5),
+        plot.subtitle = element_markdown(size = 16,
+                                         hjust = 0.5),
+        plot.caption = element_text(size = 9,
+                                    color = "#32a852",
+                                    hjust = 0.5),
+        plot.margin = margin(30, 10, 20, 10))
+```
+
+
