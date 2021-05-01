@@ -1,0 +1,61 @@
+---
+title: "MakeupShades"
+author: "Sung Inkyung"
+date: '2021 5 1'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[skin tone color palette]  (https://colorswall.com/palette/2513/)
+### Source[tidytuesday by CSHoggard] (https://github.com/CSHoggard/-TidyTuesday/blob/master/R/w14_2021.R)
+```{r}
+library(tidyverse)
+library(ggtext)
+library(here)
+```
+
+
+```{r}
+allShades <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-30/allShades.csv')
+
+df <- allShades %>% 
+  filter(str_detect(description, "Natural|nnatural")) %>% 
+  mutate(idx = row_number()) %>% 
+  mutate(idy = seq_along(id)) 
+
+df %>% 
+  count(idx, sort = T)
+
+plot <- df %>% 
+  ggplot(aes(idx, idy, fill = hex)) +
+  geom_tile(show.legend = F) +
+  geom_text(x = 132,
+            y = -1.5,
+            size = 11,
+            color = "#503335",
+            label = "Natural Colar\nin Makeup Shades") +
+  scale_fill_identity() +
+  ylim(c (-1.5, 1.5)) +
+  labs(x = "",
+       y = "",
+       caption = "Source: The Pudding data | Graphic: Sung Inkyung") +
+  coord_polar() +
+  theme(panel.background = element_blank(),
+        plot.background = element_rect(fill = "#ecbcb4",
+                                       color = NA),
+        plot.title = element_text(face = "bold",
+                                  lineheight = .7),
+        plot.caption = element_textbox_simple(halign = 0.5,
+                                              size = 11,
+                                              margin = margin(t = 10, b = 20), 
+                                              color = "#a1665e"),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank())
+
+ggsave(here::here("2021", "week14", "W14_MakeupShades.png"), width = 20, height = 27, units = "cm")
+
+```
