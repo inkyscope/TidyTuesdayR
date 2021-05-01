@@ -1,0 +1,110 @@
+---
+title: "Netflix"
+author: "Sung Inkyung"
+date: '2021 5 1'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(scales)
+library(ggtext)
+library(circlize)
+```
+
+
+```{r}
+netflix_titles <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-20/netflix_titles.csv')
+
+```
+
+
+```{r}
+df <- netflix_titles %>% 
+  select(type, date_added) %>% 
+  separate(date_added, into = c(NA, "year"), sep = ", ") %>% 
+  filter(year >= 2015) %>% 
+  mutate(year = as.numeric(year),
+         type_num =case_when(type == "TV Show" ~ "type1",
+                             type == "Movie" ~ "type2")) %>% 
+  mutate(type = factor(type),
+         year = as_factor(year)) %>% 
+  group_by(type) %>% 
+  mutate(count = n()) %>% 
+  ungroup() %>% 
+  count(type, year) %>% 
+  ungroup()
+
+```
+
+```{r}
+grid.col <- c('Movie' = "#55107e", 
+              'TV Show' = "#ffe62f",
+              '2015' = "#696969", 
+              '2016' = "#696969", 
+              '2017' = "#696969", 
+              '2018' = "#696969", 
+              '2019' = "#696969", 
+              '2020' = "#696969", 
+              '2021' = "#696969")
+
+op <- showtext::showtext_opts(dpi = 300)
+
+par(bg = "#cf2835")
+
+circos.par(canvas.xlim = c(-1.1, 1.1),
+           canvas.ylim = c(-1.2, 1.1),
+           start.degree = 0)
+
+```
+
+```{r}
+
+chordDiagram(df,
+             order = c('Movie', 'TV Show', '2015', '2016', '2017', '2018',
+                       '2019', '2020', '2021'),
+             link.sort = F,
+             link.decreasing = T,
+             grid.col = grid.col,
+             transparency = .1,
+             annotationTrack = "grid",
+             preAllocateTracks = list(track.height = .1))
+                       
+
+for(si in get.all.sector.index()) {
+  xlim = get.cell.meta.data("xlim", 
+                            sector.index = si, 
+                            track.index = 1)
+  ylim = get.cell.meta.data("ylim", 
+                            sector.index = si, 
+                            track.index = 1)
+  circos.text(mean(xlim), ylim[1], 
+              labels = si, sector.index = si, 
+              track.index = 1, 
+              facing = "clockwise", 
+              cex = 0.8, 
+              adj = c(0,.5),
+              niceFacing = TRUE,
+              col = "#dc143c")
+}
+
+title(main = "Movie and TV Shows in Netflix",
+      cex.main = 2, 
+      col.main = "#444444")
+
+text(x = 0.75, y = -1.26, "Source: Kaggle | Graphic: Sung Inkyung",
+     col = "#666666",  cex = .8)
+
+
+circos.clear()
+dev.off()
+
+
+png("Netflix.png", width = 20, height = 20, unit = "cm", type = "cairo", res = 300)
+
+```
+
