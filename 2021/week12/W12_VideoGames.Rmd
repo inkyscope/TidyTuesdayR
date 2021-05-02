@@ -1,0 +1,79 @@
+---
+title: "Games"
+author: "Sung Inkyung"
+date: '2021 5 2'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source [tidytuesday by charlie gallagher] (https://github.com/charlie-gallagher/tidy-tuesday/blob/master/games/games.R)
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggbump)
+```
+
+
+```{r}
+games <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-16/games.csv')
+
+```
+```{r}
+games <- games %>% 
+  mutate(date = ymd(paste(year, month, "01", sep = "-")),
+         top_games = fct_lump(gamename, 3, w = avg)) %>% 
+  mutate(top_games = fct_reorder(top_games, avg))
+
+```
+
+
+```{r}
+game_col <- c("Counter-Strike: Global Offensive" = "#ff00f6",
+           "Dota 2" = "#1a901a",
+           "PLAYERUNKNOWN'S BATTLEGROUNDS" ="#8900ff")
+
+game_labels <- tibble(
+  text = c("Counter-Strike:Global Offensive", 
+           "Dota 2", 
+           "PLAYERUNKNOWN'S\nBATTLEGROUNDS"),
+  x = c(16900, 16900, 17900),
+  y = c(440000, 760000, 1000000),
+  color = game_col)
+
+plot <- games %>% 
+  ggplot() +
+  geom_step(aes(date, avg, group = gamename, color = top_games),
+            size = 1,
+            na.rm = T) +
+  geom_text(data = game_labels, 
+            aes(x = x, y = y, label = text),
+            color = game_col,
+            size = c(4.5, 4.5, 4.5)) +
+  scale_color_manual(values = c("Counter-Strike: Global Offensive"="#ff00f6", 
+                                "Dota 2"="#1a901a", 
+                                "PLAYERUNKNOWN'S BATTLEGROUNDS" = "#8900ff", 
+                                "Other" = "#d7c18a")) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(label = scales::comma_format(accuracy = 1),
+                     expand = c(0, 0)) +
+  labs(title = "Top Games Since 2012",
+       subtitle = "Top games are selected by\naverage number of players\nat the same time") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#05081e",
+                                       color = NA),
+        plot.title = element_text(size = 20,
+                                  color = "#fffbde",
+                                  margin = margin(t = 20, b = 7, l = 15)),
+        plot.subtitle = element_text(size = 14,
+                                     color = "#fffbde",
+                                     margin = margin(l = 15)),
+        axis.text.y = element_text(size = 9,
+                                   color = "#d7fdcc"),
+        plot.margin = margin(10, 10, 10))
+
+ggsave(here::here("2021", "week12", "W12_VideoGames.png"), width = 34, height = 20, units = "cm")
+  
+```
