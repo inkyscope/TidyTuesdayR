@@ -21,7 +21,7 @@ library(here)
 allShades <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-30/allShades.csv')
 
 df <- allShades %>% 
-  filter(str_detect(description, "Natural|nnatural")) %>% 
+  filter(str_detect(description, "neutral")) %>% 
   mutate(idx = row_number()) %>% 
   mutate(idy = seq_along(id)) 
 
@@ -35,7 +35,7 @@ plot <- df %>%
             y = -1.5,
             size = 11,
             color = "#503335",
-            label = "Natural Colar\nin Makeup Shades") +
+            label = "Neutral Color\nin Makeup Shades") +
   scale_fill_identity() +
   ylim(c (-1.5, 1.5)) +
   labs(x = "",
