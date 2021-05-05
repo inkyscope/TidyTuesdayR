@@ -1,0 +1,83 @@
+---
+title: "CEO Departures"
+author: "Sung Inkyung"
+date: '2021 5 5'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(gghighlight)
+library(PNWColors)
+```
+
+
+```{r}
+departures <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-27/departures.csv')
+
+```
+
+```{r}
+dep_code <- departures %>% 
+  filter(departure_code %in% c(1, 2, 3, 4, 5, 6)) 
+
+dep_yr <- departures %>% 
+  select(fyear)
+```
+
+
+```{r}
+dep_labels <- c("Death", "Illness", "Job Performance", "Legal Violations", "Retirement", "New Opportunity")
+names(dep_labels) <- c("1", "2", "3","4", "5", "6")
+
+cols <- pnw_palette(name = "Sunset", n = 6, type = "discrete")
+
+plot_highlight <- departures %>% 
+  group_by(fyear, departure_code) %>% 
+  filter(departure_code %in% c(1, 2, 3, 4, 5, 6)) %>% 
+  count(fyear,
+        departure_code) %>% 
+  mutate(departure_code = as.factor(departure_code)) %>% 
+  ungroup() %>% 
+  ggplot(aes(fyear, n, fill = departure_code)) +
+  geom_col(color = NA, 
+           show.legend = F) + 
+  gghighlight() +
+  scale_fill_manual(values = cols) +
+  scale_x_continuous(limits = c(1987, 2019),
+                   labels = c(1987, 1995, 2010, 2019)) +
+  facet_wrap(~departure_code, nrow = 2,
+            labeller = labeller(departure_code = dep_labels)) +
+  labs(x = " ",
+       y = " ",
+       title = "Departure Reasons of CEOs since 1987",
+       caption = "Source: Gentry et al. | Graphic: Sung Inkyung") +
+  theme_light() +
+  theme(panel.background = element_blank(),
+        plot.background = element_blank(),
+        plot.title = element_text(size = 14, 
+                                  margin = margin(t = 10, b = 7)),
+        plot.caption = element_text(size = 7, 
+                                    margin = margin(t = 20)),
+        strip.background = element_rect(fill = "gray85"),
+        strip.text.x = element_text(size = 11, 
+                                    face = "bold",
+                                    color = "black",
+                                    hjust = .5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank())
+
+ggsave(here::here("2021", "week18", "W18_CEODepartures.png"), width = 18, height = 11, units = "cm")
+```
+
