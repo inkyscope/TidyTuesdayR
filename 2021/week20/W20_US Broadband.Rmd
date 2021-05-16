@@ -1,0 +1,72 @@
+---
+title: "US Broadband"
+author: "Sung Inkyung"
+date: '2021 5 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by gkaramanis] (https://github.com/gkaramanis/tidytuesday/blob/master/2021/2021-week19/broadband.R)
+```{r}
+library(tidyverse)
+library(janitor)
+library(sf)
+library(colorspace)
+library(albersusa)
+
+remotes::install_github("hrbrmstr/albersusa")
+```
+
+
+```{r}
+broadband <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-11/broadband.csv') %>% 
+  clean_names() %>% 
+  mutate(across(4:5, as.numeric),
+         county_name = str_remove(county_name, "County"),
+         fips = as.character(county_id)) %>% 
+  rename(state = st,
+         name = county_name,
+         usage = broadband_usage,
+         availability = broadband_availability_per_fcc)
+
+```
+
+```{r}
+usa <- albersusa::counties_sf() %>% 
+  mutate(fips = as.character(fips)) %>% 
+  geo_join(broadband, by_df = "fips",
+           by_sp = "fips") %>% 
+  mutate(diff = 100 * (usage - availability)) %>% 
+  filter(!is.na(diff))
+
+pal <- diverge_hcl(4, rev = TRUE)
+
+plot <- usa %>% 
+  ggplot() +
+  geom_sf(aes(geometry = geometry, fill = diff), 
+          color = "grey97", size = 0.05) +
+  annotate("text", x = -96, y = 56, 
+           label = toupper("Disparities in USA broadband access"),
+           size = 7, 
+           hjust = .5) +
+  annotate("text", x = -95, y = 15, 
+           label = "Source: Microsoft Data | Graphic: Sung Inkyung", 
+           size = 3) +
+  scale_fill_stepsn(colors = pal, breaks = c(-50, 0, 50),
+                    guide = guide_colorsteps(title.position = "top"), "Difference of Usage and Availability(%)") +
+  coord_sf() +
+  theme_void() +
+  theme(
+    legend.position = c(0.2, 0.25),
+    legend.direction = "horizontal",
+    legend.key.height = unit(0.5, "line"),
+    legend.title = element_text(size = 6, 
+                                margin = margin(0, 0, 3, 0)),
+    plot.background = element_rect(fill = "grey97", 
+                                   color = NA),
+    plot.margin = margin(10, 0, 10, 0))
+
+ggsave(here::here("2021", "week20", "W20_US Broadband.png"), width = 30, height = 17, units = "cm")
+```
