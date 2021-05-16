@@ -1,0 +1,168 @@
+---
+title: "UN Votes"
+author: "Sung Inkyung"
+date: '2021 5 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(igraph)
+library(tidygraph)
+library(ggraph)
+library(countrycode)
+library(cowplot)
+library(pals)
+```
+
+### Source[tidytuesday by jack davison] (https://github.com/jack-davison/TidyTuesday/blob/master/R/2021_03_23_unvotes.R)
+```{r}
+unvotes <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-23/unvotes.csv')
+roll_calls <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-23/roll_calls.csv')
+issues <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-23/issues.csv')
+
+
+```
+
+
+```{r}
+unvotes <- unvotes %>% 
+  left_join(select(roll_calls, rcid, importantvote, date), by = 'rcid') %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  left_join(issues, by = "rcid") %>% 
+  filter(year %in% seq(1980, 2020) & 
+           importantvote == 1 & 
+           issue == "Human rights")
+
+df <- unvotes %>% 
+  left_join(countrycode::codelist %>% 
+              select(country_code = iso2c, continent))
+
+asia <- df %>% 
+  filter(continent == "Asia")
+
+df_asia <- rnaturalearth::ne_countries(continent = "Asia",
+                                       scale = "medium") %>% 
+  sf::st_as_sf()
+
+```
+
+
+```{r}
+
+# Correlations
+
+library(widyr)
+
+asia_corrs <- asia %>% 
+  mutate(vote = if_else(vote == "yes", TRUE, FALSE)) %>% 
+  pairwise_cor(tbl = ., item = country_code, 
+               feature = rcid, 
+               value = vote)
+
+tidytab <- asia_corrs %>% 
+  filter(correlation > .5) %>% 
+  as_tbl_graph(directed = F) %>% 
+  mutate(block = as.factor(group_edge_betweenness(weights = correlation)))
+
+
+set.seed(123)
+
+graph = ggraph(tidytab, layout = "kk") +
+  geom_edge_link(aes(alpha = correlation)) +
+  geom_node_point(shape = 21, aes(fill = block), 
+                  color = "white", 
+                  size = 12, 
+                  stroke = 1.5) +
+  geom_node_text(aes(label = name),
+                 color = "black") + 
+  scale_fill_manual(values = as.vector(brewer.set3(9)),
+                    na.value = "grey90") +
+  theme(legend.position = "none")
+
+blocks <- tidytab %>% 
+  as.data.frame() %>% 
+  tibble() %>% 
+  rename(iso_a2 = name) %>% 
+  left_join(select(unvotes, iso_a2 = country_code)) %>% 
+  distinct()
+
+asia_blocks <- df_asia %>% 
+  left_join(blocks)
+
+library(pals)
+
+map <- ggplot(asia_blocks) +
+  geom_sf(aes(fill = block)) +
+  scale_x_continuous(limits = c(30, 142)) +
+  scale_y_continuous(limits = c(-10, 55)) +
+  scale_fill_manual(values = as.vector(brewer.set3(9)),
+                    na.value = "grey90") +
+  theme_void() +
+  theme(legend.position = "none",
+        panel.border = element_rect(fill = NA))
+  
+```
+
+
+```{r}
+#title
+text <- ggplot() +
+  annotate(geom = "text",
+           x = .1,
+           y = .7, 
+           hjust = 0,
+           label = "UN Voting on HUMAN RIGHTS in Asia",
+           color = "#42576b",
+           fontface = "bold",
+           size = 5) +
+  annotate(geom = "text",
+           x = .1, 
+           y = .65, 
+           hjust = 0,
+           label = "It shows a clear distinction on the issue among Asian countries in UN votes(R>0.5).\nCountries are clustered based on edge betweenness of correlation.",
+           color = "#42576b",
+           fontface = "bold",
+           size = 3) +
+  annotate(geom = "text",
+           x = .1,
+           y = .15,
+           hjust = 0,
+           label = "Source: Harvard Dataverse | Graphic: Sung inkyung",
+           size = 2 )
+
+
+```
+
+```{r}
+#patch
+
+ggdraw(graph) +
+  draw_plot(map, x = .78, y = .35,
+            scale = .3,
+            hjust = .5,
+            vjust = .5) +
+  draw_text(text = "UN Voting on HUMAN RIGHTS in Asia",
+            x = .48, y = .90, 
+            hjust = 0,
+            color = "#42576b",
+            fontface = "bold",
+            size = 30) +
+  draw_text(text = "It shows a clear distinction on the issue among Asian countries in UN votes(R>0.5).\nCountries are clustered based on edge betweenness of correlation.",
+            x = .48, y = .83, 
+            hjust = 0,
+            color = "#42576b",
+            size = 14) +
+  draw_text(text = "Source: Harvard Dataverse | Graphic: Sung inkyung",
+            x = .765, y = .065,
+            hjust = 0,
+            color = "#42576b",
+            size = 11)
+
+ggsave(here::here("2021", "week13", "W13_UN Votes.png"), width = 45, height = 20, units = "cm")
+```
+
