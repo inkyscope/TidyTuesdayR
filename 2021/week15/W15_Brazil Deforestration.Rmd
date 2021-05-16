@@ -1,0 +1,59 @@
+---
+title: "Deforestration"
+author: "Sung Inkyung"
+date: '2021 5 16 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggstream)
+library(ggtext)
+```
+
+
+```{r}
+brazil_loss <- # read in data
+  readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-04-06/brazil_loss.csv")
+
+```
+
+
+```{r}
+brazil <- brazil_loss %>% 
+  pivot_longer(cols = commercial_crops:small_scale_clearing,
+               names_to = "type") %>% 
+  select(year:value) %>% 
+  filter(type %in% c("commercial_crops", "pasture", "selective_logging", "fire", "small_scale_clearing"))
+
+pal <- PNWColors::pnw_palette("Lake", 5, type = "discrete")
+
+plot <- brazil %>% 
+  ggplot(aes(x = year, y = value, fill = type)) +
+  geom_stream() +
+  scale_x_continuous(limits = c(2002, 2012),
+                     breaks = seq(2002, 2012, 2)) +
+  scale_fill_manual(values = pal) +
+  labs(x = "",
+       y = "",
+       title = "Brazil Deforestration since 2002",
+       caption = "Source: Our Word in Data | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.text = element_text(size = 9),
+        plot.background = element_rect(fill = "#dce1e8"),
+        plot.title = element_text(size = 24,
+                                  hjust = .5,
+                                  margin = margin(t = 20)),
+        plot.caption = element_text(size = 7,
+                                    hjust = 1,
+                                    margin = margin(t = 30, b= 10)),
+    axis.text.x = element_text(size = 9))
+
+ggsave(here::here("2021", "week15", "W15_Brazil Deforestration.png"), width = 26, height = 14, units = "cm")
+        
+```
+
