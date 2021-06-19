@@ -1,0 +1,78 @@
+---
+title: "WEB Du Bois and Juneteenth"
+author: "Sung Inkyung"
+date: '2021 6 19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by jake kaupp] (https://github.com/jkaupp/tidytuesdays/blob/master/2021/week25/R/analysis.R)
+### Source[MUSEUMCRUSH] (https://museumcrush.org/the-turn-of-the-century-anti-racist-infographics-of-web-du-bois/)
+```{r}
+#remotes::install_github("coolbutuseless/ggpattern")
+library(tidyverse)
+library(ggtext)
+library(ggforce)
+library(glue)
+
+```
+
+
+```{r}
+tweets <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-15/tweets.csv')
+```
+
+
+```{r}
+colors <- c("#e1d0be", "#fbba00", "#d41735", "#22194e")
+text_colors <- c("#d41735", "#22194e", "#fbba00", "#e1d0be")
+```
+
+
+```{r}
+top_4 <- tweets %>% 
+  filter(str_detect(tolower(content), "tidytuesday")) %>% 
+  slice_max(like_count, n = 4) %>% 
+  arrange(like_count) %>% 
+  mutate(x0 = 0,
+         y0 = c(985, 810, 560, 135),
+         fill = colors,
+         text_color = text_colors)
+```
+
+
+```{r}
+plot <- top_4 %>% 
+  ggplot(aes(x0 = x0, 
+             y0 = y0, 
+             r = like_count/2)) +
+  geom_circle(aes(fill = fill), size = .1) +
+  geom_text(aes(x = x0, 
+                y = y0,
+                color = text_color, 
+                label = like_count),
+                fontface = "bold",
+                size = 5.5) +
+  geom_text(aes(x = x0, 
+                y = y0 - like_count/2, 
+                label = glue("@{username}")),
+            size = 4,
+            vjust = .9) +
+  scale_x_continuous(limits = c(-600, 600)) +
+  scale_fill_identity() +
+  scale_color_identity() +
+  coord_equal(clip = "off") +
+  labs(title = "Top Four Tweeter Contributors",
+       caption = "Source: #DuBoisChallenge tweets | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "#ede0d0",
+                                       color = NA),
+        plot.title = element_text(size = 20, 
+                                  hjus =.5),
+        plot.caption = element_text(size = 9,
+                                    margin = margin(t = 10, b = 7)))
+
+ggsave(here::here("2021", "week25", "W25_WEB Du Bois and Juneteenth.png"), width = 15, height = 19, units = "cm")
+```
