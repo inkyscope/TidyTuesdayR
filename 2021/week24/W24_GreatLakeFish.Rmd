@@ -1,0 +1,133 @@
+---
+title: "Week24 Great Lakes Fish"
+author: "Sung Inkyung"
+date: '2021 6 19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(ggstream)
+library(colorspace)
+library(janitor)
+library(scales)
+library(patchwork)
+```
+
+
+```{r}
+stocked <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-08/stocked.csv') %>% 
+  clean_names()
+
+```
+
+```{r}
+lakes <- tibble(lake = unique(stocked$lake),
+                label = c("Michigan", "Superior", "Ontario", "Erie", "Huron", "SC")) %>% 
+  filter(lake != "SC") %>% 
+  mutate(lake_color = case_when(label == "Michigan" ~ "#decade",
+                                label == "Superior" ~ "#82d4f5",
+                                label == "Ontario" ~ "#b0e0e6",
+                                label == "Erie" ~ "#b4c1b3",
+                                label == "Huron" ~ "#d3ffce"))
+
+
+species_colors <- tibble(species = unique(stocked$species)) %>% 
+  mutate(color = if_else(species == "CHS", "#fa8072", sample(grey.colors(30), 18)))
+```
+
+
+```{r}
+## The Great Lake map
+
+library(sf)
+library(rnaturalearth)
+
+map_lake <- ne_download(scale = 50,
+                        type = "lakes",
+                        category = "physical",
+                        returnclass = "sf")
+
+## Map legend
+
+df_great_lakes <- map_lake %>% 
+  mutate(lake = str_remove(name, "Lake ")) %>% 
+  filter(lake %in% lakes$label) %>% 
+  mutate(lake = factor(lake))
+
+legend <- df_great_lakes %>% 
+  ggplot() +
+  geom_sf(aes(fill = lake),
+          lwd = NA) +
+  scale_fill_manual(values = lakes$lake_color) +
+  annotate("text", x = -81.3, y = 42.2,
+           label = "Erie",
+           size = 3.5) +
+  annotate("text", x = -77.9, y = 43.7,
+           label = "Ontario",
+           size = 3.5) +
+  annotate("text", x = -86.9, y = 43.95,
+           label = "Michigan",
+           size = 3.5) +
+  annotate("text", x = -87.1, y = 47.8,
+           label = "Superior",
+           size = 3.5) +
+  annotate("text", x = -82.4, y = 44.95,
+           label = "Huron",
+           size = 3.5) +
+  theme_void() +
+  theme(legend.position = "none")
+
+```
+
+
+```{r}
+plot_stream <- stocked %>% 
+  filter(lake != "SC",
+         between(year, 1968, 2018)) %>% 
+  group_by(year, lake, species) %>% 
+  summarise(total = sum(no_stocked)) %>% 
+  left_join(species_colors) %>% 
+  left_join(lakes) %>% 
+  ggplot(aes(year, total)) +
+  geom_stream(type = "proportional",
+              sorting = "onset",
+              aes(color = darken(color),
+                  fill = color)) +
+  labs(x = "",
+       y = "",
+       title = "Proportion of Fish Stocks in the Great Lakes Ecosystem",
+       subtitle = "Chinook salmon is highlighted among 18 species from 1968 to 2018",
+       caption = "Source:Great Lakes Fish | Graphic: Sung Inkyung") +
+  scale_fill_identity() +
+  scale_color_identity() +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0),
+                     labels = scales::percent) +
+  facet_wrap(~label, nrow = 1) + 
+  theme_light() +
+  theme(strip.text = element_text(size = 12),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 10),
+        plot.caption = element_text(size = 7),
+        axis.text.x = element_text(size = 7))
+
+```
+
+```{r}
+
+
+p <- legend + plot_stream +
+  plot_layout(widths = c(1, 2), heights = unit(c(3, 5), c('cm', 'null')))
+
+ggsave(here::here("2021", "week24", "W24_GreatLakeFish.png"), width = 24, height = 20, units = "cm")
+  
+
+
+```
+
