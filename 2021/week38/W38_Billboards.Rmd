@@ -1,0 +1,91 @@
+---
+title: "Billboards"
+author: "Sung Inkyung"
+date: '2021 10 27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggtext)
+library(ggridges)
+```
+### Source[tidytuesday by CSHoggard] (https://github.com/CSHoggard/-TidyTuesday/blob/master/R/w38_2021.R)
+
+```{r}
+billboard <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-14/billboard.csv')
+
+features <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-14/audio_features.csv')
+
+```
+
+
+```{r}
+billboard_features <- billboard %>% 
+  left_join(features, 
+            by = c("song_id", "song", "performer")) %>% 
+  mutate(date = mdy(week_id),
+         year = year(date)) %>% 
+  filter(year > 1960) %>% 
+  select(song_id, energy, year) %>% 
+  mutate(year = as.factor(year)) %>% 
+  drop_na() %>% 
+  unique()
+
+df <- sample_n(billboard_features, 1000)
+
+billboard_features %>% 
+  count(song)
+```
+
+
+```{r}
+plot <- billboard_features %>% 
+  ggplot(aes(energy, year)) +
+  geom_density_ridges(scale = 10,
+                      color = "#faf9f6",
+                      fill = "#000000") +
+  coord_cartesian(clip = "off") +
+  labs(title = "Energy Waves of Songs in Billboard",
+       subtitle = "The energy feature of 28,654 songs from the billboard top 100 from 1960(bottom) to 2021(top)",
+       caption = "Source: Data.Word | Graphic: Sung Inyung") +
+  annotate("text", x = 0, y = -.7, 
+           label = "Less Energy", 
+           angle = 0, 
+           color = "#fadadd", 
+           fontface = "bold", 
+           size = 5.5) +
+  annotate("text", 
+           x = 1, 
+           y = -0.7, 
+           label = "More energy", 
+           angle = 0, 
+           color = "#ff007f",
+           fontface = "bold", 
+           size = 5.5) +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "#000000",
+                                       color = NA),
+        panel.background = element_rect(fill = "#000000"),
+        plot.title = element_text(size = 24,
+                                  color = "#faf9f6",
+                                  hjust = 0.5,
+                                  margin = margin(t = 20)),
+        plot.subtitle = element_text(size = 16, 
+                                     color = "#faf9f6",
+                                     hjust = 0.5,
+                                     margin = margin(t = 10, b = 25)),
+        plot.caption = element_text(size = 11,
+                                    color = "#faf9f6",
+                                    hjust = 0.5, 
+                                    margin = margin(t = 20, b = 20)))
+
+ggsave(here::here("2021", "week38", "W38_Billboards.png"), width = 40, height = 24, units = "cm")
+```
+
+
