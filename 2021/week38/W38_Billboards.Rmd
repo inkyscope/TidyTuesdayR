@@ -33,23 +33,23 @@ billboard_features <- billboard %>%
          year = year(date)) %>% 
   filter(year > 1960) %>% 
   select(song_id, energy, year) %>% 
-  mutate(year = as.factor(year)) %>% 
   drop_na() %>% 
   unique()
 
 df <- sample_n(billboard_features, 1000)
 
 billboard_features %>% 
-  count(song)
+  count(year, sort = T)
 ```
 
 
 ```{r}
 plot <- billboard_features %>% 
-  ggplot(aes(energy, year)) +
+  ggplot(aes(energy, as.factor(year))) +
   geom_density_ridges(scale = 10,
                       color = "#faf9f6",
                       fill = "#000000") +
+  
   coord_cartesian(clip = "off") +
   labs(title = "Energy Waves of Songs in Billboard",
        subtitle = "The energy feature of 28,654 songs from the billboard top 100 from 1960(bottom) to 2021(top)",
@@ -88,4 +88,60 @@ plot <- billboard_features %>%
 ggsave(here::here("2021", "week38", "W38_Billboards.png"), width = 40, height = 24, units = "cm")
 ```
 
+```{r}
+plot2 <- billboard_features %>% 
+  ggplot(aes(x = energy, y = as.factor(year),
+             group = as.factor(year))) +
+  geom_density_ridges(aes(color = year), 
+                      scale = 8,
+                      fill = "#2f4858") +
+   annotate("text", x = 0, y = -.7, 
+           label = "Less Energy", 
+           angle = 0, 
+           color = "#fadadd", 
+           fontface = "bold", 
+           size = 5.5) +
+  annotate("text", 
+           x = 1, 
+           y = -0.7, 
+           label = "More energy", 
+           angle = 0, 
+           color = "#ff007f",
+           fontface = "bold", 
+           size = 5.5) +
+  scale_color_gradient2(low = "white", 
+                        high = "white", 
+                        mid = "#ff007f", 
+                        midpoint = 1990) +
+  scale_y_discrete(breaks = c("1961", "1990", "2021"),
+                   labels = c("1961", "1990", "2021")) +
+  coord_cartesian(clip = "off") +
+  labs(title = "Energy Waves of Songs in Billboard Top 100",
+       caption = "Source: Data.Word | Graphic: Sung Inyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#2F4858", 
+                                       colour = "#2F4858"),
+        plot.title = element_text(size = 30,
+                                  face = "bold",
+                                  color = "#faf9f6",
+                                  hjust = 0.5,
+                                  margin = margin(t = 20, b = 25)),
+        plot.caption = element_text(size = 11,
+                                    color = "#faf9f6",
+                                    hjust = 0.5, 
+                                    margin = margin(t = 20, b = 20)),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(color = "white",
+                                   size = 16),
+        plot.margin = margin(l = 20, r = 20))
+
+ggsave(here::here("2021", "week38", "W38_Billboards2.png"), width = 40, height = 24, units = "cm")
+```
 
