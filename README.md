@@ -35,7 +35,7 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 
 --------------------------------------------------------------------------------------------------------------------------------------
 ### Billboard Top 100 by [Data.World](https://data.world/kcmillersean/billboard-hot-100-1958-2017#)
-![Billboard](https://github.com/inkyscope/datavizRscope/blob/master/2021/week38/W38_Billboards.png)
+![Billboard](https://github.com/inkyscope/datavizRscope/blob/master/2021/week38/W38_Billboards2.png)
 
 ### Netflix Shows by [Kaggle](https://www.kaggle.com/shivamb/netflix-shows)
 ![Netflix Shows](https://github.com/inkyscope/datavizRscope/blob/master/2021/week17/W17_NeflixTitles.png)
