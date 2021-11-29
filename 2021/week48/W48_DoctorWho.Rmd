@@ -1,0 +1,204 @@
+---
+title: "W48_DoctorWho"
+author: "Sung Inkyung"
+date: '2021 11 29'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(scales)
+theme_set(theme_light())
+```
+### Source[tidytuesday by david robinson] (https://github.com/dgrtwo/data-screencasts/blob/master/2021_11_23_doctor_who.Rmd)
+### Source[tidytuesday live screencast:Analyzing Doctor Who in R] (https://youtu.be/89l_3Y53qMM)
+
+```{r}
+directors <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-11-23/directors.csv')
+episodes <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-11-23/episodes.csv')
+writers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-11-23/writers.csv')
+imdb <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-11-23/imdb.csv')
+
+
+```
+
+
+```{r}
+epi <- episodes %>% 
+  select(-serial_title) %>% 
+  fill(season_number) %>% 
+  filter(!is.na(rating)) %>% 
+  mutate(episode = paste0(season_number, ".", coalesce(as.character(episode_number), "X"), " ", episode_title),
+         episode = fct_reorder(episode, first_aired),
+         episode_title = fct_reorder(episode_title, first_aired),
+         overall_episode_number = as.integer(episode_title))
+
+epi %>% 
+  filter(season_number >= 4) %>% 
+  ggplot(aes(episode_title, uk_viewers,
+             fill = factor(season_number))) +
+  geom_col() +
+  labs(x = "",
+       y = "# of UK viewers (millions)",
+       title = "UK Viewers per Episode of Doctor Who",
+       fill = "Season") +
+  theme(axis.text.x = element_text(angle = 90, 
+                                   hjust = 1))
+
+  
+ epi %>% 
+   filter(season_number >= 4) %>% 
+   ggplot(aes(episode_title, rating)) +
+   geom_line(group = 1) +
+   geom_point(aes(color = factor(season_number))) +
+   labs(x = "",
+        y = "Average rating (IMDB))",
+        title = "Popularity of episodes",
+        fill = "Season") +
+  theme(axis.text.x = element_text(angle = 90, 
+                                   hjust = 1))
+ 
+ epi %>% 
+   filter(!is.na(rating)) %>% 
+   ggplot(aes(as.numeric(episode_title), rating)) +
+   geom_line(group = 1) +
+   geom_point(aes(color = factor(season_number))) +
+   geom_text(aes(label = episode_title),
+             hjust = 1, 
+             vjust = 1, check_overlap = T) +
+   geom_smooth(method = "loess") +
+   labs(x = "",
+        y = "Average rating (IMDB)",
+        color = "Season") +
+   theme(axis.text.x = element_blank(),
+         panel.grid.major.x = element_blank(),
+         panel.grid.minor.x = element_blank())
+   
+
+```
+
+
+```{r}
+summarize_episode <- function(tbl){
+  tbl %>% 
+    summarize(avg_rating = mean(rating, na.rm = T),
+              avg_viewers = mean(uk_viewers, na.rm = T),
+              n_episodes = n(),
+              t_test = list(broom::tidy(t.test(rating[!is.na(rating)])))) %>% 
+    unnest(t_test)
+}
+
+epi %>% 
+  group_by(season_number) %>% 
+  summarize_episode()
+```
+```{r}
+epi %>% 
+  inner_join(writers, by = "story_number") %>% 
+  group_by(writer = fct_lump(writer, 6)) %>% 
+  summarize_episode() %>% 
+  arrange(desc(n_episodes)) %>% 
+  mutate(writer = fct_reorder(writer, avg_rating)) %>% 
+  ggplot(aes(avg_rating, writer))+
+  geom_errorbar(aes(xmin = conf.low, xmax = conf.high),
+                height = .1) +
+  geom_point() +
+  labs(x = "Average rating with 95% confidence interval",
+       y = "Writer")
+
+epi %>% 
+  inner_join(writers, by = "story_number") %>% 
+  mutate(writer = fct_lump(writer, 6)) %>% 
+  filter(writer != "Other") %>% 
+  mutate(writer = fct_reorder(writer, as.integer(episode))) %>% 
+  ggplot(aes(as.integer(episode), rating)) +
+  geom_line(data = epi, 
+            size = .4,
+            color = "gray60",)+
+  geom_point(color = "#2a77bf", 
+             size = 1.3) +
+  facet_wrap(~writer) +
+  labs(x = "",
+       y =  "Average IMDB Rating",
+       title = "**Doctor Who** Writers(selected) by Episode since 2005") +
+  theme(strip.background = element_rect(fill = "#b00606",
+                                        color = NA),
+        plot.title = element_markdown(size = 14),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_blank())
+
+ggsave(here::here("2021", "week48", "W48_DoctorWho.png"), width = 18, height = 11, units = "cm")
+
+```
+
+```{r}
+epi %>% 
+  inner_join(directors, by = "story_number") %>% 
+  mutate(director = fct_lump(director, 6)) %>% 
+  filter(director != "Other") %>% 
+  mutate(director = fct_reorder(director, as.integer(episode))) %>% 
+  ggplot(aes(as.integer(episode), rating)) +
+  geom_line(data = epi, alpha = .2)+
+  geom_point(color = "#7126bd",
+             size = 1.3) +
+  facet_wrap(~director) +
+  labs(x = "",
+       y = "Average IMDB Rating",
+       title = "Doctor Who Directors by Episode") +
+  theme(axis.text.x = element_blank())
+```
+
+
+```{r}
+# How would we do a statistical test of "does one writer make unusually (un)popular episodes?
+library(splines)
+
+writers_spread <- epi %>% 
+  inner_join(writers, by = "story_number") %>% 
+  mutate(writer = fct_lump(writer, 6)) %>% 
+  mutate(value = 1) %>% 
+  pivot_wider(names_from = writer, values_from = value) %>% 
+  janitor::clean_names() %>% 
+  mutate_if(is.numeric, ~replace(., is.na(.), 0))
+
+episode_predictions <- lm(rating ~
+     ns(overall_episode_number, 3),
+   epi) %>%
+  broom::augment(data = epi) %>%
+  select(episode_title, story_number, rating, .fitted, .resid)
+
+episode_predictions %>% 
+  inner_join(writers) %>% 
+  mutate(writer = fct_lump(writer, 6),
+         writer = fct_reorder(writer, .resid)) %>% 
+  ggplot(aes(.resid, writer)) +
+  geom_boxplot() +
+  labs(x = "Residual rating relative to position in series")
+
+```
+
+```{r}
+library(corrr)
+
+lm(rating ~
+     ns(overall_episode_number, 3) +
+     russell_t_davies + mark_gatiss + steven_moffat + toby_whithouse + gareth_roberts + chris_chibnall,
+    writers_spread) %>% 
+  summary()
+
+writers_spread %>%
+  select(russell_t_davies, mark_gatiss, steven_moffat:chris_chibnall, uk_viewers, rating) %>%
+  na.omit() %>%
+  correlate() %>%
+  rearrange() %>%
+  network_plot(colours = c("#000000", "white", "#7126bd"))
+
+```
+
+
