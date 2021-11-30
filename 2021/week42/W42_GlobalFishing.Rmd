@@ -1,0 +1,99 @@
+---
+title: "W42_GlobalFishing"
+author: "Sung Inkyung"
+date: '2021 11 30'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by @leeolney] (https://gist.github.com/leeolney3/c287f21d8ce9c44053428c26446bfb51)
+```{r}
+library(tidyverse)
+library(ggtext)
+library(janitor)
+```
+
+
+```{r}
+stock <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-12/fish-stocks-within-sustainable-levels.csv') 
+```
+
+
+```{r}
+df <- stock %>% 
+  rename(sustainable = `Share of fish stocks within biologically sustainable levels (FAO, 2020)`,
+         overexploited = `Share of fish stocks that are overexploited`) %>% 
+  clean_names() %>% 
+  filter(code == "OWID_WRL") %>% 
+  pivot_longer(sustainable:overexploited) %>% 
+  mutate(status = ifelse(name == "sustainable", -value, value),
+         value = round(value, 1),
+         status = round(status, 1))
+
+df %>% 
+  count(value, sort = T) #8.5-91.5
+df %>% 
+  count(status, sort = T)
+
+df %>% 
+  count(year, sort = T) #1974-2017
+```
+
+
+```{r}
+plot <- df %>% 
+  ggplot(aes(x = year, y = status/100, fill = name)) +
+  geom_col(aes(alpha = ifelse(name == "overexploited", 1, 0.3)),
+           show.legend = F) +
+  geom_hline(yintercept = 0,
+             color = "#2986cc",
+             size = 1.3) +
+  scale_x_continuous(breaks = c(1974, 1980, 1990, 2000, 2010, 2017),
+                     expand = c(0.03, 0.03)) +
+  scale_y_continuous(limits = c(-1, .57),
+                     breaks = seq(-1, .5, .25),
+                     labels = c("100%", "75%", "50%", "25%", "0%", "25%", "50%"),
+                     position = "right")+
+  scale_fill_manual(values = c("#992255", "#992255")) +
+  scale_alpha_identity() +
+  labs(x = "",
+       y = "",
+       title = "<span style = 'color: #c9779a'> SUSTAINABLE and <span style='color: #992255'>**OVEREXPLOITED**</span>",
+       subtitle = "Global fishing status 1974 -2017",
+       caption = "**Source**: OurWorldinData.org | **Graphic**: Sung Inkyung") +
+  annotate(geom ="richtext", 
+           label.color =NA, 
+           fill = NA,
+           size = 4.5, 
+           x = 2015, 
+           y =.53, 
+           label="2017: <span style = 'color:#992255;'>**34.2%**</span>") +
+  annotate(geom="richtext", 
+           label.color =NA, 
+           fill = NA,
+           size = 4.2, 
+           x = 1976.5, 
+           y =.30,  
+           label="1978: <span style = 'color:#992255;'>**8.5%**</span>") +
+  annotate(geom = "curve",
+           x = 1976.3, xend = 1978, 
+           y = .26, yend = 0.1, 
+           color = "grey70",
+           arrow = arrow(length = unit(0.1, "cm")),
+           curvature = -0.3) +
+  annotate(geom = "curve",
+           x = 2014.5, xend = 2017, 
+           y = .49, yend = 0.36, 
+           color = "grey70",
+           arrow = arrow(length = unit(0.1, "cm")),
+           curvature = -0.3) +
+  theme(plot.title=element_markdown(size = 24),
+        plot.subtitle = element_markdown(size = 18),
+        plot.caption = element_markdown(size = 9),
+        axis.text = element_text(size = 9),
+        panel.grid = element_blank()) 
+
+ggsave(here::here("2021", "week42", "W42_GlobalFishing.png"), width = 22, height = 16, units = "cm")
+```
