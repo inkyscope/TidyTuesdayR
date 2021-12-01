@@ -37,6 +37,9 @@ I'd like to thank you from the core of my heart to contributors to make #Tidy Tu
 ### Dr. Who by [datardis](https://github.com/KittJonathan/datardis)
 ![DoctorWho](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week48/W48_DoctorWho_IMDBRating.png)
 
+### Global Fishing by [OurWorldinData](https://ourworldindata.org/fish-and-overfishing)
+![GlobalFishing](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week42/W42_GlobalFishing.png)
+
 ### Billboard Top 100 by [Data.World](https://data.world/kcmillersean/billboard-hot-100-1958-2017#)
 ![Billboard](https://github.com/inkyscope/datavizRscope/blob/master/2021/week38/W38_Billboards2.png)
 
