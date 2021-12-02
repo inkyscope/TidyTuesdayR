@@ -13,6 +13,7 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 |[:link:](http://uc-r.github.io/)|UC Business Analytics R Programming Guide | Bradley Boehmke |
 |[:link:](https://www.tidytextmining.com/)|Tidy Text Mining with R | Julia Silge, David Robinson |
 |[:link:](https://youtu.be/nx5yhXAQLxw)|Tidy Tuesday Screencast | David Robinson |
+|[:link:](https://juliasilge.com/blog/)|Tidymodels| Julia Silge |
 |[:link:](https://ratsgo.github.io/)|Textmining | Lee KiChang |
 |[:link:](https://https://ocw.mit.edu/courses/mathematics/18-06-linear-algebra-spring-2010/video-lectures/l)|MIT 18.06 Linear Algebra, Spring 2005| Gilbert Strang|
 |[:link:](https://www.youtube.com/channel/UCPq01cgCcEwhXl7BvcwIQyg)|Korea University DSBA | Kang PilSung |
