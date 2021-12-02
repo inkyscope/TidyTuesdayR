@@ -1,0 +1,106 @@
+---
+title: "Untitled"
+author: "Sung Inkyung"
+date: '2021 12 2'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggtext)
+library(PNWColors)
+```
+
+
+```{r}
+pumpkins <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-19/pumpkins.csv')
+```
+
+
+```{r}
+df_pumpkins <- pumpkins %>%
+  separate(id, into = c("year", "type"), sep = "-") %>% 
+  mutate(across(c(year, place, weight_lbs, ott), parse_number)) %>% 
+  filter(type == "P",
+         year %in% c(2013, 2021)) %>% 
+  select(year, place, country, weight_lbs, ott) %>% 
+  mutate_at(vars(year:ott), ~replace_na(., 0)) %>% 
+  mutate(country = fct_lump(country, 16),
+         country = fct_reorder(country, weight_lbs)) %>% 
+  filter(country != "Other") %>% 
+  group_by(year, country) %>% 
+  summarise(weight_avg = mean(weight_lbs)) %>% 
+  filter(! country %in% c("Japan", "Portugal", "Belgium", "New Zealand", "Poland", "Spain")) %>% 
+  arrange(country) %>% 
+  group_by(country) %>% 
+  mutate(change = weight_avg - lag(weight_avg),
+         year = as.factor(year)) %>% 
+  tidyr::fill(change, .direction = "up") %>% 
+  arrange(country)
+
+top_5 <- df_pumpkins %>% 
+  filter(change > 100) %>% 
+  mutate(label = glue::glue("{country} [{round(weight_avg, 1)}lbs]"))
+  
+```
+
+```{r}
+plot <- df_pumpkins %>% 
+  ggplot(aes(year, weight_avg, 
+             group = country,
+             color = country)) +
+  geom_line(color = "gray85") +
+  geom_point(color = "gray85", size = 1) +
+  geom_line(data = top_5, size = 1.05) +
+  geom_point(data = top_5, size = 1.5) +
+  geom_point(data = top_5, size = 3.5, shape = 1) +
+  ggrepel::geom_text_repel(
+    data = top_5 %>% 
+      filter(year == "2013"),
+    aes(label = label),
+    hjust = 1.1
+  ) +
+  ggrepel::geom_text_repel(
+    data = top_5 %>% 
+      filter(year == "2021"),
+    aes(label = label),
+    hjust = -0.10
+  ) +
+  annotate("text",
+           x = "2013", y = 100,
+           label = "2013",
+           fontface = "bold",
+           size = 8) +
+  annotate("text",
+           x = "2021", y = 100,
+           label = "2021",
+           fontface = "bold",
+           size = 8) +
+  scale_color_manual(values = pnw_palette("Bay", n = 5)) +
+  scale_y_continuous(limits = c(100, 1000)) +
+  labs(title = "The Growth of Giant Pumpkins",
+       subtitle = "(Average of Weight lbs)",
+       caption = "Source: BigPumpkins.com | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 20,
+                                  hjust = 0.5,
+                                  color = "#e26238",
+                                  margin = margin(t = 15, b = 7)),
+        plot.subtitle = element_text(size = 14,
+                                  hjust = 0.5,
+                                  color = "#e26238",
+                                  margin = margin(b = 30)),
+        plot.caption = element_text(size = 9, 
+                                    color = "grey45",
+                                    hjust = 0.5,
+                                    margin = margin(t = 50, b = 10)))
+
+ggsave(here::here("2021", "week43", "W43_GiantPumpkins_Country.png"))
+
+```
