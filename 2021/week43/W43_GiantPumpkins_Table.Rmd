@@ -1,0 +1,107 @@
+---
+title: "Giant Pumkins_table"
+author: "Sung Inkyung"
+date: '2021 12 3'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(gt)
+```
+
+
+```{r}
+pumpkins <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-19/pumpkins.csv') %>% 
+  separate(id, into = c("year", "type"), sep = "-") %>% 
+  mutate(across(c(place, year, weight_lbs, ott), parse_number)) %>% 
+  filter(country == "United States",
+         type == "P") %>% 
+  select(year, State = state_prov, weight_lbs) 
+
+df_table <- pumpkins %>% 
+  filter(year %in% c(2013, 2017, 2021)) %>% 
+  group_by(year, State) %>% 
+  summarise(avg = round(mean(weight_lbs), 1)) %>% 
+  pivot_wider(names_from = year, values_from = avg) %>% 
+  drop_na()
+
+
+df_states <- df_table %>% 
+  pull("State")
+
+pw <- pumpkins %>% 
+  filter(State %in% df_states) %>% 
+  group_by(year, State) %>% 
+  summarise(avg = round(mean(weight_lbs), 1)) %>% 
+  ungroup()
+
+plot_linechart <- function(df){
+
+  plot_object <- df %>% 
+    ggplot(aes(year, avg, 
+               group = 1)) +
+    geom_line(color = "#ff7518",
+              size = 15) +
+    scale_x_continuous(limits = c(2013, 2021)) +
+    scale_y_continuous(limits = c(100, 1500)) +
+    theme_void()
+  
+  return(plot_object)
+}
+
+tibble_plot <- pw %>% 
+  group_by(State) %>% 
+  nest() %>% 
+  mutate(plot = map(data, plot_linechart)) %>% 
+  select(-data)
+```
+
+
+```{r}
+table_pumpkins <- df_table %>% 
+  mutate(ggplot = NA) %>% 
+  gt() %>% 
+  tab_style(style = cell_text(weight = "bold"),
+            locations = cells_body(columns = 1)) %>% 
+  data_color(columns = vars('2021'),
+             colors = scales::col_numeric(c("#f9ab46", "#fb8d13", "#df5b05", "#911b04"),
+                                          domain = NULL)) %>% 
+  cols_align(align = "center",
+             columns = 2:4) %>% 
+  cols_label(ggplot = "Trend") %>% 
+  text_transform(locations = cells_body(columns = vars(ggplot)),
+                 fn = function(x){
+                   map(tibble_plot$plot,
+                       ggplot_image,
+                       height = px(20),
+                       aspect_ratio = 5)
+                 }) %>% 
+  tab_header(title = "US Giant Pumpkins Weight(lbs) Trend",
+             subtitle = "(2013 - 2021)") %>% 
+  tab_source_note(source_note = "Source: BigPumpkins.com | Graphic: Sung Inkyung") %>% 
+   tab_options(
+    table.layout = "auto",
+    heading.title.font.size = 30,
+    heading.subtitle.font.size = 18,
+    heading.align = "left",
+    table.border.top.color = "white",
+    table.border.bottom.color = "white",
+    heading.border.bottom.color = "white",
+    column_labels.border.bottom.color = "grey",
+    column_labels.border.bottom.width = px(1)
+  ) 
+
+table_pumpkins %>%
+  gtsave(
+    "W43_GiantPumpkins_Table.png", expand = 10,
+    path = tempdir()
+  )
+
+#gtsave(here::here("2021", "week43", "W43_GiantPumpkins_Table.png"), vwidth = 1024, vheight = 768, zoom = 2)
+
+```
