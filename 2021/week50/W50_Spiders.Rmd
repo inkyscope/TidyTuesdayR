@@ -1,0 +1,154 @@
+---
+title: "W50_Spiders"
+author: "Sung Inkyung"
+date: '2021 12 8'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[TidyTuesday by @issa_madjid] (https://github.com/AbdoulMa/TidyTuesday/blob/main/2021_w50/tidytuesday_2021_w50.R)
+```{r}
+library(tidyverse)
+library(ggalluvial)
+```
+
+
+```{r}
+spiders <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-12-07/spiders.csv')
+
+range(spiders$year) 
+
+spiders$family %>% 
+  unique() %>% 
+  length() #129
+
+spiders$genus %>% 
+  unique() %>% 
+  length()
+
+spiders$species %>% 
+  unique() %>% 
+  length() #27453
+
+spiders$author %>% 
+  unique() %>% 
+  length #3070
+
+spiders$distribution %>% 
+  unique() %>% 
+  length() #5749
+
+```
+
+
+```{r}
+# Wrangling
+df_spiders <- spiders %>% 
+   mutate(
+    distribution = str_replace(distribution, " \\s*\\([^\\)]+\\)", ""),
+    distribution = fct_lump_n(distribution, n = 10),
+    family = fct_lump(family, n = 10),
+    author = fct_lump(author, n = 10)
+  ) %>% 
+  filter(distribution != "Other", 
+         family != "Other", 
+         author != "Other") %>% 
+  count(author, family, country = distribution) %>% 
+  mutate(
+    author = fct_reorder(author, desc(n), .fun = sum),
+    family = fct_reorder(family, desc(n), .fun = sum),
+    country = fct_reorder(country, desc(n), .fun = sum)
+  ) %>% 
+  ungroup()
+
+df_spiders %>% 
+  count(author, sort = T)
+# Simon, O.Pickard-Cambridge, Strand, Keyserling, Thorell
+
+df_spiders %>% 
+  count(family, sort = T)
+
+df_spiders %>% 
+  count(country, sort = T)
+
+p_country <- df_spiders %>% 
+  ggplot(aes(n, author, fill = country)) +
+  geom_col()
+
+p_family <- df_spiders %>% 
+  ggplot(aes(n, author, fill = family)) +
+  geom_col()
+
+p_author <- df_spiders %>% 
+  ggplot(aes(n, family, fill = country)) +
+  geom_col() +
+  facet_wrap(~author)
+```
+### [Alluvia across strata: curve_type ] (https://corybrunson.github.io/ggalluvial/reference/geom_alluvium.html)
+### [spider color] (https://icolorpalette.com/color/camel-spider)
+```{r}
+plot <- df_spiders %>% 
+  ggplot(aes(axis1 = author, axis2 = family, axis3 = country,
+             y = n,
+             fill = fct_other(author, keep = c("Simon", "Levi", "Huber", "Thorell")),
+             label = author
+  )) + 
+  geom_alluvium(curve_type = "sigmoid",
+                aes(alpha = fct_collapse(author, 
+                                         main = c("Simon", "Levi", "Huber", "Thorell"), 
+                                         other_level = "Other"))) + 
+  geom_stratum(color = NA) + 
+  ggfittext::geom_fit_text(aes(label = after_stat(stratum)), 
+                           stat = "stratum", 
+                           fontface = "bold",
+                           width = 1/4, 
+                           min.size = 3, 
+                           grow = T, 
+                           lineheight = .95) +
+  annotate(geom = "text", 
+           x = 1, y = 2300, 
+           size = 7.5, 
+           color = "#af5851",
+           label = "Author") + 
+  annotate(geom = "text", 
+           x = 2, y = 2300, 
+           size = 7.5, 
+           color = "#af5851",
+           label = "Family") +
+  annotate(geom = "text", x = 3, y = 2300, 
+           size = 7.5, 
+           color = "#af5851",
+           label = "Country") +
+  scale_x_continuous(expand = c(0.05, 0.05)) +
+  scale_alpha_manual(values = c("main" = .9,
+                               "Other" = .4)) +
+  scale_fill_manual(values = c("Simon" = "#51af87",
+                               "Levi" = "#af8751",
+                               "Huber" = "#5178af",
+                               "Thorell" = "#af5179",
+                               "Other" = "#ceb696")) +
+  labs(title = "Authors by Spider Family since 1757",
+       subtitle = "129 families, 4232 genus,  27453species discovered by 3070 authors\nIllustrated below top 10 authors, families along with countries are sorted",
+       caption = "Source: World Spider Database | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#eee6dc",
+                                       color = NA),
+        plot.title = element_text(size = 30,
+                                  color = "#8b6b40",
+                                  margin = margin(t = 20, b = 7)),
+        plot.subtitle = element_text(size = 18,
+                                     color = "#8b6b40",
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(size = 12,
+                                    color = "#a7af51",
+                                  margin = margin(t = 20, b = 10)),
+        panel.grid = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank())
+
+ggsave(here::here("2021", "week50", "W50_Spiders.png"), width = 30, height = 26, units = "cm")
+  
+```
