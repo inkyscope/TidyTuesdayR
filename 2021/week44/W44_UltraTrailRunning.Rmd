@@ -1,0 +1,157 @@
+---
+title: "W44 Ultra Trail Running"
+author: "Sung Inkyung"
+date: '2021 12 11'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(patchwork)
+
+theme_set(theme_minimal())
+```
+### Source[tidytuesday by @jkaupp](https://github.com/jkaupp/tidytuesdays/blob/master/2019/week18/R/analysis.R)
+### Source[data wrangling:gsub, recode, str_detect, str_replace](https://bit.ly/31RadZo)
+
+```{r}
+race <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-26/race.csv')
+
+df_race <- race %>% 
+  filter(country != "NA",
+         city != "NA") %>% 
+  mutate(month = month(date),
+         year = year(date)) %>% 
+  count(year, month, country) %>% 
+  complete(nesting(year, country), month = 1:12, fill = list(n = 0)) %>% 
+  group_by(year, country) %>% 
+  mutate(percent = n/sum(n)) %>% 
+  mutate(percent = ifelse(is.nan(percent), 0, percent))
+
+df_cleaned <- df_race %>% 
+  mutate(country = str_replace(country, ".*United States", "USA"),
+         country = str_replace(country, ".*China", "China"),
+         country = str_replace(country, ".*Japan", "Japan"))
+
+df <- df_cleaned %>% 
+  mutate(country = str_replace(country, "United Kingdom", "UK")) 
+  
+```
+
+
+```{r}
+flower <- ggplot(df, aes(x = month, y = percent, 
+                         fill = country)) +
+  geom_area(size = 0, 
+            position = position_dodge(width = .03),
+            alpha = 0.2) +
+  scale_x_continuous(labels = month.abb,
+                     breaks = 1:12) +
+  scale_y_continuous(limits = c(0, 1),
+                     breaks = c(0.5, 0.1)) +
+  scale_fill_viridis_d("Year", 
+                       option = "plasma",
+                       direction = 1) +
+  scale_color_viridis_d(option = "plasma",
+                        direction = 1) +
+  guides(fill = guide_colorbar()) +
+  coord_polar() +
+  labs(x = "",
+       y = "",
+       title = "Overall") +
+  theme(legend.position = "none",
+        strip.text = element_text(size = 9),
+        plot.title = element_text(size = 14),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.x = element_line(size = 0.05,
+                                          color = "gray65"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank())
+
+flower
+
+petals <- flower +
+  aes(group = year) +
+  geom_path(aes(color = country), size = 0.2, 
+            show.legend = F) +
+  labs(title = "By country") +
+  facet_wrap(~ country,
+             nrow = 8) +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 14),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid.major.x = element_line(size = 0.05,
+                                          color = "gray65"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank())
+
+petals
+```
+
+```{r}
+legend <- df %>% 
+  filter(country == "Switzerland") %>% 
+  ggplot(aes(month, percent, 
+             fill = country, 
+             group = year)) +
+  geom_area(size = 0, position = position_dodge(width = 0.03), alpha = 0.1) +
+  geom_path(aes(color = country), size = 0.2, 
+            show.legend = F) +
+  annotate("text",
+           x = 7.1, y = 0.8, 
+           label = "One year of \nevents in August",
+           size = 3, hjust = 0) +
+  annotate("segment",
+           x = 7.2, y = 0.8, xend = 7.75, yend = 0.8,
+           arrow = arrow(length = unit(0.2, "cm"))) +
+  annotate("text",
+           x = 9.9, y = 0.8, 
+           label = "Multiple years of\nevents in September", size = 3) +
+  annotate("segment",
+           x = 9.7, y = 0.8, xend = 9.25, yend = 0.8,
+           arrow = arrow(length = unit(0.2, "cm"))) +
+  scale_x_continuous(labels = month.abb,
+                     breaks = 1:12) +
+  scale_y_continuous(limits = c(0, 1),
+                     breaks = c(0.5, 0.1)) +
+  scale_fill_viridis_d("Year", option = "plasma",
+                       direction = 1) +
+  scale_color_viridis_d(option = "plasma",
+                        direction = 1) +
+  labs(x = "",
+       y = "",
+       title = "How to Interpret This Chart",
+       subtitle = str_wrap("A flower represents the recorded total ultra running events of each country with the individual petals representing the normalized events during each year (from 0-1). The position of the petals indicates the month or months ultra trail running events held, with overlaps indicating repeated year-over-year events.", width = 70)) +
+  guides(fill = guide_colorbar()) +
+  coord_polar(theta = "x", start = 0) +
+  theme(legend.position = "none",
+        axis.text.y = element_blank(),
+        plot.title = element_text(size = 14))
+
+legend
+ 
+```
+
+```{r}
+out <- wrap_plots(flower / legend, plot_spacer(), petals,
+                  ncol = 3,
+                  widths = c(1, 0.1, 2))  +
+  plot_annotation(title = "Seasonability of Ulra Trail Running in the World",
+                  subtitle = str_wrap("Presented below is a petal chart of a ultra traill running events, with instructions on how to interpret this chart in the lower left. The upper left flower represents ultra trail running events recorded across all years and countries, with individual country presented as small maultiple flowers on the right.", 160),
+                  caption = "Source: BjnNowak-Github Repo | Graphic: Sung Inkyung\nCredit:Tidytuesday 2019 Week 18 Chicago Bird Collisions by @jkaupp",
+                  theme = theme(plot.title.position = "plot",
+                                plot.title = element_text(size = 20),
+                                plot.subtitle = element_text(size = 16),
+                                plot.caption = element_text(size = 11),
+                                panel.grid.major = element_blank(),
+                                panel.grid.minor = element_blank()))
+
+ggsave(here::here("2021", "week44", "W44_UltraTrailRunning.png"), out, width = 43, height = 30, units = "cm")
+```
