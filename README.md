@@ -32,6 +32,9 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### Billboard Top 100 by [Data.World](https://data.world/kcmillersean/billboard-hot-100-1958-2017#)
 ![Billboard](https://github.com/inkyscope/datavizRscope/blob/master/2021/week38/W38_Billboards2.png)
 
+### Star Trek Voice Commands by [SpeechInteraction](http://www.speechinteraction.org/TNG/)
+![StarTrek](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week34/W34_StarTrek_Voice_Commands.png)
+
 ### Netflix Shows by [Kaggle](https://www.kaggle.com/shivamb/netflix-shows)
 ![Netflix Shows](https://github.com/inkyscope/datavizRscope/blob/master/2021/week17/W17_NeflixTitles.png)
 
