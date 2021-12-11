@@ -1,0 +1,128 @@
+---
+title: "Star Trek Voice Commands"
+author: "Sung Inkyung"
+date: '2021 12 11'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggtext)
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+computer <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-17/computer.csv') %>% 
+  select(-(type:sub_domain)) %>% 
+  distinct(value_id, .keep_all = T) %>% 
+  mutate(interaction = str_remove_all(interaction, "\\(.+?\\)"),
+         interaction = str_remove_all(tolower(interaction), "computer")) 
+
+View(computer)
+
+computer %>% 
+  count(char_type)
+
+```
+
+
+```{r}
+computer <- computer %>% 
+  unnest_tokens(word, interaction) %>% 
+  anti_join(stop_words) %>% 
+  count(char_type, word, sort = T)
+
+computer %>%
+  filter(n > 5) %>% 
+  group_by(char_type) %>% 
+  slice_max(n = 10, n) %>% 
+  ungroup() %>% 
+  ggplot(aes(n, fct_reorder(word, n), 
+             fill = char_type)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~char_type, scales = "free_y") +
+  labs(y = "")
+```
+#star trek color code: #c1c730, #a71313, #2b53a7, #000000, #d6a444
+
+```{r}
+df_tfidf <- computer %>%
+  select(char_type, interaction) %>% 
+  unnest_tokens(word, interaction) %>% 
+  anti_join(stop_words) %>% 
+  count(char_type, word, sort = T) %>% 
+  bind_tf_idf(word, char_type, n) %>% 
+  arrange(-tf_idf) 
+
+plot_tfidf <- df_tfidf %>% 
+  filter(word != "ee") %>% 
+  group_by(char_type) %>% 
+  slice_max(n = 10, tf_idf) %>% 
+  ungroup() %>% 
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), 
+             fill = char_type)) +
+  geom_col(show.legend = F) +
+  scale_fill_manual(values = c("Person" = "#a71313",
+                               "Computer" = "#d6a444")) +
+  labs(y = "") +
+  facet_wrap(~char_type, scales = "free_y")
+```
+
+
+```{r}
+df_sent <- df_tfidf %>% 
+  inner_join(get_sentiments()) %>% 
+  group_by(char_type) %>% 
+  filter(tf_idf >= 0.0008) %>% 
+  group_by(char_type) %>%
+  arrange(-tf_idf)
+```
+
+
+```{r}
+plot_sent <- df_sent %>% 
+  ggplot(aes(label = word,
+             size = tf_idf, 
+             color = char_type,
+             alpha = tf_idf)) +
+  ggwordcloud::geom_text_wordcloud_area(area_corr_power = 1) + 
+  scale_color_manual(values = c("Person" = "#a71313",
+                                "Computer" = "#2b53a7")) + 
+  scale_size_area(max_size = 15) +
+  scale_alpha(range = c(.6, 1)) +
+  facet_wrap(~ sentiment) +
+  labs(title = "Which of the words of <span style = 'color:#a71313'>**HUMAN**</span> and <span style = 'color:#2b53a7'>**COMPUTER**</span> is positive or negative?",
+       subtitle = "Illustrated below words are selected from Star Trek by tf-idf",
+       caption = "**Source**: SpeechInteraction.org | **Graphic**: Sung Inkyung") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "gray85",
+                                       color = NA),
+        strip.text = element_text(size = 16, 
+                                  color = "#231838",
+                                  margin = margin(b = 5)),
+        plot.title = element_markdown(size = 15,
+                                      color = "#231838",
+                                      hjust = 0.5, 
+                                      vjust = 0.5,
+                                      margin = margin(t = 10, b = 7)),
+        plot.subtitle = element_text(size = 12,
+                                     color = "#231838",
+                                     hjust = 0.5, 
+                                     vjust = 0.5,
+                                     margin = margin(b = 30)),
+        plot.caption = element_markdown(size = 9,
+                                        color = "#495054",
+                                        hjust = 0.5, 
+                                        vjust = 0.5,
+                                        margin = margin(t = 20)),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2021", "week34", "W34_StarTrek_Voice_Commands.png"), width = 20, height = 16, units = "cm")
+```
