@@ -20,6 +20,9 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 
 
 --------------------------------------------------------------------------------------------------------------------------------------
+### Spiders by [World Spiders Database](https://wsc.nmbe.ch/dataresources)
+![Spiders](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week50/W50_Spiders.png)
+
 ### Dr. Who by [datardis](https://github.com/KittJonathan/datardis)
 ![DoctorWho](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week48/W48_DoctorWho_IMDBRating.png)
 
