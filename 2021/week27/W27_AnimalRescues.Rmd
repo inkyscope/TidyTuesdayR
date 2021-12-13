@@ -1,0 +1,91 @@
+---
+title: "W27_AnimalRescue"
+author: "Sung Inkyung"
+date: '2021 12 13'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggtext)
+library(ggrepel)
+library(wesanderson)
+```
+
+
+```{r}
+animal_rescues <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-29/animal_rescues.csv')
+
+animal_rescues %>% 
+  count(cal_year, sort = T)
+```
+
+```{r}
+df <- animal_rescues %>% 
+  filter(cal_year %in% c(2010, 2020)) %>%
+  select(animal = animal_group_parent, year = cal_year) %>% 
+  mutate(animal = fct_lump(animal, 5)) %>% 
+  filter(animal != "Other") %>% 
+  group_by(animal, year) %>% 
+  summarise(total = sum(n())) %>% 
+  mutate(change = total - lag(total)) %>% 
+  tidyr::fill(change, .direction = "up") %>% 
+  arrange(change)
+
+df_plot <- df %>% 
+  mutate(label = paste0(animal, " (", total, ")"))
+
+```
+
+
+```{r}
+plot <- df %>% 
+  ggplot(aes(year, total, group = animal, color = animal)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 3.5) +
+  geom_text_repel(data = df_plot %>% 
+                             filter(year == 2010),
+                           aes(label = label),
+                           hjust = 0.5) +
+  geom_text_repel(data = df_plot %>% 
+                             filter(year == 2020),
+                           aes(label = label),
+                           hjust = -0.5) +
+  annotate("text", 
+           x = 2010, 
+           y = -30, 
+           label = "2010", 
+           fontface = "bold", 
+           size = 9) +
+  annotate("text", 
+           x = 2020, 
+           y = -30, 
+           label = "2020", 
+           fontface = "bold", 
+           size = 9) +
+  scale_x_continuous(limits = c(2008, 2022)) +
+  scale_y_continuous(limits = c(-50, 400),
+                     expand = c(0, 0)) +
+  scale_color_manual(values = wes_palette("FantasticFox1")) +
+  labs(title = "Animals Rescues Status in UK",
+       caption = "Source: London.gov | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position  = "none",
+        plot.title = element_text(size = 20,
+                                  hjust = 0.5),
+        plot.caption = element_text(size = 8,
+                                    hjust = 0.5,
+                                    color = "gray55",
+                                    margin = margin(t = 20)),
+        plot.margin = margin(10, 10, 10, 10))
+  
+ggsave(here::here("2021", "week27", "W27_AnimalRescues.png"), width = 15, height = 20, units = "cm")
+
+```
+
