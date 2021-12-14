@@ -1,0 +1,124 @@
+---
+title: "W40_NBER Papers"
+author: "Sung Inkyung"
+date: '2021 12 14 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(patchwork)
+theme_set(theme_minimal())
+```
+
+
+```{r}
+papers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/papers.csv')
+
+programs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/programs.csv')
+
+paper_programs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/paper_programs.csv')
+
+df <- paper_programs %>% 
+  left_join(programs) %>% 
+  left_join(papers) %>% 
+  na.omit() %>% 
+  rename(category = program_category) %>% 
+  filter(between(year, 2000, 2020)) %>% 
+  mutate(program_desc = case_when(program_desc == "Economic Fluctuations and Growth" ~ "Economic\nFluctuations and\n Growth",
+                                  program_desc == "International Trade and Investment" ~  "International\nTrade and\nInvestment",
+                                  program_desc == "International Finance and Macroeconomics" ~ "International\nFinance and\n Macroeconomics",
+                                  program_desc == "Productivity, Innovation, and Entrepreneurship" ~ "Productivity,\nInnovation,and\n Entrepreneurship",
+                                  program_desc == "Environment and Energy Economics" ~ "Environment and\nEnergy Economics",
+                                  program_desc == "Development of the American Economy" ~ "Development of\nthe American Economy",
+                                  TRUE ~ program_desc))
+```
+
+
+```{r}
+plot_category <- df %>% 
+  group_by(year, category) %>% 
+  summarise(total = n()) %>% 
+  ggplot(aes(year, total, color = category, group = category)) +
+  geom_line(size = 1) +
+  scale_color_manual(values = c("Micro" = "#906269",
+                                "Macro/International" = "#99c1bb",
+                                "Finance" = "#f7606b"),
+                      breaks = c("Micro", "Macro/International", "Finance"),
+                     expand = c(0, 0)) +
+  labs(color = "",
+       x = "",
+       y = "",
+       title = "Trend of 3 Program Categories Published in NBER (200 - 2020)") +
+  theme(legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank())
+
+```
+
+```{r}
+plot_program <- df %>%
+  group_by(category, program_desc) %>% 
+  summarize(total = sum(n())) %>% 
+  mutate(program_desc = fct_reorder(program_desc, total)) %>% 
+  arrange(desc(program_desc)) %>% 
+  ungroup() %>% 
+  ggplot(aes(total, program_desc, fill = category)) +
+  geom_col() +
+  facet_wrap(~ category, nrow = 1, scales = "free") +
+  scale_fill_manual(values = c("Micro" = "#906269",
+                                "Macro/International" = "#99c1bb",
+                                "Finance" = "#f7606b"),
+                      breaks = c("Micro", "Macro/International", "Finance")) +
+  labs(fill = "",
+       x = "",
+       y = "",
+       title = "Program Decription by Each Program Category") +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5),
+        panel.grid = element_blank())
+```
+
+
+```{r}
+df_word <- df %>% 
+  unnest_tokens(word, title) %>% 
+  anti_join(stop_words) %>% 
+  count(category, word, sort = T) %>% 
+  bind_tf_idf(word,category, n) %>% 
+  arrange(desc(tf_idf)) %>% 
+  mutate(tf_idf = round(tf_idf, 5)) %>% 
+  group_by(category) %>% 
+  slice_max(tf_idf, n = 15) %>% 
+  ungroup() 
+
+plot_word <- df_word %>% 
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = category)) +
+  geom_col(show.legend = F) +
+  facet_wrap(~ category, nrow = 1, scales = "free") +
+  scale_fill_manual(values = c("Micro" = "#906269",
+                                "Macro/International" = "#99c1bb",
+                                "Finance" = "#f7606b"),
+                    breaks = c("Micro", "Macro/International", "Finance")) +
+  labs(x = "",
+       y = "",
+       title = "Highest tf-idf Words Representing Each of Program Category") +
+  theme(axis.text.x = element_blank())
+  
+```
+```{r}
+p <- plot_category | (plot_program / plot_word) + plot_layout(widths = c(1, 2))
+
+p +  plot_annotation(
+  caption = "Source: NBER  | Graphic: Sung Inkyung"
+) &
+  theme(plot.caption = element_text(size = 9))
+
+ggsave(here::here("2021", "week40", "W40_NBER.png"), width = 36, height = 20, units = "cm")
+
+```
