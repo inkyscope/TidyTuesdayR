@@ -41,6 +41,8 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 <img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2018/week_01/W1_US-AverageTuition.png" width="15%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2018/week_03/W3_GlobalMortality.png" width="15%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2018/week_05/W5_ACS%20Census%20Data%202015.png" width="15%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2018/week_06/W6_GlobalCoffeeChains.png" width="15%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2018/week_13/W13_BeerConsumtion.png" width="15%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2018/week_14/W14_GlobalLifeExpectancy.png" width="15%" hspace="3"/>
 </p>
 
+# Favorites
+
 ### Spiders by [World Spiders Database](https://wsc.nmbe.ch/dataresources)
 ![Spiders](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week50/W50_Spiders.png)
 
