@@ -22,10 +22,7 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ---------------------------------------------------------------------------------------------------
 # 2020
 <p float="center">
-<img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W2_AustraliaRainfall.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W2_Hotelbookings.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W3_Top10TF-IDFPasswords.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W4_SpotifySongsFeatures.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W4_SpotifySongsPatterns.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W5_TreeChronicles.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W7_Hotelbookings.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W8_ContinentsFoodCo2.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W8_FoodCarbonFootprint.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W9_MeaslesVaccination.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W10_NHLSeasonsGoals.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W11_TuitionTracker.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W12_TheOfficeCharacters.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W13_Traumatic%20Brain%20Injury.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W15_TourdeFranceWinnders.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W16_BestRapArtists.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W17_GDPR-Violation.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W18_BroadwayMusicals.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W18_BroadwayMusicals_2.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W19_AnimalCrossing.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W20_Volcanos.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W22_Cocktails.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W24_African-AmeriacanAchievements.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W25_AfricanAmericanCensus.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W26_CaribouLocations.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W28_CoffeeRatings.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W28_CoffeeRatingsRadar.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W30_AustralianPets.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W33_Avatar-TheLastAirbender.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W33_Avatar-TheLastAirbender_1.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W34_ExtinctPlants.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W34_ExtinctPlants_Asia.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W35_Chopped.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W36_GlobalCropYields.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W37_Friends.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W37_Friends_Chandler.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W38_GovSpendingonKids.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W41_NCAA%20Women's%20Basketball%20Champions.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W41_NCAA%20Women's%20Basketball.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W42_Datasaurus.gif" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W43_GreatAmericanBeerFestivalData.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W45_IKEA.png" width="10%" hspace="3"/>
-  
-  
-  
+<img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W2_AustraliaRainfall.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W2_Hotelbookings.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W3_Top10TF-IDFPasswords.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W4_SpotifySongsFeatures.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W4_SpotifySongsPatterns.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W5_TreeChronicles.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W7_Hotelbookings.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W8_ContinentsFoodCo2.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W8_FoodCarbonFootprint.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W9_MeaslesVaccination.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W10_NHLSeasonsGoals.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W11_TuitionTracker.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W12_TheOfficeCharacters.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W13_Traumatic%20Brain%20Injury.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W15_TourdeFranceWinnders.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W16_BestRapArtists.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W17_GDPR-Violation.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W18_BroadwayMusicals.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W18_BroadwayMusicals_2.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W19_AnimalCrossing.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W20_Volcanos.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W22_Cocktails.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W24_African-AmeriacanAchievements.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W25_AfricanAmericanCensus.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W26_CaribouLocations.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W28_CoffeeRatings.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W28_CoffeeRatingsRadar.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W30_AustralianPets.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W33_Avatar-TheLastAirbender.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W33_Avatar-TheLastAirbender_1.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W34_ExtinctPlants.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W34_ExtinctPlants_Asia.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W35_Chopped.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W36_GlobalCropYields.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W37_Friends.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W37_Friends_Chandler.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W38_GovSpendingonKids.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W41_NCAA%20Women's%20Basketball%20Champions.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W41_NCAA%20Women's%20Basketball.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W42_Datasaurus.gif" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W43_GreatAmericanBeerFestivalData.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W45_IKEA.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W46_HistoricalPhones.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W48_Washington%20Trails.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W49_TorontoShelters.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W50_WomenOf2020.png" width="10%" hspace="3"/><img src="https://github.com/inkyscope/TidyTuesdayR/blob/master/2020/W52_BigMacIndex.png" width="10%" hspace="3"/>
 </p>
 
 # 2019
@@ -65,23 +62,8 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### The Office by [schrute](https://bradlindblad.github.io/schrute/index.html)
 ![The Office](https://github.com/inkyscope/datavizRscope/blob/master/2020/W12_TheOffice_Characters.png)
 
-### Big Mac Index by [TheEconomist](https://github.com/TheEconomist/big-mac-data)
-![Big Mac](https://github.com/inkyscope/datavizRscope/blob/master/2020/W52_BigMacIndex.png)
-
-### 100 Women of 2020 by [BBC](https://www.bbc.com/news/world-55042935)
-![WOMEN](https://github.com/inkyscope/datavizRscope/blob/master/2020/W50_WomenOf2020.png)
-
-### IKEA Furniture by [Kaggle](https://www.kaggle.com/ahmedkallam/ikea-sa-furniture-web-scraping)
-![IKEA](https://github.com/inkyscope/datavizRscope/blob/master/2020/W45_IKEA.png)
-
 ### DatasauRus Dozen by [Alberto Cairo](http://www.thefunctionalart.com/2016/08/download-datasaurus-never-trust-summary.html)
 ![DatasaRus](https://github.com/inkyscope/datavizRscope/blob/master/2020/W42_Datasaurus.gif)
-
-### US Budget on PK12 by [Urban Institute](https://datacatalog.urban.org/dataset/state-state-spending-kids-dataset)
-![PK12](https://github.com/inkyscope/datavizRscope/blob/master/2020/W38_GovSpendingonKids.png)
-
-### Friends Pair by [friends R Package](https://github.com/EmilHvitfeldt/friends)
-![Friends](https://github.com/inkyscope/datavizRscope/blob/master/2020/W37_Friends.png)
 
 ### Chopped by [kaggle](https://www.kaggle.com/jeffreybraun/chopped-10-years-of-episode-data)
 ![Chopped](https://github.com/inkyscope/datavizRscope/blob/master/2020/W35_Chopped.png)
@@ -89,26 +71,14 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### Extinct Plants in Asia by [IUCN Red List](https://www.iucnredlist.org/)
 ![Extinct Plants in Asia](https://github.com/inkyscope/datavizRscope/blob/master/2020/W34_ExtinctPlants_Asia.png)
 
-### Avatar:The Last Airbender by [appa](https://github.com/averyrobbins1/appa)
-![Avatar](https://github.com/inkyscope/datavizRscope/blob/master/2020/W33_Avatar-TheLastAirbender_1.png)
-
 ### Australian Dogs Outcome by [RSPCA](https://www.rspca.org.au/what-we-do/our-role-caring-animals/annual-statistics)
 ![Australian Pets](https://github.com/inkyscope/datavizRscope/blob/master/2020/W30_AustralianPets.png)
-
-### Coffee Ratings by [James LeDoux & Coffee Quality Database](https://github.com/jldbc/coffee-quality-database)
-![CoffeeRatings](https://github.com/inkyscope/datavizRscope/blob/master/2020/W28_CoffeeRatingsRadar.png)
 
 ### Broadway Musicals by [Playbill](https://www.playbill.com/grosses)
 ![BroadwayMusicals](https://github.com/inkyscope/datavizRscope/blob/master/2020/W18_BroadwayMusicals_1.png)
 
-### Animals Crossing by [Villager DB](https://github.com/jefflomacy/villagerdb)
-![Villager DB](https://github.com/inkyscope/datavizRscope/blob/master/2020/W19_AnimalCrossing.png)
-
 ### Tour de France Winners by [tdf](https://github.com/alastairrushworth/tdf)
 ![tdf](https://github.com/inkyscope/datavizRscope/blob/master/2020/W15_TourdeFranceWinnders.png)
-
-### School Diversity by [NCES](https://nces.ed.gov/ccd/pubschuniv.asp)
-![Diversit](https://github.com/inkyscope/datavizRscope/blob/master/figures/SchoolDiversity.png)
 
 ### Chrismas Birds Count by [Bird Studies Canada](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
 ![Birds](https://github.com/inkyscope/datavizRscope/blob/master/figures/ChristmasBirdsCounts.png)
@@ -116,29 +86,14 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### Meteorites Impacts by [NASA](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
 ![Meteorites](https://github.com/inkyscope/datavizRscope/blob/master/figures/MeteoritesImpacts.png)
 
-### Space Launches by [JSR Launch Vehicle Database](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-01-15)
-![Space Launches](https://github.com/inkyscope/datavizRscope/blob/master/figures/SpaceLaunches.png)
-
-### UFO Shapes by [NUFORC](http://www.nuforc.org/)
-![UFO Shapes](https://github.com/inkyscope/datavizRscope/blob/master/figures/UFO-Shapes.png)
-
-### Characters in THE OFFICE by [schrute](https://bradlindblad.github.io/schrute/index.html)
-![The Office](https://github.com/inkyscope/datavizRscope/blob/master/2020/W12_TheOfficeCharacters.png)
-
 ### Food's Carbon Footprints by [nu3](https://www.nu3.de/blogs/nutrition/food-carbon-footprint-index-2018)
 ![Food CO2](https://github.com/inkyscope/datavizRscope/blob/master/2020/W8_ContinentsFoodCo2.png)
 
 ### Spotify songs by [Spotify](https://www.rcharlie.com/spotifyr/)
 ![Song Genres](https://github.com/inkyscope/datavizRscope/blob/master/2020/W4_SpotifySongsFeatures.png)
 
-### Australian Fires by [Bureau of Meteorology](http://www.bom.gov.au/climate/data/stations/)
-![Australian Fires](https://github.com/inkyscope/datavizRscope/blob/master/2020/W2_AustraliaRainfall.png)
-
 ### CRAN Code by [CRAN](https://cran.r-project.org/src/contrib/)
 ![CRAN Code](https://github.com/inkyscope/datavizRscope/blob/master/figures/ProgrammingLanguagesinTidyverse.png)
-
-### Parking tickets by hour of day by [Open Data Philly](https://www.opendataphilly.org/dataset/parking-violations)
-![Philadelphia](https://github.com/inkyscope/datavizRscope/blob/master/figures/ParkingTickets.png)
 
 ### Top players in Grand Slams by [Wikipedia](https://en.wikipedia.org/wiki/List_of_Grand_Slam_women%27s_singles_champions)
 ![GrandSlamTimeline](https://github.com/inkyscope/datavizRscope/blob/master/figures/GrandSlamPlayers.png)
