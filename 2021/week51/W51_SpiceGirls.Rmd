@@ -1,0 +1,98 @@
+---
+title: "W51_SpiceGirls"
+author: "Sung Inkyung"
+date: '2021 12 15'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(embed)
+```
+
+
+```{r}
+studio_album_tracks <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-12-14/studio_album_tracks.csv')
+
+ 
+ df <- studio_album_tracks %>% 
+   select(danceability, energy, loudness, speechiness:tempo, key_mode, album = album_name) %>% 
+   add_count(key_mode) %>% 
+   filter(n >=2)
+```
+
+
+```{r}
+df_key <- df %>% 
+   select(-n) %>% 
+   pivot_longer(-c("key_mode", "album")) %>% 
+   pivot_wider(names_from = key_mode, values_from = value) %>% 
+   unnest() %>% 
+   mutate_all(~replace(., is.na(.), 0))
+
+
+umap_rec_mode <- recipe(~., data = df_key) %>% 
+  update_role(album, name, new_role = "id") %>% 
+  step_normalize(all_predictors()) %>% 
+  step_umap(all_predictors())
+
+umap_prep_mode <- prep(umap_rec_mode)
+
+umap_prep_mode
+
+plot_mode <- juice(umap_prep_mode) %>% 
+    ggplot(aes(UMAP1, UMAP2, label = name)) +
+    geom_rect(aes(xmin = -3, xmax = -1,
+                 ymin = -3, ymax = 3),
+             fill = "#e32227",
+             color = NA) +
+   geom_rect(aes(xmin = -1, xmax = 1,
+                 ymin = -3, ymax = 3),
+             fill = "#31ed31",
+             color = NA) +
+   geom_rect(aes(xmin = 1, xmax = 3,
+                 ymin = -3, ymax = 3),
+             fill = "#eb3298",
+             color = NA) +
+   geom_rect(aes(xmin = 3, xmax = 5,
+                 ymin = -3, ymax = 3),
+             fill = "#f5dc16",
+             color = NA) +
+   annotate("text",
+            x = 1, y = 0,
+            label = "SPICE GIRLS",
+            color = "white",
+            size = 60,
+            fontface = "bold") +
+   geom_point(aes(color = album), size = 5) +
+   geom_text(hjust = -0.2,
+            size = 4,
+            check_overlap = T) +
+   scale_x_continuous(limits = c(-3, 5),
+                      expand = c(0, 0)) +
+   scale_color_manual(values = c("Forever" = "red",
+                                 "Spice" = "green",
+                                 "Spiceworld" = "blue")) +
+ 
+   labs(caption = "Source: Spice Girls by Jacquie Tran| Graphic: Sung Inkyung") +
+   theme_void() +
+   theme(legend.position = "bottom",
+         legend.text = element_text(size = 16),
+         panel.background = element_rect(color = "transparent",
+                                         fill = "transparent"),
+         plot.caption = element_text(size = 12,
+                                     color = "gray25",
+                                     hjust = 0.5,
+                                     margin = margin(t = 25)))
+
+ggsave(here::here("2021", "week51", "W51_SpiceGirlds.png"), width = 36, height = 26, units = "cm")
+   
+```
+
+```{r}
+```
+
