@@ -1,0 +1,85 @@
+---
+title: ""W40_NBER_UMAP
+author: "Sung Inkyung"
+date: '2021 12 15'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+papers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/papers.csv')
+
+programs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/programs.csv')
+
+paper_programs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-28/paper_programs.csv')
+
+df <- paper_programs %>% 
+  left_join(programs) %>% 
+  left_join(papers) %>% 
+  na.omit() %>% 
+  rename(category = program_category) %>% 
+  filter(between(year, 2000, 2020)) 
+
+df_nerb <- df %>% 
+  unnest_tokens(word, title) %>% 
+  anti_join(stop_words) %>% 
+  count(category, program_desc, word, sort = T) %>% 
+  bind_tf_idf(word, category, n) %>% 
+  filter(n > 50) %>% 
+  distinct(word, .keep_all = T) %>% 
+  select(category, program_desc, word, tf_idf) %>% 
+  pivot_wider(names_from = word, values_from = tf_idf, values_fill = 0 )
+```
+
+
+```{r}
+# UMAP(Uniform Manifold Approximation and Projecton)
+
+library(embed)
+
+pals = c("Micro" = "#906269",
+         "Macro/International" = "#99c1bb",
+         "Finance" = "#f7606b")
+
+umap_rec <- recipe(~., data = df_nerb) %>% 
+  update_role(program_desc, category, new_role = "id") %>% 
+  step_normalize(all_predictors()) %>% 
+  step_umap(all_predictors())
+
+umap_prep <- prep(umap_rec)
+
+umap_prep
+
+plot_program <- juice(umap_prep) %>% 
+  ggplot(aes(UMAP1, UMAP2, label = program_desc)) +
+  geom_point(aes(color = category), size = 4) +
+  geom_text(hjust = -0.05,
+            size = 3.5,
+            check_overlap = T) +
+  scale_color_manual(values = pals,
+                     breaks = c("Micro", "Macro/International", "Finance")) +
+  scale_x_continuous(limits = c(-2, 3)) +
+  labs(color = "",
+       title = "Exploring NBER Working Paper 2000-2020",
+       subtitle = "Paper titles classified by NBER paper programs were selected accoridng to tf-idf, and then UMAP analysis was applied to indicate program category",
+       caption = "Source: NBER | Graphic: Sung Inkyung") +
+  theme(plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 14,
+                                     margin = margin(b = 20)),
+        plot.caption = element_text(size = 9,
+                                    margin = margin(t = 40)))
+
+ggsave(here::here("2021", "week40", "W40_NBER_UMAP.png"), width = 38, height = 20, units = "cm")
+```
+
