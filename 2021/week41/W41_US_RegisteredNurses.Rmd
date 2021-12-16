@@ -1,0 +1,63 @@
+---
+title: "Registered Nurses"
+author: "Sung Inkyung"
+date: '2021 12 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(scales)
+```
+
+
+```{r}
+nurses <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-05/nurses.csv') %>% 
+  janitor::clean_names() 
+
+df <- nurses %>% 
+  arrange(year) %>% 
+  group_by(state) %>% 
+  mutate(label = if_else(year == max(year), state, NULL)) %>% 
+  ungroup()
+
+ggplot(df, 
+       aes(x = total_employed_rn, 
+           y = hourly_wage_median,
+           group = state, 
+           label = label)) +
+  geom_step(aes(size = year),
+            color = "#0a6496") + 
+  geom_text(hjust = 0,
+            check_overlap = T,
+            color = "#67074e",
+            size = 4.5) +
+  scale_size_continuous(range = c(0.3, 0.8)) +
+  scale_x_continuous(labels = label_number()) +
+  scale_y_continuous(labels = label_dollar()) +
+  coord_cartesian(clip = "off") +
+  labs(x = "Number of Employed RN",
+       y = "Hourly Wage(Median)",
+       title = "Hourly Wages and\n Number of Employed Registered Nurses by\n State (1998 - 2020)",
+       caption = "Source: Data.World | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#a8bed0",
+                                       color = NA),
+        plot.title = element_text(size = 28,
+                                  hjust = 0.5,
+                                  face = "bold"),
+        plot.caption = element_text(size = 10,
+                                    hjust = 0.5,
+                                    color = "gray45",
+                                    margin = margin(t= 30)),
+        panel.grid = element_blank(),
+        axis.title = element_text(size = 13),
+        plot.margin = margin(20, 40, 20, 20))
+  
+ggsave(here::here("2021", "week41", "W41_US_RegisteredNurses.png"), width = 34, height = 24, units = "cm")
+```
