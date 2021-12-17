@@ -14,7 +14,7 @@ library(tidyverse)
 library(scales)
 ```
 
-
+### Source[tidytuesday by @gkaramanis] (https://github.com/gkaramanis/tidytuesday/blob/master/2021/2021-week32/investment.R)
 ```{r}
 nurses <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-10-05/nurses.csv') %>% 
   janitor::clean_names() 
