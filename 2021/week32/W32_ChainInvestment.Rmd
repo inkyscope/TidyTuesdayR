@@ -1,0 +1,91 @@
+---
+title: "W32_Chain_Investment"
+author: "Sung Inkyung"
+date: '2021 12 17 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(scales)
+library(nord)
+```
+
+
+```{r}
+chain_investment <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-10/chain_investment.csv')
+
+chain_investment %>% 
+  filter(meta_cat == "Digital") %>% 
+  filter(gross_inv_chain == max(gross_inv_chain))
+```
+
+
+```{r}
+df <- chain_investment %>% 
+  filter(meta_cat == "Digital") %>% 
+  mutate(gross_inv_chain = gross_inv_chain * 1e6) #Gross investment (chained 2021 dollars) in millions of USD
+
+
+ggplot(df) +
+  geom_line(aes(year, gross_inv_chain,
+                group = category, 
+                color = category), size =1) +
+  scale_color_manual(values = c("#950245", "#07695b", "#744700", "#f37553")) +
+  scale_y_continuous(breaks = c(0, 10e9, 20e9, 
+                                seq(50e9, 150e9, by = 25e9)),
+                     minor_breaks = seq(0, 125e9, by = 2e9),
+                     sec.axis = dup_axis(),
+                     labels = label_number(suffix = "B", 
+                                           prefix = "$",
+                                           scale = 1e-9)) +
+  guides(color = guide_legend(nrow = 2, 
+                              byrow = T,
+                              title = "")) +
+  facet_zoom(x = year < 1990,
+             ylim = c(0, 21e9),
+             horizontal = F) +
+  labs(title = "Digital Infrastructure Investment",
+       subtitle = "In chained (2012) dollars",
+       caption = "Source: Bureau of Economic Analysis | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 10),
+        plot.background = element_rect(fill = "#accad4",
+                                       color = NA),
+        panel.background = element_rect(fill = "grey90",
+                                       color = NA),
+        strip.background = element_rect(fill = "grey90", 
+                                         color = "grey70", 
+                                         size = 1),
+        plot.title = element_text(size = 20,
+                                  face = "bold",
+                                  color = "#282e54",
+                                  hjust = 0.5),
+        plot.subtitle = element_text(size = 14,
+                                  face = "bold",
+                                  color = "#282e54",
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(size = 8,
+                                  color = "gray55",
+                                  margin = margin(t = 20)),
+        axis.title = element_blank(),
+        axis.text = element_text(size = 10),
+        axis.text.x = element_text(face = "bold"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_line(color = "#8d9ca1",
+                                          size = 0.1),
+        panel.grid.minor.y = element_line(color = "#8d9ca1",
+                                          size = 0.05),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2021", "week32", "W32_ChainInvestment.png"), width = 26, height = 22, units = "cm")
+```
+
