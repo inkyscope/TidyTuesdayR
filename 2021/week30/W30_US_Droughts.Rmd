@@ -1,0 +1,78 @@
+---
+title: "W30_Us Droughts"
+author: "Sung Inkyung"
+date: '2021 12 18'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(geofacet)
+library(ggtext)
+library(scales)
+library(lubridate)
+
+```
+
+
+```{r}
+drought <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-20/drought.csv')
+
+drought %>% 
+  count(valid_start) %>% 
+  arrange(desc(valid_start))
+  
+```
+
+
+```{r}
+df <- drought %>%
+  filter(stat_fmt == 2) %>%
+  select(-area_total, -pop_pct, -pop_total) %>%
+  pivot_wider(names_from = "drought_lvl",
+              values_from = "area_pct") %>%
+  mutate(abnormally_drought = D1,
+         no_drought = None) %>%
+  select(state_abb, valid_start,
+         abnormally_drought, no_drought) %>%
+  pivot_longer(abnormally_drought:no_drought,
+               names_to = "drought",
+               values_to = "area_pct") %>%
+  mutate(drought = factor(drought, levels = c("no_drought", "abnormally_drought")))
+```
+
+```{r}
+plot <- ggplot(df,
+               aes(x = valid_start,
+                   y = area_pct,
+                   fill = drought)) +
+  geom_area() +
+  scale_fill_manual(values = c("#dcdca4", "#3c241f")) +
+  facet_geo(~ state_abb) +
+  labs(title = "<span style = 'color:#3c241f'>**ABNORMALLY DROUGHT**</span> by States",
+       subtitle = "Illustrated below shows the percent of the land area in each state that is in <span style = 'color:#3c241f'>**ABNORMALLY DROUGHT**</span> from July 2001 to July 2021.<br><span style = 'color:#3c241f'>**DROUGHT (D0)**</span>divided into 5 classifications of U.S. Drought Monitor; abnormal, moderate, severe, extreme and exceptional drought.",
+       x = "",
+       y = "",
+       caption = "Source:U.S. Drought Monitor | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#dcdca4",
+                                        color = NA),
+        plot.background = element_rect(fill = "#dcdca4",
+                                       color= NA),
+        plot.title = element_markdown(size = 24,
+                                      margin = margin(b = 7)),
+        plot.subtitle = element_markdown(size = 14,
+                                         lineheight = 1,1,
+                                         margin = margin(b = 25)),
+        plot.caption = element_text(size = 11,
+                                    color = "#5c443d",
+                                    margin = margin(t = 20)),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2021", "week30", "W30_US_Droughts.png"), width = 30, height = 26, units = "cm")
+```
