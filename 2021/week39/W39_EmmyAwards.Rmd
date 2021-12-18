@@ -1,0 +1,101 @@
+---
+title: "W39_EmmyAwards"
+author: "Sung Inkyung"
+date: '2021 12 17 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(gggibbous)
+library(ggtext)
+```
+### Source[Tidytuesday by @danoehm] (https://twitter.com/danoehm/status/1441310354902978562)
+
+```{r}
+nominees <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-21/nominees.csv')
+
+df <- nominees %>% 
+  mutate(distributor = case_when(
+    str_detect(distributor, "CBS") ~ "CBS",
+    str_detect(distributor, "National Geo") ~ "National Geographic",
+    str_detect(distributor, "Disney") ~ "Disney",
+    str_detect(distributor, "NBC") ~ "NBC",
+    str_detect(distributor, "HBO") ~ "HBO",
+    TRUE ~ distributor
+  ))
+```
+
+
+```{r}
+top_distributor <- df %>% 
+  count(distributor) %>% 
+  slice_max(n, n = 48, with_ties = FALSE) %>% 
+  pull(distributor)
+
+df_emmys <- expand_grid(distributor = top_distributor, 
+                        type = c("Winner", "Nominee")) %>% 
+  left_join(nominees, by = c("distributor", "type")) %>% 
+  count(distributor, type) 
+```
+
+
+```{r}
+df_plot <- df_emmys %>% 
+  group_by(distributor) %>% 
+  mutate(total = sum(n),
+         ratio = n/sum(n),
+         ratio = round(ratio, 2),
+         result = ifelse(type == "Winner", TRUE, FALSE),
+         distributor = str_wrap(distributor, 8)) %>%  
+  ungroup() %>% 
+  mutate(distributor = fct_reorder(distributor, ratio, max))
+```
+
+
+```{r}
+plot <- df_plot %>% 
+  ggplot(aes(x = .5, y = .5,
+             ratio = ratio,
+             right = result,
+             fill = result,
+             size = total)) +
+  geom_moon() +
+  scale_fill_manual(values = c("#a48111", "#d4af37")) +
+  scale_size_area(max_size = 30) +
+  facet_wrap(~distributor, nrow = 8) +
+  labs(title = "<span style = 'color:#a48111'>**NOMINEES**</span> and <span style = 'color:#d4af37'>**WINNERS**</span>",
+       subtitle = "The proportion of Emmy <span style = 'color:#a48111'>**NOMINEES**</span> and <span style = 'color:#d4af37'>**WINNERS**</span> are shown for the 48 largest distributors.<br>**HBO** have the most nominations and winners with **4442** nominations. As well the highest proportion<br> of winners with <span style = 'color:#d4af37'>**30%**</span> taking the trophy. Size represents total number of nominations  since 1957.",
+       caption = "Source: Emmys | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#30267a",
+                                        colour = NA),
+        panel.background = element_rect(fill = "#30267a",
+                                        colour = NA),
+        plot.title = element_markdown(size = 40, 
+                                      hjust = 0.5,
+                                      color = "#ffc968",
+                                      margin = margin(b = 15)),
+        plot.subtitle = element_markdown(size = 18,
+                                         hjust = 0.5,
+                                         color = "#ffc968",
+                                         lineheight = 1.3,
+                                         margin = margin(b = 20)),
+        plot.caption = element_text(size = 16,
+                                   color = "#ffc968",
+                                   margin = margin(t = 15)), 
+        strip.text = element_text(color = "#fefbd4", 
+                                  size = 21,
+                                  margin = margin(t = 20)),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2021", "week39", "W39_EmmyAwards.png"), width = 32, height = 45, units = "cm")
+          
+```
+
+
