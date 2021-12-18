@@ -1,7 +1,7 @@
 ---
-title: "W32_Chain_Investment"
+title: "W33_Chain_Investment"
 author: "Sung Inkyung"
-date: '2021 12 17 '
+date: '2021 12 17'
 output: html_document
 ---
 
@@ -13,7 +13,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggforce)
 library(scales)
-library(nord)
 ```
 
 
@@ -86,6 +85,6 @@ ggplot(df) +
                                           size = 0.05),
         plot.margin = margin(20, 20, 20, 20))
 
-ggsave(here::here("2021", "week32", "W32_ChainInvestment.png"), width = 26, height = 22, units = "cm")
+ggsave(here::here("2021", "week33", "W33_ChainInvestment.png"), width = 26, height = 22, units = "cm")
 ```
 
