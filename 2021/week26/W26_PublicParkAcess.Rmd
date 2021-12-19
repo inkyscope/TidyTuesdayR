@@ -46,9 +46,7 @@ df <- parks %>%
   filter(year >= 2018) %>% 
   mutate(measure = str_remove_all(measure, "points"),
          measure = str_replace_all(measure, "_" , " "),
-         measure = str_to_title(measure)) %>% 
-  arrange(measure, value)
-
+         measure = str_to_title(measure)) 
 ```
 
 ```{r}
