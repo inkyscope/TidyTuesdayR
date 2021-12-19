@@ -1,0 +1,104 @@
+---
+title: "W26_Public Park Acess"
+author: "Sung Inkyung"
+date: '2021 12 19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[raincloud plots by cedric scherer] (https://www.cedricscherer.com/2021/06/06/visualizing-distributions-with-raincloud-plots-and-how-to-create-them-with-ggplot2/)
+```{r}
+library(tidyverse)
+library(gghalves)
+library(ggtext)
+```
+
+
+```{r}
+parks <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-22/parks.csv')
+
+parks %>% 
+  colnames()
+```
+```{r}
+df <- parks %>% 
+  select(year,
+         med_park_size_points,
+         park_pct_city_points,
+         pct_near_park_points,
+         basketball_points,
+         dogpark_points,
+         playground_points,
+         rec_sr_points,
+         restroom_points,
+         splashground_points,
+         amenities_points) %>% 
+  rename("median park size" = med_park_size_points,
+         "parkland of\ncity area" = park_pct_city_points,
+         "within 10 min\nwalk to park" = pct_near_park_points,
+         "dog parks" = dogpark_points,
+         "recreation &\nsenior centers" = rec_sr_points,
+         "splashground &\nsplashland" = splashground_points) %>% 
+  pivot_longer(!year,
+               names_to = "measure") %>% 
+  filter(year >= 2018) %>% 
+  mutate(measure = str_remove_all(measure, "points"),
+         measure = str_replace_all(measure, "_" , " "),
+         measure = str_to_title(measure)) %>% 
+  arrange(measure, value)
+
+```
+
+```{r}
+plot <- df %>% 
+  ggplot(aes(x = reorder(measure, value, median), y = value)) +
+  ggdist::stat_halfeye(
+    adjust = .5,
+    width = .6, 
+    .width = c(.5, .95),
+    justification = -0.2,
+    point_color = NA
+  ) +
+  geom_half_point(aes(x = reorder(measure, value, median),
+                 y = value,
+                 color = factor(year)),
+             position = position_jitter(0.15),
+             range_scale = .4, size = 1.5, alpha = 0.3) +
+  geom_boxplot(position = position_nudge(x = 0, y = 0.25),
+               width = 0.15, 
+               outlier.shape = NA, 
+               varwidth = F, 
+               color = "gray30",
+               alpha = 0.3) +
+  scale_color_manual(values = c("#fa9705", "#55acee",  "#ff4466")) +
+  scale_y_continuous(limits = c(0, 100),
+                     breaks = seq(0, 100, 25),
+                     expand = c(0, 0)) +
+  labs(color = " ",
+       y = "",
+       x = "",
+       title = "US Cities Public Parks Assessment",
+       subtitle = "Rating points by <span style = 'color:#fa9705'>**2018**</span> <span style = 'color:#55acee'>**2019**</span> <span style = 'color:#ff4466'>**2020**</span>",
+       caption = "Source: The Trust for Public Land | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 16,
+                                  hjust = .5,
+                                  margin = margin(b = 7)),
+        plot.subtitle = element_markdown(size = 12,
+                                         hjust = .5,
+                                         margin = margin(b = 15)),
+        plot.caption = element_text(size = 6,
+                                    color = "gray55"),
+        panel.grid.major = element_line(color = "grey95", 
+                                        size = .4),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 7),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave(here::here("2021", "week26", "W26_PublicParkAcess.png"), width = 22, height = 14, units = "cm")
+  
+```
+
