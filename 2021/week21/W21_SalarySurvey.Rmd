@@ -1,0 +1,134 @@
+---
+title: "W21_Salary Survey"
+author: "Sung Inkyung"
+date: '2021 12 20'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(gghalves)
+library(nord)
+library(scales)
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+survey <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-18/survey.csv')
+
+survey %>% 
+  count(country, sort = T)
+
+survey %>% 
+  count(industry, sort = T)
+  
+```
+
+
+```{r}
+df <- survey %>% 
+  filter(industry == "Computing or Tech") %>%
+  select(country,  annual_salary, currency) %>% 
+  mutate(country = fct_lump(country, 16),
+         country = case_when(country == "United States" ~ "USA",
+                             country == "US" ~ "USA",
+                             country == "U.S." ~ "USA",
+                             country == "United States of America" ~ "USA",
+                             country == "Usa"~ "USA",
+                             country == "United states" ~ "USA",
+                             country == "usa" ~ "USA",
+                             country == "united staes" ~ "USA",
+                             country == "United Kingdom" ~ "UK",
+                             country == "England" ~ "UK",
+                             TRUE ~as.character(country))) %>% 
+  filter(country !="Other") %>% 
+  mutate(annual_salary = case_when(
+                currency == "GBP"~ annual_salary * 1.32,
+                currency == "CAD" ~ annual_salary * 0.77,
+                currency == "EUR" ~ annual_salary * 1.13,  
+                currency == "AUD/NZD" ~ annual_salary * 0.71,
+                TRUE ~ annual_salary
+              )) %>% 
+  group_by(country) %>% 
+  mutate(total_salary = sum(annual_salary)) %>% 
+  ungroup() %>% 
+  mutate(country = fct_reorder(country, total_salary))
+
+
+
+df_max <- df %>% 
+  group_by(country) %>% 
+  summarise(max_salary = max(annual_salary)) %>% 
+  ungroup() %>% 
+  arrange(max_salary)
+```
+
+
+
+```{r}
+plot <- df %>% 
+  ggplot(aes(x = annual_salary,
+             y = fct_rev(country),
+             color = country,
+             fill = country)) +
+  ggdist::stat_halfeye(adjust = .5,
+                       width = .6,
+                       .width = 0,
+                       justification = -.2,
+                       point_color = NA) +
+  geom_boxplot(width = .15,
+               outlier.shape = NA) +
+  geom_point(shape = 95,
+             size = 10,
+             alpha = .2) +
+  geom_text(data = df_max,
+            aes(x = max_salary,
+                y = fct_rev(country),
+                color = country, 
+                label = country),
+            size = 6,
+            fontface = "bold",
+            nudge_y = 0,
+            hjust = -0.5) +
+  coord_cartesian(clip = "off") +
+  labs(x = "",
+       y = "",
+       color = "",
+       fill = "" ,
+       title = "Annual Salary in Computing & Tech Industry",
+       subtitle = "Countries are indicated in the position of maximum annual salary respectively.",
+       caption = "Source: Ask a Manager | Graphic: Sung Inkyung") +
+  scale_x_continuous(label = unit_format(prefix = "$", unit = "K", scale = 1e-3, sep = ""),
+                     limits = c(0, 2e6),
+                     breaks = seq(0, 2e6, 25e4)) +
+  scale_color_nord("afternoon_prarie") +
+  scale_fill_nord("afternoon_prarie") +
+  theme(legend.position = "none",
+        plot.title = element_text(size = 20,
+                                  face = "bold",
+                                  color = "#6d6c71",
+                                  margin = margin(b = 7)),
+        plot.subtitle = element_text(size = 15,
+                                     color = "#6d6c71",
+                                     margin = margin(b = 15)),
+        plot.caption = element_text(size = 11, 
+                                    color = "gray55",
+                                    margin = margin(t = 20)),
+        axis.text.x = element_text(size = 11, 
+                                   color ="#70828b"),
+        axis.text.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_line(color = "gray95",
+                                          size = 0.4),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2021", "week21", "W21_SalarySurvey.png"), width = 28, height = 20, units = "cm")
+
+```
