@@ -1,0 +1,84 @@
+---
+title: "W1_Geom"
+author: "Sung Inkyung"
+date: '2021 12 20'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(forcats)
+library(textreadr)
+
+geoms <- read_dir(path = here::here(), pattern = "\\.R", recursive = TRUE) %>% 
+  mutate(geom = str_extract(content, "geom_\\w+")) %>%  # assumes one geom per line
+  filter(!is.na(geom)) %>% 
+  count(geom) %>% 
+  mutate(
+    freq = n / sum(n),
+    total_geoms = sum(n),
+    geom = fct_reorder(geom, n)
+    )  %>% 
+  arrange(-n)
+
+top_30 <- geoms %>%
+  slice_max(n, n = 30)
+```
+
+
+```{r}
+ggplot(top_30) +
+  geom_col(aes(n, geom), width = 0.6, fill = "gray20") +
+  geom_text(aes(n + 1, geom, label = n), 
+            size = 3 , hjust = 0, 
+            color = "gray20") +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "gray95", color = NA),
+    axis.title = element_blank(),
+    axis.text = element_text(color = "gray20"),
+    panel.grid.major.y = element_blank()
+  ) 
+
+```
+
+
+```{r}
+plot_lollipop <- top_30 %>% 
+  ggplot(aes(geom, n)) +
+  geom_point(size = 6) +
+  geom_text(aes(geom, n, label = n), 
+            size = 2.5 , hjust = 0.5,
+            fontface = "bold",
+            color = "gray97") +
+  geom_segment(aes(x = geom,
+                   xend = geom,
+                   y = 0,
+                   yend = n),
+               size = 0.7) +
+  scale_y_continuous(limits = c(0, 200),
+                     expand = c(0, 0)) +
+  labs(x = "",
+       y = "",
+       title = "Frquency of Geom in My Tidytuesday Charts since 2018",
+       caption = "Source: Tidytuesday | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16,
+                                  margin = margin(b = 15)),
+        axis.text.x = element_text(angle = 65,
+                                   size = 9,
+                                   vjust = 0.6),
+        panel.grid.major = element_blank(),
+        panel.grid.minor.x = element_line(size = 0.4, 
+                                          color = "gray95"),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2021", "week1", "W1_Top30Geom.png"), dpi = 320, width = 20, height = 14, units = "cm")
+```
+
