@@ -1,0 +1,79 @@
+---
+title: "W28_Independence Days"
+author: "Sung Inkyung"
+date: '2021 12 20'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(ggtext)
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+holidays <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-06/holidays.csv') %>% 
+  na.omit()
+
+
+df_holidays <- holidays %>% 
+  select(country, year, month) %>% 
+  group_by(month) %>% 
+  mutate(total = sum(n())) %>% 
+  ungroup() %>% 
+  mutate(month = factor(month, 
+                        levels = c("Jan", "Feb", "March", "Apr", 
+                               "May", "Jun", "Jul", "Aug", 
+                               "Sep", "Oct", "Nov", "Dec"),
+                        ordered = T),
+         label = paste0(country, "\n", year)) %>% 
+  filter(!is.na(month)) %>% 
+  mutate(axis_x = runif(90),
+         axis_y = runif(90))
+
+df_holidays %>% 
+  filter(month == "Aug")
+
+```
+
+
+```{r}
+plot <- df_holidays %>% 
+  ggplot() +
+  geom_point(aes(axis_x, axis_y, size = total),
+             color = "#19A3EB",
+             alpha = 0.8) +
+  geom_point(aes(axis_x, axis_y), color = "#67DD0B", size = 1.5) +
+  geom_text_repel(data = df_holidays %>% 
+                    filter(month == "Aug"),
+                  aes(axis_x, axis_y, 
+                      label = label),
+                  size = 3.5, 
+                  fontface = "bold",
+                  color = "#FFC200") +
+  scale_size(range = c(1, 16)) +
+  labs(title = "**International Independence Day**",
+       subtitle = "Illustrated below diplays 19 countries that gained independece in <span style = 'color:#19A3EB'>**August**</span><br>when the most countries became free.",
+       caption = "**Source**: Wikipedia  | **Graphic**: Sung Inkyung") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "#020e14"),
+        plot.title = element_markdown(size = 20,
+                                      color = "#FEA002",
+                                      margin = margin(b = 7)),
+        plot.subtitle = element_markdown(size = 13,
+                                         color = "#FEA002",
+                                         margin = margin(b = 15)),
+        plot.caption = element_markdown(size = 8,
+                                       color = "#a2a5a4",
+                                       hjust = 1.25),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2021", "week28", "W28_IndependenceDay.png"), width = 18, height = 18, units = "cm")
+```
