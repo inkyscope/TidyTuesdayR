@@ -1,0 +1,66 @@
+---
+title: "W46_AfricaPopulation2020"
+author: "Sung Inkyung"
+date: '2021 12 21'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[afrilearndata] (https://github.com/afrimapr/afrilearndata)
+### Source[tidytuesday by @geokaramanis] (https://github.com/gkaramanis/tidytuesday/blob/master/2021/2021-week45/afrimapr.R)
+```{r}
+library(tidyverse)
+library(afrilearndata) 
+#remotes::install_github("afrimapr/afrilearndata")
+library(raster)
+library(paletteer)
+library(oompaBase)
+```
+
+
+```{r}
+df <- afripop2000 %>% 
+  as.data.frame(xy = TRUE) %>% 
+  rename(pop = 3) %>% 
+  filter(!is.na(pop))
+
+df %>% 
+  filter(pop == max(pop))
+
+plot <- df %>%
+  ggplot() +
+  geom_tile(aes(x, y, fill = pop)) +
+  annotate("text",
+           -7.51, -5, 
+           label = "Africa",
+           size = 20, 
+           fontface = "bold",
+           color = "#655e4d") +
+  scale_fill_paletteer_c("oompaBase::redgreen",
+                         trans = "pseudo_log",
+                  breaks = c(0, 100, 1000, 2000)) +
+  guides(fill = guide_colorbar(title = "Population density\n(people/km²)",
+                               label.position = "left",
+                               title.hjust = 0.5)) +
+  labs(caption = "Source:afrilearndata | Graphic: Sung Inkyung\nCredit: @geokaramanis") +
+  coord_fixed() +
+  theme_void() +
+  theme(legend.position = c(0.22, 0.23),
+        legend.key.width = unit(0.5, "line"),
+        legend.key.height = unit(2, "line"),
+        legend.title = element_text(color = "#f2e6c9",
+                                    lineheight = 1.1, 
+                                    margin = margin(t = 15)),
+        legend.text = element_text(color = "#f2e6c9"),
+        plot.background = element_rect(fill = "#dd3348",
+                                       color = NA),
+        plot.caption = element_text(color = "#bdb7a8",
+                                    hjust = 1),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave(here::here("2021", "week46", "W46_AfricaPopulation2020.png"), width = 25, height = 25, units = "cm")
+
+```
+

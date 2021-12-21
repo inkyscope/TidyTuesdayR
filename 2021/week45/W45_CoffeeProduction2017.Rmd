@@ -96,5 +96,6 @@ mtext("Data from spData package | Graphic: Sung Inkyung", 1,
       line = -1, col = "#3b282a", 
       adj = .5, cex = .65, font = 1, outer = T)
 
-ggsave(here::here("2021", "week45", "W45_CoffeeProduction2017.png"), width = 30, height = 26)
+#ggsave(here::here("2021", "week45", "W45_CoffeeProduction2017.png"), width = 30, height = 26)
+#save plot failed. 
 ```
