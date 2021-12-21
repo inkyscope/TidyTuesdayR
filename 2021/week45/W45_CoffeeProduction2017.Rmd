@@ -1,0 +1,100 @@
+---
+title: "W45_Coffee"
+author: "Sung Inkyung"
+date: '2021 12 21'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[rCarto/spikemap] (https://github.com/rCarto/spikemap)
+```{r}
+library(tidyverse)
+library(sf)
+library(spikemap) # remotes::install_github
+library(lwgeom)
+library(cartography)
+library(spData)
+```
+
+
+```{r}
+sf_world <- st_as_sf(rworldmap::getMap(resolution = "low")) 
+
+coffee <- coffee_data %>%  
+  na.omit() %>% 
+  rename("name" = "name_long") %>% 
+  filter(name != "Others") %>% 
+  mutate(name = case_when(name == "Tanzania" ~ "United Republic of Tanzania",
+                          name == "Timor-Leste" ~ "East Timor",
+                          name == "Congo, Dem. Rep. of" ~ "Democratic Republic of the Congo",
+                          TRUE ~ as.character(name)))
+
+#coffee$name
+#sf_world$SOVEREIGNT
+
+df_coffee_world <- sf_world %>% 
+  left_join(coffee, by = c("SOVEREIGNT" = "name")) 
+
+
+df_label <- df_coffee_world %>% 
+  drop_na(coffee_production_2017) %>% 
+  mutate(label = paste0(SOVEREIGNT, "\n",
+                        scales::comma(coffee_production_2017, big.mark = ",", 
+                                      accuracy = 4)))
+```
+
+
+```{r}
+par(mar = c(0,0.2,3,0.2), omi=c(0,0.75,0.95,0.75))
+
+plot(st_geometry(df_coffee_world),
+     col = "#cbdea6",
+     border = "#fdf3f1",
+     lwd = 0.2,
+     bg = "#eaeaea")
+
+
+spikemap(x = df_coffee_world[df_coffee_world$coffee_production_2017 <= 300,  ],
+         var = "coffee_production_2017", inches = .5,
+         fixmax = 3000,
+         col = "#de5f46", border = "#f48472",  lwd = .07,
+         legend.pos = "x")
+
+spikemap(x = df_coffee_world[df_coffee_world$coffee_production_2017 > 300, ], 
+         var = "coffee_production_2017", inches = .5,
+         fixmax = 3000,
+         col = "#de5f46", border = "#f48472", lwd = 1.1,
+         legend.pos = c(-180, -60),
+         legend.title.txt = "Production",
+         legend.values.rnd = -3)
+
+#xmin: -180 ymin: -89.9989 xmax: 180 ymax: 83.5996
+
+coffee_label <- spikelabel(x = df_label, 
+                           var = "coffee_production_2017",
+                           inches = .5, fixmax = 3000) %>% 
+  arrange(desc(coffee_production_2017))
+
+# display  coffee production 2017 > 300
+coffee_label %>% 
+  filter(coffee_production_2017 >= 300) %>%
+  labelLayer(txt = "label",
+             pos = 3, offset = .5,
+             halo = T, bg = "#eaeaea",
+             cex = .4,
+             col = "#3b282a")
+
+# north arrow, title, sources...
+
+mtext("World Coffee Production\n2017",
+      side = 3, adj = 0.5, padj = 0, line = 1,
+      cex = 2, font = 2,  col = "#3b282a")
+
+mtext("Data from spData package | Graphic: Sung Inkyung", 1,
+      line = -1, col = "#3b282a", 
+      adj = .5, cex = .65, font = 1, outer = T)
+
+ggsave(here::here("2021", "week45", "W45_CoffeeProduction2017.png"), width = 30, height = 26)
+```
