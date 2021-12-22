@@ -66,6 +66,9 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### US Droughts by [Drought Monitor](https://droughtmonitor.unl.edu/DmData/DataDownload.aspx)
 ![Droughts](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week30/W30_US_Droughts.png)
 
+### Scooby Doo by [Kaggle](https://www.kaggle.com/williamschooleman/scoobydoo-complete)
+![Scooby Doo](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week29/W29_ScoobyDoo.png)
+
 ### Independence Day by [Wikipedia](https://en.wikipedia.org/wiki/List_of_national_independence_days)
 ![Independence Day](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week28/W28_IndependenceDay.png)
 
