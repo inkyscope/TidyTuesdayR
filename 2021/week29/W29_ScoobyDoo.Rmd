@@ -1,0 +1,174 @@
+---
+title: "W29_Scooby Doo"
+author: "Sung Inkyung"
+date: '2021 12 22 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggridges)
+library(ggtext)
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+scoobydoo <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-13/scoobydoo.csv') %>% 
+  mutate(year = year(date_aired))
+
+scoobydoo %>% 
+  count(year, sort = T) %>% 
+  arrange(year) #1969-2020
+```
+
+
+```{r}
+df_caught <- scoobydoo %>% 
+  select(index, season, year, caught_fred:caught_scooby) %>% 
+  pivot_longer(caught_fred:caught_scooby) %>% 
+  separate(name, c("type", "character"), "_") %>% 
+  filter(value == "TRUE") %>% 
+  mutate(character = str_to_title(character),
+         n = -1) %>% 
+  group_by(character, type, year, season) %>% 
+  summarize(count = sum(n), .groups = "drop")
+
+df_captured <- scoobydoo %>% 
+  select(index, season, year, captured_fred:captured_scooby) %>%
+  pivot_longer(captured_fred:captured_scooby) %>% 
+  separate(name, c("type", "character"), "_") %>% 
+  filter(value == "TRUE") %>% 
+  mutate(character = str_to_title(character),
+         n = 1) %>% 
+  group_by(character, type, year, season) %>% 
+  summarize(count = sum(n), .groups = "drop")
+```
+
+
+```{r}
+df_join <- df_caught %>% 
+  full_join(df_captured, by = c("character", "season", "year")) %>%
+  na.omit() %>% 
+  select(year, season, character, get_caught = count.x, captured = count.y) %>% 
+  pivot_longer(cols = c(get_caught, captured)) %>% 
+  group_by(character, year) %>% 
+  summarise(value = sum(value, na.rm = TRUE)) %>% 
+  group_by(character) %>% 
+  mutate(cum = cumsum(value))
+
+```
+
+
+```{r}
+pals = c("Scooby" = "#6a3400",
+         "Fred" = "#f47920",
+         "Shaggy" ="#41525c", 
+         "Velma" = "#79af30",
+         "Daphnie"=  "#a091c6")
+
+
+plot <- df_join %>% 
+  ggplot(aes(x = cum, y = character, fill = character, color = character)) +
+  geom_vline(xintercept = 0, color = "firebrick3", linetype = 2, size = 1) +
+  geom_density_ridges(scale = 2,
+                      lwd = 1.1,
+                      alpha = .8) +
+  annotate("text",
+           label = "Get Caught",
+           size = 5,
+           fontface = "bold",
+           color = "#C70C47",
+           x = -60, y = 0) +
+  annotate("text",
+           label = "Captured",
+           size = 5,
+           fontface = "bold",
+           color = "#291ff7",
+           x = 17, y = 0) +
+  scale_y_discrete(limits = rev(c("Scooby", "Fred", "Shaggy", "Velma", "Daphnie"))) +
+  scale_x_continuous(limit = c (-65, 30)) +
+  scale_fill_manual(values = pals) +
+  scale_color_manual(values = pals) +
+  coord_cartesian(expand = FALSE,
+                  clip = "off") +
+  labs(color = "",
+       fill = "",
+       x = "",
+       y = "",
+       title = "**Scooby Doo**",
+       subtitle = "The Race of Get-Caught and Captured since **1969**",
+       caption = "**Source** Kaggle | **Graphic**: Sung Inkyung") +
+   theme(legend.position = "none",
+        plot.background = element_rect(fill = "#f9e014",
+                                       color = NA),
+        panel.background = element_rect(fill = "#f9e014",
+                                       color = NA),
+        plot.title = element_markdown(size = 30,
+                                      hjust = 0.5,
+                                      color = "#17bdb9",
+                                      margin = margin(t= 20, b = 7)),
+        plot.subtitle = element_markdown(size = 24,
+                                      hjust = 0.5,
+                                      color = "#17bdb9",
+                                      margin = margin(b = 25)),
+        plot.caption = element_markdown(size = 11,
+                                        hjust = 0.5,
+                                        color = "gray45"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.y = element_text(size = 18,
+                                   face = "bold",
+                                   hjust = 1,
+                                   color = "#44434c"),
+        axis.text.x = element_blank(),
+        plot.margin = margin(10, 10, 10, 10)
+        )
+ggsave(here::here("2021", "week29", "W29_ScoobyDoo.png"), width = 36, height = 20, units = "cm")
+```
+
+```{r}
+library(geomtextpath)
+
+plot_path <- df_join %>% 
+  ggplot(aes(x = cum, color = character, label = character)) +
+  geom_textdensity(size = 5.5, fontface = 2, 
+                   hjust = .7, vjust = .3,
+                   padding = unit(.3, "cm"),
+                   adjust = 15) +
+  scale_color_manual(values = pals) +
+  coord_cartesian(clip = "off") +
+  labs(color = "",
+       x = "",
+       y = "",
+       title = "**Scooby Doo**: The Race of Get-Caught and Captured since 1969",
+       caption = "**Source** Kaggle | **Graphic**: Sung Inkyung") +
+   theme(legend.position = "none",
+        plot.background = element_rect(fill = "#f9e014",
+                                       color = NA),
+        panel.background = element_rect(fill = "#f9e014",
+                                       color = NA),
+        plot.title = element_markdown(size = 24,
+                                      color = "#17bdb9",
+                                      margin = margin(t= 20, b = 15)),
+        plot.caption = element_markdown(size = 10,
+                                        color = "#ace0ee"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_text(size = 10,
+                                   color = "#44434c"),
+        plot.margin = margin(10, 10, 10, 10)
+        )
+
+plot_path
+```
+
