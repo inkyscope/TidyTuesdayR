@@ -1,0 +1,108 @@
+---
+title: "W35 Lemur"
+author: "Sung Inkyung"
+date: '2021 12 22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[lemur color] (https://icolorpalette.com/palette-by-themes/lemur)
+```{r}
+library(tidyverse)
+library(gghalves)
+library(ggtext)
+library(showtext)
+
+font_add_google("Fira Sans", "Fira Sans")
+showtext_auto()
+
+```
+
+
+```{r}
+lemurs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-24/lemur_data.csv')
+
+df <- lemurs %>% 
+  select(dlc_id, name, birth_type, sex, age_at_death_y) %>% 
+  filter(birth_type != "Unk",
+         sex != "ND") %>% 
+  na.omit() %>% 
+  distinct()
+
+df %>%  
+  filter(age_at_death_y == max(age_at_death_y)) # male 39.39
+df %>% 
+  filter(age_at_death_y == min(age_at_death_y))
+```
+
+
+```{r}
+plot <- df %>% 
+  ggplot(aes(age_at_death_y, birth_type, color = birth_type)) +
+    ggdist::stat_halfeye(aes(fill = sex),
+    adjust = .5, 
+    width = .6, 
+    .width = 0, 
+    justification = -.2, 
+    point_colour = NA,
+  ) + 
+  geom_boxplot(
+    width = .25, 
+    outlier.shape = NA
+  ) +
+  geom_point(
+    size = 1.1,
+    alpha = .5,
+    position = position_jitter(
+      seed = 1, width = .1)
+  ) +
+  labs(x = "",
+       y = " ",
+       fill = "",
+       title = "**The Life Expectancy of Lemur**",
+       subtitle = "<span style = 'color:#843c08'>**Male**</span> <span style = 'color:#b57d4c'>**Female**</span>",
+       caption = "Source: Duke Lemur Center | Graphic: Sung Inkyung") +
+  scale_y_discrete(labels = c("WB" = "Wild Born",
+                              "CB" = "Captive Born")) +
+  scale_fill_manual(values = c("M" = "#843c08",
+                               "F" = "#b57d4c")) +
+  scale_color_manual(values = c("WB" = "#4f4c25",
+                                "CB" = "#4f4c25")) +
+  coord_cartesian(xlim = c(1.2, NA), 
+                           clip = "off") +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#e0d9d8",
+                                       color = NA),
+        panel.background = element_rect(fill = "#e0d9d8",
+                                       color = NA),
+        plot.title = element_markdown(size = 80,
+                                      color = "#343444",
+                                      hjust = 0.5,
+                                      family = "Fira Sans",
+                                      margin = margin(t= 20, b = 7)),
+        plot.subtitle = element_markdown(size = 65,
+                                         hjust = 0.5,
+                                         family = "Fira Sans",
+                                         margin = margin(b = 15)),
+        plot.caption = element_text(size = 30,
+                                    color = "#878a97",
+                                    family = "Fira Sans"),
+        panel.grid.major.x = element_line(size = 0.1,
+                                          color = "#878a97"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.y = element_text(size = 40,
+                                   color = "#44434c"),
+        axis.text.x = element_text(size = 35,
+                                   color = "#44434c"),
+        plot.margin = margin(10, 10, 10, 10)
+        )
+
+
+ggsave(here::here("2021", "week35", "W35_Lemur.png"), width = 30, height = 24, units = "cm")
+
+```
+
