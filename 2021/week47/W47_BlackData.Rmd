@@ -1,0 +1,66 @@
+---
+title: "W47_BlackDat"
+author: "Sung Inkyung"
+date: '2021 12 22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(sf)
+library(afrilearndata)
+library(raster)
+library(paletteer)
+```
+
+
+```{r}
+df <- africountries %>% 
+  dplyr::select(name, geometry, pop_est, languages) %>% 
+  filter(!is.na(pop_est)) %>% 
+  mutate(pop_est = log10(pop_est),
+         label = paste0(name, "\n", languages))
+
+
+#xmin: -17.62504 ymin: -34.81917 xmax: 51.13387 ymax: 37.34999
+```
+
+
+```{r}
+ggplot(data = df, aes(fill = pop_est)) +
+  geom_sf(color = "#ded6cc", size = 0.5) +
+  geom_sf_text(data = df %>% 
+                 filter(languages >=5),
+               aes(label = label), 
+               color = "#504a40",
+               size = 3) +
+  scale_fill_paletteer_c("pals::kovesi.diverging_rainbow_bgymr_45_85_c67",
+                         breaks = seq(5, 10, 1)) +
+  guides(fill = guide_colorbar(title = "Population"),
+                               label.position = "left",
+                               title.hjust = 0) +
+  labs(title = "African Countries with More than 5 Lauguages",
+       caption = "Source:afrilearndata | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = c(0.22, 0.23),
+        legend.key.width = unit(0.5, "line"),
+        legend.key.height = unit(2, "line"),
+        legend.title = element_text(color = "#796e65",
+                                    hjust = 0),
+        legend.text = element_text(color = "#796e65"),
+        plot.background = element_rect(fill = "#ded6cc",
+                                       color = NA),
+        plot.title = element_text(size = 20,
+                                  color = "#27241d",
+                                  hjust = 0.5,
+                                  margin = margin(t = 15)),
+        plot.caption = element_text(color = "#625d52"),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave(here::here("2021", "week47", "W47_BlackData.png"), width = 20, height = 22, units = "cm")
+
+```
