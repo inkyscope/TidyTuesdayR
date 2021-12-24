@@ -49,10 +49,7 @@ df_captured <- scoobydoo %>%
          n = 1) %>% 
   group_by(character, type, year, season) %>% 
   summarize(count = sum(n), .groups = "drop")
-```
 
-
-```{r}
 df_join <- df_caught %>% 
   full_join(df_captured, by = c("character", "season", "year")) %>%
   na.omit() %>% 
@@ -62,7 +59,6 @@ df_join <- df_caught %>%
   summarise(value = sum(value, na.rm = TRUE)) %>% 
   group_by(character) %>% 
   mutate(cum = cumsum(value))
-
 ```
 
 
@@ -131,7 +127,7 @@ plot <- df_join %>%
         axis.text.x = element_blank(),
         plot.margin = margin(10, 10, 10, 10)
         )
-ggsave(here::here("2021", "week29", "W29_ScoobyDoo.png"), width = 36, height = 20, units = "cm")
+ggsave(here::here("2021", "week29", "W29_ScoobyDoo.png"), width = 36, height = 20, units = "cm", type = "cairo")
 ```
 
 ```{r}
@@ -170,5 +166,22 @@ plot_path <- df_join %>%
         )
 
 plot_path
+```
+### after 2 days 
+```{r streamline join}
+df_new <- scoobydoo %>%
+  select(index, season, year, starts_with("caught"), starts_with("captured")) %>%
+  pivot_longer(caught_fred:captured_scooby) %>%
+  separate(name, c("type", "character")) %>%
+  mutate(value = case_when(
+    type == "caught" & value == "TRUE" ~ 1,
+    type == "captured" & value == "TRUE" ~ -1,
+    TRUE ~ 0
+  )
+  ) %>%
+  group_by(character, year) %>% 
+  summarise(value = sum(value, na.rm = TRUE)) %>% 
+  group_by(character) %>% 
+  mutate(cum = cumsum(value))
 ```
 
