@@ -1,0 +1,141 @@
+---
+title: "W2 Transit Cost Project"
+author: "Sung Inkyung"
+date: '2021 12 24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(ggthemes)
+library(countrycode)
+library(rnaturalearth)
+```
+
+
+```{r}
+transit_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-01-05/transit_cost.csv') %>% 
+  filter(!is.na(city))
+
+transit_cost %>% 
+  count(cost_km_millions, sort = T) %>% 
+  arrange(-cost_km_millions)
+
+```
+
+
+```{r}
+world <- ne_countries(scale = "medium",
+                      returnclass = "sf") %>% 
+  filter(!continent %in% c("Antarctica", "Seven seas (open sea)"))
+
+continents <- codelist %>% 
+  select(ecb, country = country.name.en, continent) %>% 
+  na.omit()
+
+cities <- read_csv("C:/Users/inkyscope/Documents/projectR/datavizRscope/2021/week2/worldcities.csv")
+
+df <- transit_cost %>% 
+  mutate(country = if_else(country == "UK", "GB", country)) %>% 
+  select(ecb = country, city,  year, cost_km_millions) %>% 
+  left_join(continents, by =  "ecb") %>% 
+  left_join(cities, by = c("city", "country")) %>% 
+  select(ecb, city, country, continent, lat, lng, cost_km_millions)
+
+df_median_cost <- df %>% 
+  group_by(city, country, continent, lat, lng) %>% 
+  summarise(med = median(cost_km_millions)) %>% 
+  na.omit() %>% 
+  ungroup()
+```
+
+
+```{r}
+top_city <- df_median_cost %>% 
+  group_by(continent) %>% 
+  arrange(desc(med)) %>% 
+  filter(med == max(med))
+
+
+annotations <- top_city %>% 
+  mutate(description = glue::glue("{city}\n${round(med, 0)} mn/km"))
+```
+
+
+```{r}
+plot <- df_median_cost %>% 
+  ggplot() +
+  borders("world", color = "#cfdee3", fill = "#84737b") +
+  geom_point(aes(lng, lat, 
+                 group = city,
+                 size = med,
+                 color = continent),
+             alpha = .6) +
+  geom_mark_circle(data = annotations,
+                   aes(lng + .22, lat + .22,
+                       label = toupper(country),
+                       description = description),
+                   expand = unit(3, "mm"),
+                   label.fontsize = 8,
+                   label.fill = "#d0f0c0",
+                   label.colour = "#002333",
+                   con.colour = "#002333",
+                   label.buffer = unit(20, 'mm'),
+                   label.margin = margin(2, 3, 2, 15, "mm")) +
+  scale_color_manual(values = c("Africa" = "#f4511e", 
+                                "Asia" = "#049101", 
+                                "Europe" = "#bb29bb",
+                                "Oceania" = "#ffcc00", 
+                                "Americas" = "#3b3b6d")) +
+  scale_size(range = c(1,10), 
+             limits = c(50, 2000)) +
+  guides(color = guide_none()) +
+  coord_map(projection = "mollweide", orientation = c(90, 0, 0)) +
+  labs(size = " ",
+       title = "Rail Transit Median Cost in World Cities",
+       caption = "Source:TransitCosts.com | Graphic: Sung Inkyung") +
+  theme_map() +
+  theme_void() +
+  theme(legend.position = "top",
+        legend.key = element_rect(fill = "#cfdee3", color = NA),
+        legend.text = element_text(hjust = 0),
+        legend.spacing.x = unit(5, "mm"),
+        legend.margin = margin(b = 10),
+        legend.background = element_rect(fill = "#cfdee3",
+                                         color = NA),
+        plot.background = element_rect(fill = "#cfdee3",
+                                       color = "#cfdee3"),
+        panel.background = element_rect(fill = "#cfdee3",
+                                        color = "#cfdee3"),
+        plot.title = element_text(size = 20,
+                                  color = "#0e5477",
+                                  hjust = .5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(size = 9,
+                                    hjust = 0.5,
+                                    color = "#8c7d70",
+                                    margin = margin(t = 15)),
+        plot.margin = margin(10, 10, 10, 10)) 
+
+ggsave(here::here("2021", "week2", "W2_TransitCostProject.png"), width = 30, height = 18, units = "cm", type = cairo)
+```
+
+
+```{r}
+library(leaflet)
+
+plot_leaflet <- leaflet(df_median_cost) %>% 
+  addTiles() %>% 
+  addCircles(data = df_median_cost,
+             lng = ~lng,, lat = ~lat,
+             radius = ~round(med, 0) * 200) %>% 
+  addMarkers(lng = ~lng, lat = ~lat,
+             clusterOptions = markerClusterOptions(),
+             popup = ~paste0("<b>", city, "</b>, ",country,"<br>",
+                             "$",round(med,0)," million / km"))
+```
