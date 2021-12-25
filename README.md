@@ -84,23 +84,11 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### Chopped by [kaggle](https://www.kaggle.com/jeffreybraun/chopped-10-years-of-episode-data)
 ![Chopped](https://github.com/inkyscope/datavizRscope/blob/master/2020/W35_Chopped.png)
 
-### Extinct Plants in Asia by [IUCN Red List](https://www.iucnredlist.org/)
-![Extinct Plants in Asia](https://github.com/inkyscope/datavizRscope/blob/master/2020/W34_ExtinctPlants_Asia.png)
-
-### Australian Dogs Outcome by [RSPCA](https://www.rspca.org.au/what-we-do/our-role-caring-animals/annual-statistics)
-![Australian Pets](https://github.com/inkyscope/datavizRscope/blob/master/2020/W30_AustralianPets.png)
-
 ### Broadway Musicals by [Playbill](https://www.playbill.com/grosses)
 ![BroadwayMusicals](https://github.com/inkyscope/datavizRscope/blob/master/2020/W18_BroadwayMusicals_1.png)
 
-### Tour de France Winners by [tdf](https://github.com/alastairrushworth/tdf)
-![tdf](https://github.com/inkyscope/datavizRscope/blob/master/2020/W15_TourdeFranceWinnders.png)
-
 ### Chrismas Birds Count by [Bird Studies Canada](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
 ![Birds](https://github.com/inkyscope/datavizRscope/blob/master/figures/ChristmasBirdsCounts.png)
-
-### Meteorites Impacts by [NASA](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
-![Meteorites](https://github.com/inkyscope/datavizRscope/blob/master/figures/MeteoritesImpacts.png)
 
 ### Food's Carbon Footprints by [nu3](https://www.nu3.de/blogs/nutrition/food-carbon-footprint-index-2018)
 ![Food CO2](https://github.com/inkyscope/datavizRscope/blob/master/2020/W8_ContinentsFoodCo2.png)
