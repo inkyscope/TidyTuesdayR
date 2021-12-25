@@ -1,0 +1,78 @@
+---
+title: "W36 Bird Baths"
+author: "Sung Inkyung"
+date: '2021 12 25'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[a quick how to on labelling bar graphs in ggplot2] (https://www.cedricscherer.com/2021/07/05/a-quick-how-to-on-labelling-bar-graphs-in-ggplot2/)
+```{r}
+library(tidyverse)
+library(showtext)
+
+font_add_google("Lato", "lato")
+showtext_auto()
+
+theme_set(theme_minimal())
+```
+
+### Source[tidytuesday by benjamin Nowak] (https://bjnnowak.netlify.app/2021/08/31/r-polar-barplots/)
+```{r}
+bird_baths <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-31/bird_baths.csv')
+```
+
+
+```{r}
+df_perc <- bird_baths %>% 
+  group_by(bird_type) %>% 
+  summarise(total = sum(bird_count)) %>% 
+  slice_max(n = 30, order_by = total) %>% 
+  ungroup() %>% 
+  mutate(perc = scales::percent(total / sum(total),
+                                accuracy = .1, trim = F),
+         color = case_when(
+           bird_type == "Noisy Miner" ~ "#f8b500",
+           bird_type == "Australian Magpie" ~ "#46473b",
+           bird_type == "Rainbow Lorikeet" ~ "#1ab621",
+           TRUE ~ "#cfdee3"
+         ))
+
+axis_cols = pal <- c(
+  rep("#7d98a1", length(df_perc$bird_type) - 3), 
+  "#1ab621", "#46473b", "#f8b500"
+)
+
+ggplot(df_perc,
+       aes(x = total, y = fct_reorder(bird_type, perc),
+           fill = color)) +
+  geom_col() +
+  geom_text(aes(label = perc),
+            size = 6,
+            hjust = 0, 
+            nudge_x = 1.5) +
+  coord_cartesian(clip = "off") +
+  scale_x_continuous(expand = c(0.01, 0.01)) +
+  scale_fill_identity(guide = "none") +
+  labs(x = "",
+       y = "",
+       title = "Most Common Birds in Australia",
+       caption = "Source: Cleary et al, 2016 | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(plot.title = element_text(size = 32,
+                                  hjust = 0.5,
+                                  margin = margin(b = 10)),
+        plot.caption = element_text(size = 15,
+                                    hjust = 0.5,
+                                    color = "gray45",
+                                    margin = margin(t = 20)),
+        axis.text.y = element_text(size = 16, 
+                                   hjust = 1,
+                                   color = axis_cols),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave(here::here("2021", "week36", "W36_Birdbaths.png"), width = 10, height = 10, units = "cm", type = "cairo")
+
+```
