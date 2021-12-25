@@ -81,6 +81,9 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### Plastic Pollution by [Break Free from Plastic](https://www.breakfreefromplastic.org/)
 ![Plastic](https://github.com/inkyscope/datavizRscope/blob/master/2021/week5/W5_PlasticPollution.png)
 
+### Transit Cost Project by [TransitCosts.com](https://transitcosts.com/)
+![Transit Cost](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week2/W2_TransitCostProject.png)
+
 ### DatasauRus Dozen by [Alberto Cairo](http://www.thefunctionalart.com/2016/08/download-datasaurus-never-trust-summary.html)
 ![DatasaRus](https://github.com/inkyscope/datavizRscope/blob/master/2020/W42_Datasaurus.gif)
 
