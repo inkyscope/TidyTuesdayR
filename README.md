@@ -78,9 +78,6 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### Du Bois Challenge by [Du Bois Data Challenge](https://github.com/ajstarks/dubois-data-portraits/tree/master/challenge)
 ![Freed Slaves](https://github.com/inkyscope/datavizRscope/blob/master/2021/week8/W8_DuBoisChallenge_FreedSlaves.png)
 
-### Plastic Pollution by [Break Free from Plastic](https://www.breakfreefromplastic.org/)
-![Plastic](https://github.com/inkyscope/datavizRscope/blob/master/2021/week5/W5_PlasticPollution.png)
-
 ### Transit Cost Project by [TransitCosts.com](https://transitcosts.com/)
 ![Transit Cost](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week2/W2_TransitCostProject.png)
 
@@ -95,9 +92,6 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 
 ### Chrismas Birds Count by [Bird Studies Canada](https://data.nasa.gov/Space-Science/Meteorite-Landings/gh4g-9sfh/data)
 ![Birds](https://github.com/inkyscope/datavizRscope/blob/master/figures/ChristmasBirdsCounts.png)
-
-### Food's Carbon Footprints by [nu3](https://www.nu3.de/blogs/nutrition/food-carbon-footprint-index-2018)
-![Food CO2](https://github.com/inkyscope/datavizRscope/blob/master/2020/W8_ContinentsFoodCo2.png)
 
 ### Spotify songs by [Spotify](https://www.rcharlie.com/spotifyr/)
 ![Song Genres](https://github.com/inkyscope/datavizRscope/blob/master/2020/W4_SpotifySongsFeatures.png)
