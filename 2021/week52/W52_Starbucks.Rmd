@@ -1,0 +1,113 @@
+---
+title: "W52 Starbucks"
+author: "Sung Inkyung"
+date: '2021 12 26'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(emojifont)
+library(cowplot)
+library(magick)
+theme_set(theme_minimal())
+```
+
+
+```{r}
+starbucks <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-12-21/starbucks.csv')
+
+caffeine_zero <- starbucks %>% 
+  distinct(product_name, size, whip, milk, sugar_g, caffeine_mg) %>% 
+  group_by(product_name) %>% 
+  mutate(max_caffeine = max(caffeine_mg)) %>% 
+  filter(max_caffeine == 0,
+         sugar_g > 0) %>% 
+  distinct(product_name)
+
+```
+
+
+```{r}
+menu <- c("Iced Passion Tango Tea",
+          "Iced Passion Tango Tea Lemonade",
+          "Orange Mango Smoothie",
+          "Strawberry Smoothie",
+          "Blended Strawberry Lemonade",
+          "Strawberries & Creme Frappuccino Blended",
+          "Vanilla Bean Creme Frappuccino Blended",
+          "Caramel Apple Spice",
+          "Lemonade",
+          "Skinny Hot Chocolate",
+          "White Hot Chocolate")
+
+
+df <- starbucks %>% 
+  distinct(product_name, size, sugar_g, caffeine_mg) %>%
+  filter(product_name %in% menu,
+         size %in% c("short", "tall", "grande", "venti")) %>% 
+  select(product_name, size, sugar_g) %>% 
+  group_by(product_name, size) %>% 
+  summarize(sugar = mean(sugar_g)) %>% 
+  mutate(size = str_to_title(factor(size)),
+         label = fontawesome('fa-coffee'))
+
+
+```
+
+
+```{r}
+plot <- df %>% 
+  ggplot() +
+  geom_text(aes(x = size, y = reorder(product_name, sugar),
+            label = label, size = size, color = sugar),
+            family = 'fontawesome-webfont', vjust = 0) +
+  scale_x_discrete(position = "top") +
+  scale_size_manual(values = c(20, 25, 30, 40),
+                    guide = "none") +
+  scale_colour_gradient("Sugar (g)", 
+                        high="#79003c", low="#f0cddb") +
+  coord_cartesian(clip = "off",
+                  expand = c(0.01, 0.01)) +
+  labs(x = "",
+       y = "",
+       title = "Beverages of Average Sugar with zero Caffeine",
+       caption = "Source: Starbuck drinks | Graphic: Sung Inkyung") +
+  theme(legend.position = "top",
+        legend.title = element_text(size = 36,
+                                    color = "#ffffff"),
+        legend.direction = "horizontal",
+        legend.key.height = unit(.3, "cm"),
+        legend.key.width = unit(1.1, "cm"),
+        legend.text = element_text(size = 28,
+                                   color = "#ffffff"),
+        plot.background = element_rect(fill = "#00704a",
+                                       color = NA),
+        panel.background = element_rect(fill = "#00704a",
+                                        color = NA),
+        plot.title = element_text(size = 60,
+                                  hjust = 1.09,
+                                  face = "bold",
+                                  color = "#ffffff",
+                                  margin = margin(t = 15, b = 10)),
+        plot.caption = element_text(size = 28,
+                                    hjust = 1,
+                                    color = "#ffffff"),
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 40,
+                                   color = "#00ac45",
+                                   margin = margin(b = 15)),
+        axis.text.y = element_text(size = 38,
+                                   face = "bold",
+                                   color = "#fff887"),
+        axis.ticks = element_blank(),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave(here::here("2021", "week52", "W52_Starbucks.png"), width = 18, height = 24, units ="cm", type = "cairo", dpi = 300)
+  
+```
+
