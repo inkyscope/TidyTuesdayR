@@ -1,0 +1,73 @@
+---
+title: "W22 Mario Kart World Records"
+author: "Sung Inkyung"
+date: '2021 12 27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(png)
+library(patchwork)
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+records <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-25/records.csv')
+
+drivers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-05-25/drivers.csv')
+```
+
+
+```{r}
+logo <- readPNG(here::here("2021", "week22", "mario-kart-logo.png"))
+
+
+plot <- records %>% 
+  mutate(year = year(date)) %>% 
+  count(year, sort = T) %>% 
+  ggplot(aes(year, n)) +
+  geom_line(color = "#fbd000", size = 1.5) +
+  geom_point(size = 4, 
+             fill = "#43b047",
+             color = "white",
+             pch = 21, 
+             stroke = 1) +
+  geom_segment(aes(x = year, xend = year, 
+                   y = 0, yend = n),
+               color = "#049cd8", linetype = "dashed") +
+  geom_text(aes(label = n),
+            hjust = 0.5, 
+            vjust = -1,
+            size = 3.5) +
+  geom_hline(aes(yintercept = 0, color = "#e52521", size = 1.1),
+             show.legend = F) +
+  annotate("text",
+           x = 2002, y = 270,
+           label = "Annually Number of Records Set",
+           size = 5,
+           fontface = "bold",
+           hjust = 0) +
+  annotation_raster(logo,
+                    2002, 2012, 280, 360) +
+  scale_y_continuous(limits = c(0, 410)) +
+  coord_cartesian(clip = "off") +
+  labs(x = "",
+       y = "",
+       caption = "Source: Mario Kart World Records | Graphic: Sung Inkyung") +
+  theme(plot.caption = element_text(size = 8),
+        panel.grid = element_blank(),
+        axis.text.x = element_text(size = 11),
+        axis.text.y = element_blank())
+
+ggsave(here::here("2021", "week22", "W22_MarioKartWorldRecords.png"),width = 22, height = 20, units = "cm")
+
+```
+
