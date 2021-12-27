@@ -73,26 +73,18 @@ pals = c("Scooby" = "#6a3400",
 plot <- df_join %>% 
   ggplot(aes(x = cum, y = character, fill = character, color = character)) +
   geom_vline(xintercept = 0, color = "firebrick3", linetype = 2, size = 1) +
-  geom_density_ridges(scale = 2,
+  geom_density_ridges(scale = 1.5,
                       lwd = 1.1,
                       alpha = .8) +
-  annotate("text",
-           label = "Get Caught",
-           size = 5,
-           fontface = "bold",
-           color = "#C70C47",
-           x = -60, y = 0) +
-  annotate("text",
-           label = "Captured",
-           size = 5,
-           fontface = "bold",
-           color = "#291ff7",
-           x = 17, y = 0) +
+  annotate("text", label = "Get Caught", size = 5, 
+           fontface = "bold", color = "#C70C47",  x = -60,  y = .5, hjust = -0.3, vjust = -1.5) +
+  annotate("text", label = "Captured", size = 5,
+           fontface = "bold", color = "#291ff7", x = 17, y = 0.5, hjust = -0.3, vjust = -1.5) +
   scale_y_discrete(limits = rev(c("Scooby", "Fred", "Shaggy", "Velma", "Daphnie"))) +
-  scale_x_continuous(limit = c (-65, 30)) +
+  scale_x_continuous(limit = c (-60, 30)) +
   scale_fill_manual(values = pals) +
   scale_color_manual(values = pals) +
-  coord_cartesian(expand = FALSE,
+  coord_cartesian(expand = c(0, .5),
                   clip = "off") +
   labs(color = "",
        fill = "",
@@ -114,7 +106,7 @@ plot <- df_join %>%
                                       hjust = 0.5,
                                       color = "#17bdb9",
                                       margin = margin(b = 25)),
-        plot.caption = element_markdown(size = 11,
+        plot.caption = element_markdown(size = 13,
                                         hjust = 0.5,
                                         color = "gray45"),
         panel.grid.major = element_blank(),
@@ -127,7 +119,7 @@ plot <- df_join %>%
         axis.text.x = element_blank(),
         plot.margin = margin(10, 10, 10, 10)
         )
-ggsave(here::here("2021", "week29", "W29_ScoobyDoo.png"), width = 36, height = 20, units = "cm", type = "cairo")
+ggsave(here::here("2021", "week29", "W29_ScoobyDoo.png"), width = 36, height = 28, units = "cm", type = "cairo")
 ```
 
 ```{r}
