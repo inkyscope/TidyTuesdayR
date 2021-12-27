@@ -1,0 +1,86 @@
+---
+title: "W23 Survivor TV Shows"
+author: "Sung Inkyung"
+date: '2021 12 27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggchicklet)
+library(ragg)
+
+#remotes::install_github("hrbrmstr/ggchicklet")
+```
+
+
+```{r}
+summary <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-01/summary.csv') 
+
+```
+
+
+```{r}
+summary %>% 
+  count(country) %>%  
+  mutate(country = reorder(country, n)) %>% 
+  arrange(desc(n)) %>% 
+  ggplot(aes(n, country), group = country) +
+  geom_col() +
+  scale_x_continuous(limits = c(0, 10),
+                     breaks = seq(0, 10, 2)) +
+  labs(x = "",
+       y = "")
+```
+```{r}
+df <- summary %>% 
+  group_by(country) %>% 
+  summarise(final = mean(viewers_finale),
+            premier = mean(viewers_premier),
+            final = round(final, 2),
+            premier = round(premier, 2)) %>% 
+  pivot_longer(cols = c(final, premier),
+               names_to = "stage",
+               values_to = "viewers")
+  
+plot <- df %>% 
+  ggplot(aes(fct_reorder(country, viewers), viewers, group = country, fill = stage)) +
+  geom_chicklet(color = "white",
+                size = .2, 
+                alpha = .8) +
+  scale_fill_manual(values = c("premier" = "#99cccc",
+                               "final" = "#fb1239")) +
+  scale_y_continuous(position = "right",
+                     expand = c(0, 0.0625)) +
+  labs(y = "Average of viewers(mn)",
+       x = "",
+       fill = "",
+       title = "Countries Filmed in Suvivor TV Shows",
+       subtitle = "3 13, 2000 - 5 22, 2019 (Season 1- 40)",
+       caption = "Source: Survivor package | Graphic: Sung Inkyung") +
+  coord_flip(expand = FALSE,
+             clip = "off") +
+  guides(fill = guide_legend(nrow = 1)) +
+  theme(legend.position = "top",
+        legend.text = element_text(size = 12),
+        plot.title = element_text(size = 20,
+                                  hjust = 0.5),
+        plot.subtitle = element_text(size = 14,
+                                     hjust = 0.5,
+                                     margin = margin(t = 3, b = 10)),
+        plot.caption = element_text(size = 9,
+                                    margin = margin(t = 15)),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_line(size = 0.04,
+                                          color = "gray65"),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 10, 
+                                       color = "gray60"),
+        axis.text.y = element_text(size = 11))
+
+ggsave(here::here("2021", "week23", "W23_SurvivorTVShows.png"))
+```
