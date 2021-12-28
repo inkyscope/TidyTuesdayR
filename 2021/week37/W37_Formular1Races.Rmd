@@ -1,0 +1,110 @@
+---
+title: "W37 Formular 1 Races"
+author: "Sung Inkyung"
+date: '2021 12 28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by jake kaupp] (https://github.com/jkaupp/tidytuesdays/blob/master/2021/week12/R/analysis.R)
+```{r}
+library(tidyverse)
+library(ggridges)
+library(colorspace)
+library(ggfx)
+library(ggtext)
+library(ragg)
+```
+
+
+```{r}
+drivers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/drivers.csv')
+races <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/races.csv')
+results <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-09-07/results.csv')
+```
+
+
+```{r}
+df_points <- results %>% 
+  filter(raceId == max(raceId),
+         points > 0) %>% 
+  select(positionOrder,  points)
+
+
+df <- results %>% 
+  left_join(races, by = "raceId") %>% 
+  left_join(drivers, by = "driverId") %>% 
+  unite(driver_name, c("forename", "surname"), sep = " ") %>% 
+  left_join(df_points) %>% 
+  filter(points > 0) %>% 
+  select(resultId, year, driver = driver_name, points) %>% 
+  group_by(driver) %>% 
+  mutate(id = row_number(),
+         cum_points = cumsum(points)) %>% 
+  select(-points)
+
+top_drivers <- df %>% 
+  group_by(driver) %>% 
+  slice_max(cum_points) %>% 
+  arrange(desc(cum_points)) %>% 
+  ungroup() %>% 
+  slice(1:3) %>% 
+  pull(driver)
+
+plot_data <- df %>% 
+  filter(driver %in% top_drivers) %>% 
+  mutate(driver = factor(driver, rev(top_drivers)))
+
+labels <- plot_data %>% 
+  group_by(driver, year) %>% 
+  summarise(cum_points = 0)
+```
+
+
+```{r}
+plot <- ggplot() +
+  as_reference(geom_text(data = labels, 
+                         aes(x = 2003, y = driver,
+                         label = driver),
+               vjust = -0.1,
+               hjust = 0.05, 
+               size = 16,
+               fontface = "bold",
+               color = "#37323e"),
+               id = "text") +
+  with_blend(geom_ridgeline(data = plot_data,
+                            aes(y = driver, x = year, 
+                                height = cum_points/10000, 
+                                group = driver,
+                                color = driver,
+                                fill = driver),
+                            size = 0.1, 
+                            alpha = 1, 
+                            show.legend = F,
+                            scale = 2),
+             bg_layer = "text",
+             blend_type = "xor") +
+  labs(x = "",
+       y = "",
+       title = "Cumulative F1 Points over Time",
+       caption = "**Source**: ergast.com/mrd/db | **Graphic**: Sung Inkyung") +
+  scale_x_continuous(limits = c(2003, 2021),
+                     breaks = seq(2005, 2021, 5)) +
+  scale_y_discrete(expand = c(0.01, 0)) +
+  scale_fill_manual(values = c("#006eff", "#c30000", "#2ab4a5")) +
+  scale_color_manual(values = darken(c("#006eff", "#c30000", "#2ab4a5"))) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.x =element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid = element_blank(),
+        plot.title = element_text(size = 20,
+                                  hjust = 0.5,
+                                  color = "#500001"),
+        plot.caption = element_markdown(size = 9,
+                                        color = "#808080",
+                                        hjust = 0.95))
+
+ggsave(here::here("2021", "week37", "W37_Formular1Races.png"), width = 20, height = 16, units = "cm")
+```
