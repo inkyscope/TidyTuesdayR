@@ -19,7 +19,7 @@ library(scales)
 library(patchwork)
 ```
 
-
+### Source[tidytuesday by @jake kaupp] (https://github.com/jkaupp/tidytuesdays/blob/master/2021/week24/R/analysis.R)
 ```{r}
 stocked <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-08/stocked.csv') %>% 
   clean_names()
@@ -38,7 +38,7 @@ lakes <- tibble(lake = unique(stocked$lake),
 
 
 species_colors <- tibble(species = unique(stocked$species)) %>% 
-  mutate(color = if_else(species == "CHS", "#fa8072", sample(grey.colors(30), 18)))
+  mutate(color = if_else(species == "CHS", "#c2725a", sample(grey.colors(30), 18)))
 ```
 
 
@@ -67,19 +67,19 @@ legend <- df_great_lakes %>%
   scale_fill_manual(values = lakes$lake_color) +
   annotate("text", x = -81.3, y = 42.2,
            label = "Erie",
-           size = 3.5) +
+           size = 2.5) +
   annotate("text", x = -77.9, y = 43.7,
            label = "Ontario",
-           size = 3.5) +
+           size = 2.5) +
   annotate("text", x = -86.9, y = 43.95,
            label = "Michigan",
-           size = 3.5) +
+           size = 2.5) +
   annotate("text", x = -87.1, y = 47.8,
            label = "Superior",
-           size = 3.5) +
+           size = 2.5) +
   annotate("text", x = -82.4, y = 44.95,
            label = "Huron",
-           size = 3.5) +
+           size = 2.5) +
   theme_void() +
   theme(legend.position = "none")
 
@@ -106,28 +106,31 @@ plot_stream <- stocked %>%
        caption = "Source:Great Lakes Fish | Graphic: Sung Inkyung") +
   scale_fill_identity() +
   scale_color_identity() +
-  scale_x_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0),
+                     limits = c(1968, 2018),
+                     breaks = seq(1970, 2018, 20)) +
   scale_y_continuous(expand = c(0, 0),
                      labels = scales::percent) +
   facet_wrap(~label, nrow = 1) + 
   theme_light() +
-  theme(strip.text = element_text(size = 12),
-        plot.title = element_text(size = 14),
-        plot.subtitle = element_text(size = 10),
-        plot.caption = element_text(size = 7),
-        axis.text.x = element_text(size = 7))
+  theme(strip.text = element_text(size = 6.5,
+                                  hjust = 0,
+                                  color = "black"),
+        strip.background = element_rect(fill = "white",
+                                        color = NA),
+        plot.title = element_text(size = 9),
+        plot.subtitle = element_text(size = 7),
+        plot.caption = element_text(size = 6),
+        axis.text.x = element_text(size = 5),
+        axis.text.y = element_text(size = 6),
+        axis.ticks = element_blank())
 
 ```
 
 ```{r}
-
-
 p <- legend + plot_stream +
-  plot_layout(widths = c(1, 2), heights = unit(c(3, 5), c('cm', 'null')))
+  plot_layout(widths = c(1, 1.2), heights = unit(c(3, 5), c('cm', 'null')))
 
-ggsave(here::here("2021", "week24", "W24_GreatLakeFish.png"), width = 24, height = 20, units = "cm")
-  
-
-
+ggsave(here::here("2021", "week24", "W24_GreatLakeFish.png"), width = 18, height = 8, units = "cm")
 ```
 
