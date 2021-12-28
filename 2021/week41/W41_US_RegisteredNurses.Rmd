@@ -42,8 +42,8 @@ ggplot(df,
   coord_cartesian(clip = "off") +
   labs(x = "Number of Employed RN",
        y = "Hourly Wage(Median)",
-       title = "Hourly Wages and\n Number of Employed Registered Nurses by\n State (1998 - 2020)",
-       caption = "Source: Data.World | Graphic: Sung Inkyung") +
+       title = "Hourly Wages and\n Number of Employed Registered Nurses\nby State (1998 - 2020)",
+       caption = "Source: Data.World | Graphic: Sung Inkyung\nCredit: @geokaramanis") +
   theme_minimal() +
   theme(legend.position = "none",
         plot.background = element_rect(fill = "#a8bed0",
