@@ -29,6 +29,14 @@ plot <- earn %>%
   filter(sex != "Both Sexes") %>% 
   filter(age %in% c("16 to 19 years", "20 to 24 years", "25 to 34 years","35 to 44 years", "45 to 54 years", 
                     "55 to 64 years", "65 years and over")) %>% 
+  mutate(age = case_when(age == "16 to 19 years" ~ "16 - 19",
+                         age == "20 to 24 years" ~ "20 - 24",
+                         age == "25 to 34 years" ~ "25 - 34",
+                         age == "35 to 44 years" ~ "35 - 44",
+                         age == "45 to 54 years" ~ "45 - 54",
+                         age == "55 to 64 years" ~ "55 - 64",
+                         age == "65 years and over" ~ "65 +",
+                         TRUE ~ age)) %>% 
   group_by(age, sex, year, quarter) %>% 
   ggplot(aes(year, median_weekly_earn, color = sex)) +
   geom_jitter(size = 2.5, alpha = .7) +
@@ -36,22 +44,27 @@ plot <- earn %>%
   facet_wrap(~ age, nrow = 1) +
   labs(x = "",
        y = "",
-       title = "Median Weekly Earnings for <span style = 'color: #f71297'>**Women**</span> and <span style = 'color:#0477c2'>**Men**</span>by Age Group in USA",
+       title = "Median Weekly Earnings for <span style = 'color: #f71297'>**Women**</span> and <span style = 'color:#0477c2'>**Men**</span> by Age Group in USA",
        caption = "Source: BLS | Graphic: Sung Inkyung",
        color = "") +
-  scale_x_continuous(limits = c(2012, 2021),
-                     breaks = seq(2012, 2021, 3)) +
+  scale_x_continuous(limits = c(2010, 2021),
+                     breaks = seq(2010, 2021, 10)) +
   scale_y_continuous(labels = scales::dollar_format()) +
   theme_light() +
   theme(legend.position = "none",
-        strip.background = element_rect(fill = "#383227"),
+        strip.background = element_rect(fill = "#808080"),
         strip.text.x = element_text(color = "#f8f8ff",
+                                    size = 14,
                                     face = "bold"),
-        plot.title = element_markdown(size = 22,
-                                      margin = margin(b = 10)),
-        plot.caption = element_text(size = 9),
+        plot.title = element_markdown(size = 18,
+                                      margin = margin(b = 15)),
+        plot.caption = element_text(size = 10,
+                                    margin = margin(t = 15)),
         panel.grid = element_blank(),
-        axis.text.x = element_text(size = 7.5))
+        axis.text.x = element_text(size = 9),
+        axis.text.y = element_text(size = 11),
+        axis.ticks = element_blank(),
+        plot.margin = margin(10, 10, 10, 10))
 
-ggsave(here::here("2021", "week9", "W9_Employment and Earnings.png"), width = 32, height = 24, units = "cm")
+ggsave(here::here("2021", "week9", "W9_Employment and Earnings.png"), width = 28, height = 16, units = "cm")
 ```
