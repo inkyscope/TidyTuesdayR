@@ -1,0 +1,104 @@
+---
+title: "Untitled"
+author: "Sung Inkyung"
+date: '2021 12 29 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(showtext)
+
+font_add_google("Jetbrains Mono", "jetbrains")
+showtext.auto()
+```
+
+
+```{r}
+athletes <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-08-03/athletes.csv')
+```
+
+
+```{r}
+df <- athletes %>% 
+  filter(!is.na(medal)) %>% 
+  group_by(athlete, abb, year) %>% 
+  summarise(athlete_count = sum(n())) %>% 
+  group_by(abb) %>% 
+  mutate(country_count = sum(n())) %>% 
+  filter(!is.na(abb)) %>% 
+  ungroup() %>% 
+  arrange(athlete)
+
+df_players <- df %>% 
+  filter(country_count == 1) %>% 
+  pull(athlete)
+
+
+plot_data <- df %>% 
+  left_join(athletes) %>% 
+  mutate(group = ifelse(country_count == 1, 1, 0),
+         color = case_when(group == 1 & medal == "Gold" ~ "#ffd700",
+                           group == 1 & medal == "Silver" ~ "#c0c0c0",
+                           group == 1 & medal == "Bronze" ~  "#cd7f32",
+                           TRUE ~ "gray85")) %>% 
+  mutate(axis_x = runif(19498),
+         axis_y = runif(19498)) 
+
+
+df_label <- plot_data %>% 
+  filter(athlete %in% df_players) %>% 
+  mutate(label = paste0(athlete, ", ", abb, " (", year, ")"))
+
+
+plot <- plot_data %>% 
+  ggplot() +
+  geom_point(aes(axis_x, axis_y, size = group,
+             color = color)) +
+  geom_text_repel(data = df_label,
+                  aes(axis_x, axis_y, 
+                      label = label),
+                  max.overlaps = 10.3,
+                  size = 9,
+                  color = "#1b273c",
+                  fontface = "bold") +
+  scale_size_identity() +
+  scale_color_identity() +
+  labs(title = "Paralympics 1980 - 2016",
+       subtitle = "Countries with Single Medal",
+       caption = "Source: IPC | Grphic: Sung Inkyung") +
+  coord_fixed(expand = FALSE,
+              clip = "off") +
+  theme_void() + 
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "white",
+                                       color = NA),
+        panel.background = element_rect(fill = "white",
+                                        color = "#005c5c",
+                                        size = 3),
+        plot.title = element_text(size = 50, 
+                                  family = "jetbrains",
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  margin = margin(b = 7)),
+        plot.subtitle = element_text(size = 42, 
+                                  family = "jetbrains",
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(size = 25, 
+                                  family = "jetbrains",
+                                  hjust = 0.5,
+                                  margin = margin(t = 20)),
+        plot.margin = margin(10, 10, 10, 10))
+       
+
+ggsave(here::here("2021", "week32", "W32_Paralympics.png"), width = 17, height = 17, units = "cm")
+  
+```
+
