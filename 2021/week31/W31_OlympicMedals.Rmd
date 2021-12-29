@@ -1,0 +1,83 @@
+---
+title: "W31 Olymipc Medals"
+author: "Sung Inkyung"
+date: '2021 12 29'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(showtext)
+
+font_add_google("Jetbrains Mono", "jetbrains")
+showtext.auto()
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+olympics <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-27/olympics.csv')
+
+Kor_medal <- olympics %>% 
+  filter(team == "South Korea" & !is.na(medal)) %>%  
+  select(year, season, medal) %>% 
+  group_by(year, season, medal) %>% 
+  count(medal, sort = T)
+
+
+Kor_medal$medal <- ordered(Kor_medal$medal,
+                           levels = c("Gold", "Silver", "Bronze"))
+
+levels(Kor_medal$medal)
+
+plot <- Kor_medal %>% 
+  ggplot() +
+  geom_col(aes(year, n, fill = as.factor(medal))) +
+  facet_grid(season ~ medal) +
+  scale_fill_manual(values = c("#ffd700", "#c0c0c0", "#cd7f32"),
+                    guide = "none") +
+  scale_x_continuous(expand = c(0, 0),
+                     limits = c(1945, 2016),
+                     breaks = seq(1945, 2016, 10)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = "",
+       y = "",
+       title = "South Korea Olympic Medals",
+       subtitle = "1948 - 2016",
+       caption = "Source: Kaggle | Graphic: Sung Inkyung") +
+  theme(strip.text = element_text(size = 30, 
+                                  color = "gray90"),
+        plot.background = element_rect(fill = "#1b273c",
+                                       color = NA),
+        panel.background = element_rect(fill = "#1b273c",
+                                       color = NA),
+        plot.title = element_text(size = 60,
+                                  color = "white",
+                                  family = "jetbrains"),
+        plot.subtitle = element_text(size = 48,
+                                     color = "white",
+                                     family = "jetbrains",
+                                     margin = margin(b = 15)),
+        plot.caption = element_text(size = 18,
+                                    color = "white",
+                                    family = "jetbrains",
+                                    hjust = 1.01,
+                                    margin = margin(t = 20)),
+        panel.spacing = unit(2, "lines"),
+        panel.grid = element_blank(),
+        axis.line.x = element_line(color = "gray90",
+                                   size = 0.5),
+        axis.text = element_text(size = 20, 
+                                 color = "gray90"),
+        plot.margin = margin(10, 20, 10, 20))
+
+ggsave(here::here("2021", "week31", "W31_OlympicMedals.png"), width = 20, height = 14, units = "cm")
+
+```
+
