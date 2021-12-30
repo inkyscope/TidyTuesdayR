@@ -63,6 +63,9 @@ My personal projects for the weekly [#TidyTuesday](https://github.com/rfordatasc
 ### Billboard Top 100 by [Data.World](https://data.world/kcmillersean/billboard-hot-100-1958-2017#)
 ![Billboard](https://github.com/inkyscope/datavizRscope/blob/master/2021/week38/W38_Billboards2.png)
 
+### Formular 1 by [ergast](https://ergast.com/mrd/db/)
+![F1](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week37/W37_Formular1Races.png)
+
 ### Bird Baths by [Cleary et al, 2016](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0150899#abstract0)
 ![BirdBaths](https://github.com/inkyscope/TidyTuesdayR/blob/master/2021/week36/W36_Birdbaths.png)
 
