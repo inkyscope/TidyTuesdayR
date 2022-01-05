@@ -1,0 +1,137 @@
+---
+title: "Personal Stepcount"
+author: "Sung Inkyung"
+date: '2022 1 5'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(waffle)
+library(lubridate)
+library(MetBrewer)
+library(hrbrthemes)
+library(showtext)
+
+font_add_google("Monoton", "monoton")
+font_add_google("Jost", "jost")
+
+showtext_opts(dpi = 300)
+showtext_auto(enable = TRUE)
+```
+
+
+```{r}
+df <- read.csv("C:/Users/inkyscope/Documents/projectR/30DayChartChallenge/data/inkystepcounts.csv")
+
+df_plot <- df %>% 
+  mutate(year = year(date),
+         month = month(date),
+         week = week(date),
+         day = factor(day,
+                      levels = rev(c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun"))))
+
+df_plot %>% 
+  filter(month == 12) %>% 
+  count(year, steps, sort = T) %>% 
+  arrange(year)
+
+
+plot_steps <- df_plot %>% 
+  filter(year >= 2016) %>% 
+  ggplot(aes(x = week, y = day, fill = steps)) +
+  geom_tile(col = "white",
+            width = .9, height = .9) +
+  scale_fill_gradientn(colors = met.brewer("Isfahan1")) +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = seq(1, 52, length.out = 12),
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  facet_wrap(~ year, strip.position = "top", nrow = 6) +
+  guides(fill = guide_colorbar(
+    title = "Step counts",
+    title.position = "top",
+    barwidth = 7,
+    barheight = .3)) +
+  labs(x = "",
+       y = "",
+       title = "Step Count 2016 - 2021",
+       caption = "Source: Personal Daily Record | Grpahic: Sung Inkyung") +
+  theme_minimal(base_family = "jost") +
+  theme(legend.position = "bottom",
+        legend.background = element_rect(fill = "gray97",
+                                   color = NA),
+        legend.direction = "horizontal",
+        legend.title = element_text(size = 12),
+        legend.title.align = 0.5,
+        strip.text = element_text(size = 20, 
+                                  family = "jost"),
+        plot.background = element_rect(fill = "gray97",
+                                       color = NA),
+        plot.title = element_text(size = 34, 
+                                  family = "monoton",
+                                  hjust = 0.5,
+                                  margin = margin(t= 15,
+                                                  b = 10)),
+        plot.caption = element_text(size = 11,
+                                    margin = margin(t = 15)),
+        axis.text = element_text(size = 12),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("w1_StepCounts.png", width = 22, height = 30, units = "cm")
+
+```
+
+
+```{r}
+plot_distances <- df_plot %>% 
+  filter(year >= 2016) %>% 
+  ggplot(aes(x = week, y = day, fill = distance)) +
+  geom_tile(col = "white",
+            width = .9, height = .9) +
+  scale_fill_gradientn(colors = met.brewer("VanGogh3")) +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = seq(1, 52, length.out = 12),
+                     labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  facet_wrap(~ year, strip.position = "top", nrow = 6) +
+  guides(fill = guide_colorbar(
+    title = "Distance(km)",
+    title.position = "top",
+    barwidth = 7,
+    barheight = .3)) +
+  labs(x = "",
+       y = "",
+       title = "Strolling Distance",
+       subtitle = "2016 - 2021",
+       caption = "Source: Personal Daily Record | Grpahic: Sung Inkyung") +
+  theme_minimal(base_family = "jost") +
+  theme(legend.position = "bottom",
+        legend.background = element_rect(fill = "gray97",
+                                   color = NA),
+        legend.direction = "horizontal",
+        legend.title = element_text(size = 12),
+        legend.title.align = 0.5,
+        strip.text = element_text(size = 20, 
+                                  family = "jost"),
+        plot.background = element_rect(fill = "gray97",
+                                       color = NA),
+        plot.title = element_text(size = 30, 
+                                  family = "monoton",
+                                  hjust = 0.5,
+                                  margin = margin(t = 15, 
+                                                  b = 5)),
+        plot.subtitle = element_text(size = 26,
+                                     family = "monoton",
+                                     hjust = 0.5, 
+                                     margin = margin(b = 15)),
+        plot.caption = element_text(size = 11,
+                                    margin = margin(t = 15)),
+        axis.text = element_text(size = 12),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("w1_StrollingDistance.png", width = 22, height = 30, units = "cm")
+```
+
