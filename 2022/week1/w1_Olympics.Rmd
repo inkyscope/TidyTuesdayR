@@ -13,6 +13,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(colorspace)
 library(ggtext)
+library(showtext)
+
+font_add_google("Jetbrains Mono", "jetbrains")
+
+showtext_opts(dpi = 300)
+showtext_auto(enable = TRUE)
 ```
 
 
@@ -99,15 +105,20 @@ plot_tree <- tree %>%
   theme(
     legend.position = "none",
     plot.background = element_rect(fill = "black", color = NA),
-    plot.title = element_markdown(size = 20,
+    plot.title = element_markdown(size = 26,
+                                  family = "jetbrains",
+                                  hjust = 0.5,
                                   margin = margin(b = 7)),
-    plot.subtitle = element_markdown (size = 17, 
+    plot.subtitle = element_markdown (size = 24, 
+                                      family = "jetbrains",
+                                      hjust = 0.5,
                                       margin = margin(b = 15)),
     plot.caption = element_text(size = 11, 
+                                family = "jetbrains",
                                 color = "gray65",
                                 margin = margin(t = 17)),
     plot.margin = margin(20, 20, 20, 20)
   ) 
 
-ggsave("w1_Olympics.png", width = 21, height = 24, units = "cm")
+ggsave("w1_Olympics.png", width = 23, height = 24, units = "cm")
 ```
