@@ -1,0 +1,96 @@
+---
+title: "W2 Bee Colony Losses
+author: "Sung Inkyung"
+date: '2022 1 17'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[poissoned by @coolbutuseless](https://coolbutuseless.github.io/2019/06/25/poissoned-a-package-for-poisson-disc-sampling/)
+```{r}
+library(tidyverse)
+library(poissoned)
+library(showtext)
+
+font_add_google("Teko")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+colony <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/colony.csv')
+
+stressor <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/stressor.csv')
+
+```
+
+```{r}
+colony %>% 
+  group_by(year, state) %>% 
+  summarise(count = sum(colony_n)) %>%
+  ungroup() %>% 
+  filter(state !="United States") %>% 
+  slice_max(n = 35, order_by = count)
+```
+
+
+```{r}
+states <- c("California", "North Dakota", "Florida", "Texas", "Georgia", "Oregon", "Idaho")
+
+disc <- colony %>% 
+  filter(state%in%states) %>% 
+  group_by(year, state) %>% 
+  summarise(max = sum(colony_max)) %>% 
+  ungroup() %>% 
+  filter(!is.na(max)) %>% 
+  rowwise() %>% 
+  mutate(honeycomb = sqrt(max/10000),
+         points = list(poisson_disc(ncols = honeycomb,
+                                    nrows = honeycomb,
+                                    cell_size = 1/honeycomb))) %>% 
+  ungroup() %>% 
+  unnest(points)
+
+```
+
+```{r}
+plot <- ggplot() +
+  geom_tile(data = disc, 
+            aes(0.5, 0.5, width = 1.05, height = 1.05),
+            fill = "#fcb43a", color = "#23212c", size = 0.1, stat = "unique") +
+  geom_point(data = disc, aes(x, y),
+             color = "#23212c") +
+  scale_size_continuous(range = c(0.01, 0.1)) +
+  facet_grid(state ~ year, switch = "both") +
+  coord_fixed() +
+  labs(title = "Bee Colony Losses in the United States",
+       caption = "Source: Bee Colony Losses | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(strip.text = element_text(color = "#fac622",
+                                  family = "Poppins",
+                                  size = 10),
+        strip.background = element_rect(fill = "#23212c",
+                                        color = NA),
+        plot.background = element_rect(fill = "#23212c",
+                                       color = NA),
+        panel.background = element_rect(fill = "#23212c",
+                                       color = NA),
+        plot.title = element_text(color = "#fcb43a",
+                                  family = "Teko",
+                                  size = 32,
+                                  margin = margin(b = 10)),
+        plot.caption = element_text(color = "#fcd615",
+                                    family = "Teko",
+                                    size = 11,
+                                    margin = margin(t = 15)),
+        plot.margin = margin(15, 10, 10, 10))
+
+ggsave("W2_BeecolonlyLosses.png", width = 20, height = 23, units = "cm")
+  
+```
+
