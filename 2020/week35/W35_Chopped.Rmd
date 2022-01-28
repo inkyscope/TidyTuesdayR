@@ -1,0 +1,98 @@
+---
+title: "W35 Chopped"
+author: "Sung Inkyung"
+date: '2020 11 14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(showtext)
+
+font_add_google("Pacifico")
+font_add_google("Advent Pro")
+font_add_google("Saira Condensed")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+
+
+```{r}
+chopped <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-25/chopped.tsv')
+
+```
+
+
+```{r}
+ingredients <- chopped %>% 
+  select(episode_rating, appetizer, entree, dessert) %>% 
+  filter(episode_rating >= 8.5) %>% 
+  pivot_longer(cols = c("appetizer", "entree", "dessert"),
+               names_to = "type",
+               values_to = "ingredients") %>% 
+  separate_rows(ingredients, sep = ", ")
+
+top <- ingredients %>% 
+  group_by(type) %>% 
+  count(ingredients, name = "count") %>% 
+  slice_max(n = 5, count) %>% 
+  mutate(type = factor(type, 
+                       levels = c("appetizer", "entree", "dessert"))) %>% 
+  arrange(type, -count) %>% 
+  mutate(rank = factor(row_number()),
+         type = str_to_title(type),
+         type = as.factor(type))
+
+plot <- top %>% 
+  ggplot(aes(rank, 5)) +
+  geom_point(aes(size = count),
+             color = "#ff3f76",
+             alpha = .75) +
+  geom_text(aes(y = 4, label = ingredients),
+            color = "#ddff87",
+            family = "Saira Condensed",
+            size = 5) +
+  scale_y_continuous(limits = c(3, 6)) +
+  scale_size_continuous(range = c(6, 15)) +
+  facet_wrap(~ type, ncol = 1, 
+             strip.position = "left") +
+  labs(x = "",
+       y = "",
+       title = "Top Ingredients Through All Seasons",
+       subtitle = "Ingredients are initially selected based on rating above 8.5 per episode across 45 seasons",
+       caption = "**Source**: Kaggle & IMDB | **Graphic**: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#1c1819"),
+        plot.title = element_text(color = "#2BAE66",
+                                  family = "Advent Pro",
+                                  size = 28,
+                                  face = "bold",
+                                  margin = margin(t = 20, b = 7)),
+        plot.subtitle = element_text(color = "#2BAE66",
+                                     family = "Saira Condensed",
+                                     size = 21,
+                                     margin = margin(b = 20)),
+        plot.caption = element_markdown(color = "#cfabb4",
+                                        family = "Pacifico",
+                                        size = 9,
+                                        margin = margin(t = 15, b = 20)),
+        strip.text.y.left = element_text(color = "#D198C5FF",
+                                         family = "Pacifico",
+                                         size = 16,
+                                         face = "bold",
+                                         vjust = .5,
+                                         hjust = .5,
+                                         margin = margin(l = 10)),
+        plot.margin = margin(20, 20, 02, 20))
+
+
+  ggsave("W35_Chopped.png", width = 36, height = 24, units = "cm")
+```
+

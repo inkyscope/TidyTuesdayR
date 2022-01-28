@@ -1,0 +1,120 @@
+---
+title: "W13 Brain Injury"
+author: "Sung Inkyung"
+date: '2020 11 20'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(ggtext)
+library(scales)
+library(showtext)
+
+font_add_google("Oswald")
+font_add_google("Saira")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+```{r}
+tbi_age <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-24/tbi_age.csv')
+
+```
+
+```{r practice geom_circle}
+top_mechanism <- tbi_age %>% 
+  filter(age_group != "0-17",
+         age_group != "Total") %>% 
+  filter(!is.na(number_est)) %>% 
+  count(age_group, injury_mechanism, 
+        wt = number_est,
+        name = "count") %>% 
+  slice_max(n = 5, order_by = count,
+            with_ties = F) %>% 
+  mutate(rank = row_number(),
+         age_group = as.factor(age_group),
+         injury_mechanism = as.factor(injury_mechanism))
+```
+
+
+```{r}
+plot <- top_mechanism  %>% 
+  ggplot(aes(rank, 5)) +
+  geom_point(aes(size = count), 
+             color = "#b41f25", 
+             alpha = 0.7,
+             show.legend = F) +
+  geom_text(aes(y = 4, 
+                label = age_group), 
+            color = "#5e1914",
+            family = "Saira",
+            size = 4, 
+            fontface = "bold",
+            vjust = 5) +
+  labs(title = "Maior Traumatic Brain Injury Mechanism by Age Group",
+       subtitle = "<span style = 'color:#b41f25'>**UNINTENTIONALL FALLS**</span> is a major cause happening to the **old** and **baby** most frequently",
+       caption = "**Source**: CDC | **Graphic**: Sung Inkyung") +
+  scale_y_continuous(limits = c(0, 10)) +
+  scale_size_continuous(range = c(10, 40)) +
+  theme_void() +
+  theme(plot.title = element_text(family = "Oswald",
+                                  size = 30,
+                                  hjust = 0.5,
+                                  margin = margin(b = 9)),
+        plot.subtitle = element_markdown(family = "Saira",
+                                         size = 16,
+                                         hjust = 0.5),
+        plot.caption = element_markdown(family = "Saira",
+                                        size = 11,
+                                        margin = margin(t = 20)))
+
+ggsave("W13_Traumatic Brain Injury.png", width = 38, height = 8, units = "cm")
+```
+
+```{r}
+top_reasons <- tbi_age %>% 
+  filter(age_group != "0-17",
+         age_group != "Total") %>% 
+  filter(!is.na(number_est)) %>% 
+  mutate(injury_mechanism = case_when(
+    injury_mechanism ==  "Motor Vehicle Crashes" ~ "Motor Vehicle Crashes",
+    injury_mechanism == "Unintentional Falls" ~ "Unintentional Falls", 
+    injury_mechanism == "Unintentionally struck by or against an object" ~ "Struck By/Against",
+    injury_mechanism == "Other unintentional injury, mechanism unspecified" ~ "Unintentional Injury", 
+    injury_mechanism == "Intentional self-harm" ~ "Intentional self-harm", 
+    injury_mechanism == "Assault" ~ "Assault",
+    injury_mechanism == "Other or no mechanism specified" ~ "Unknown"
+    )) %>% 
+  group_by(age_group) %>% 
+  slice_max(n = 5, order_by = number_est,
+            with_ties = F) %>% 
+  mutate(rank = row_number(),
+         age_group = as.factor(age_group),
+         injury_mechanism = as.factor(injury_mechanism))
+
+
+plot_reasons <- top_reasons %>% 
+  ggplot(aes(rank, 5)) +
+  geom_point(aes(size = number_est), 
+             color = "#cd5c5c", #indian red
+             alpha = 0.75,
+             show.legend = F) +
+  geom_text(aes(y = 4, 
+                label = injury_mechanism),
+            size = 3, 
+            color = "black") +
+  labs(title = "Maior Traumatic Brain Injury Risks by Age Group") +
+  scale_y_continuous(limits = c(3, 6)) +
+  scale_size_continuous(range = c(5, 15)) +
+  facet_wrap(~ age_group, ncol = 1, strip.position = "left") +
+  theme_void()
+
+```
+

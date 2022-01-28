@@ -1,0 +1,87 @@
+---
+title: "W5 Sf_trees"
+author: "Sung Inkyung"
+date: '2020 2 4'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggmap)
+library(osmdata)
+library(sf)
+library(paletteer)
+library(showtext)
+
+font_add_google("Bebas Neue")
+font_add_google("Saira")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+sf_trees <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-28/sf_trees.csv')
+```
+
+
+```{r}
+sf_trees_cleaned <- sf_trees %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(between(year, 1960, 2019)) %>% 
+  separate(species, c("scientific_name", "common_name"), sep = " :: ") %>% 
+  filter(!is.na(common_name),
+         !is.na(caretaker),
+         !is.na(longitude),
+         !is.na(latitude),
+         !is.na(date)) %>% 
+  mutate(decade = floor(year / 10) * 10) 
+
+top_sf_trees <- sf_trees_cleaned %>% 
+  count(common_name, sort = TRUE) %>% 
+  top_n(6) %>% 
+  pull(common_name)
+
+```
+
+
+```{r}
+tree_plot <- sf_trees_cleaned %>% 
+  filter(common_name %in% top_sf_trees) %>% 
+  ggplot() +
+  geom_point(aes(longitude, latitude, color = common_name), size = 0.3, alpha = 0.7) +
+  coord_equal() +
+  scale_color_paletteer_d("ghibli::YesterdayMedium") +
+  facet_wrap(~ decade) +
+  labs(title = "Tree Chronicles in San Francisco Since 1960",
+       color = "Top 6 trees",
+       caption = "Source: sfgov.org | Graphic: Sung Inkyung") +
+  guides(color = guide_legend(override.aes = list(size = 3), nrow = 3)) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.title = element_text(family = "Saira",
+                                    size = 8),
+        legend.text = element_text(family = "Saira",
+                                   size = 7),
+        plot.title = element_text(family = "Bebas Neue",
+                                  size = 18,
+                                  hjust = 0.5,
+                                  margin= margin(b = 15)),
+        plot.caption = element_text(family = "Saira",
+                                    size = 7,
+                                    hjust = 0.95,
+                                    margin = margin(t = 15)),
+        strip.text.x = element_text(family = "Saira",
+                                    size = 10,
+                                    face = "bold"),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W5_TreeChronicles.png", width = 16, height = 12, units = "cm")
+  
+```
+

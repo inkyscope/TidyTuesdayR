@@ -1,0 +1,150 @@
+---
+title: "W37 Friends"
+author: "Sung Inkyung"
+date: '2020 10 18 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(ggraph)
+library(tidygraph)
+library(showtext)
+
+font_add_google("Courier Prime")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 37)
+```
+
+## Source[tidytuesday by loreadbad6] (https://github.com/loreabad6/TidyTuesday/blob/master/R/2020/week_37.Rmd)
+## Source[Medium by Elizabeth Ter Sahakyan] (https://medium.com/@liztersahakyan/the-one-with-the-data-scientist-a-closer-look-at-the-friends-of-friends-d3530d1902af)
+
+```{r}
+main_chars <- tuesdata$friends %>% 
+  count(speaker, sort = T) %>% 
+  slice_head(n = 6) %>% 
+  pull(speaker)
+
+characters <- tuesdata$friends %>% 
+  filter(speaker %in% main_chars) %>% 
+  count(speaker, name = "no_of_lines") %>% 
+  arrange(-no_of_lines) %>% 
+  mutate(rank = row_number()) %>% 
+  separate(speaker, into = c("first_name", "last_name"), 
+           remove = F) %>% 
+  mutate(letter = unlist(strsplit('FRIEND', "")))
+```
+## Source[ceros] (https://www.ceros.com/originals/friends-scripts-25th-anniversary-catchphrase-scenes-quotes/)
+```{r}
+characters_groupings <- tribble(
+  ~to, ~from, ~no_of_lines,
+  "Rachel Green", "Ross Geller", 3796,
+  "Monica Geller", "Chandler Bing", 3201,
+  "Chandler Bing", "Joey Tribbiani", 2563,
+  "Rachel Green", "Phoebe Buffay", 1776,
+  "Rachel Green", "Monica Geller", 1756,
+  "Monica Geller", "Phoebe Buffay", 1684,
+  "Rachel Green", "Joey Tribbiani", 1662,
+  "Joey Tribbiani", "Ross Geller", 1589,
+  'Chandler Bing', 'Ross Geller', 1295,
+  'Joey Tribbiani', 'Phoebe Buffay', 1204,
+  'Phoebe Buffay', 'Ross Geller', 1068,
+  'Monica Geller', 'Ross Geller', 921,
+  'Monica Geller', 'Joey Tribbiani', 920,
+  'Chandler Bing', 'Phoebe Buffay', 795,
+  'Chandler Bing', 'Rachel Green', 670
+)
+```
+
+
+```{r}
+friends_graph <- tbl_graph(
+  nodes = characters,
+  edges = characters_groupings,
+  directed = T,
+  node_key = "speaker"
+)
+```
+
+
+```{r}
+colors = c('#ff4238', '#ffdc00', '#42a2d6',  '#7a0006', "#fff5bd", "#00007e")
+
+plot <- ggraph(friends_graph, 
+               layout = "linear") +
+  geom_edge_arc(aes(color = no_of_lines, 
+                    width = no_of_lines, 
+                    alpha = stat(index)),
+                strength = 0.6) +
+  geom_node_point(aes(color = speaker, 
+                      size = 21), 
+                  shape = 19,
+                  show.legend = T) +
+  geom_node_text(aes(label = letter),
+                 nudge_x = -.5,
+                 family = "Poppins",
+                 size = 9,
+                 fontface = "bold.italic",
+                 color = "#ebddd1",
+                 show.legend = F) +
+  geom_node_text(aes(label = first_name), 
+                 family = "Courier Prime",
+                 size = 5, 
+                 fontface = 'bold',
+                 color = '#d9a77c', 
+                 show.legend = F) +
+  annotate('text', x = 6.5, y = 0, 
+           label = 'S', 
+           color = "#ebddd1", 
+           family = "Poppins",
+           size = 9,
+           fontface = "italic") +
+  scale_size(range = c(21, 47)) +
+  scale_edge_color_gradient(low = "white", 
+                            high = '#e60f07') +
+  scale_edge_width(range = c(.7, 2.5)) +
+  scale_edge_alpha(guide = 'none') +
+  scale_color_manual(breaks = characters$speaker,
+                     values = colors,
+                     guide = "none") +
+  scale_x_discrete(expand = expansion(.1, 0)) +
+  scale_y_discrete(expand = expansion(.1, 0)) +
+  labs(title = "Friends Pair:The One With All The Relationships",
+       subtitle = "Best Friends of Friends: Every two-character grouping possibility was taken into account and\nline thickness and gradient color represent the number of storylines shared between them.\n#1 Rachel + Ross, #2 Chandler + Monica, #3 Chandler + Joey; Joey and Pheobe tend to be\nhappy-go-lucky, self-directing as well as connected fairly tightly among them.",
+       caption = "Source: Friends | Graphic: Sung Inkyung") +
+  theme(panel.background = element_rect(fill = "#1c0e01"),
+        plot.background = element_rect(fill = "#1c0e01"),
+        legend.position = "none",
+        plot.title = element_text(color = "gray95",
+                                  family = "Courier Prime",
+                                  size = 26,
+                                  margin = margin(5, 30, 10, 0)),
+        plot.subtitle = element_text(color = "gray95",
+                                     family = "Poppins",
+                                     size = 14,
+                                     lineheight = 1.1),
+        plot.caption = element_text(color = "gray65",
+                                    family = "Courier Prime",
+                                    size = 10,
+                                    hjust = 0.95,
+                                    margin = margin(b = 20, r = 30)),
+        plot.margin = margin(20, 20, 20, 20),
+        text = element_text(color = "white",
+                            size = 9))
+
+ggsave("W37_Friends.png", width = 32, height = 23, units = "cm")
+
+```
+

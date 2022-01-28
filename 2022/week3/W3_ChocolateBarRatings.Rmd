@@ -1,0 +1,119 @@
+---
+title: "W3 Chocolate bar"
+author: "Sung Inkyung"
+date: '2022 1 20'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(igraph)
+library(ggraph)
+library(MetBrewer)
+library(showtext)
+
+font_add_google("Gochi Hand")
+font_add_google("Cantora One")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+chocolate <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-18/chocolate.csv')
+```
+
+
+```{r}
+df <- chocolate %>% 
+  mutate(id = row_number()) %>% 
+  select(id, words = most_memorable_characteristics, rating) %>%
+  separate_rows(words, sep = ",") %>% 
+  mutate(words = str_trim(words)) %>% 
+  group_by(id) %>% 
+  mutate(to = lead(words)) %>% 
+  rename(from = words) %>% 
+  mutate(to = ifelse(is.na(to), from, to)) %>%  
+  ungroup() %>% 
+  select(id, from, to, rating) %>% 
+  filter(rating <= 2) %>% 
+  mutate(group = case_when(from == "bitter" | to == "bitter" ~ "BITTER",
+                           from == "very bitter" | to == "very bitter" ~ "VERY BITTER",
+                           TRUE ~ "Other")) %>% 
+  select(-rating)
+```
+
+
+```{r}
+# graph object
+df_gg <- df %>% 
+  select(-id) %>% 
+  graph_from_data_frame
+
+# node df
+node_group <- df %>% 
+  select(-to) %>% 
+  mutate(from = fct_reorder(from, id)) %>% 
+  group_by(from) %>% 
+  slice(1) %>% 
+  arrange(id) %>% 
+  select(from, group) %>% 
+  mutate(group = case_when(from == "bitter" ~ "BITTER",
+                           from == "very bitter" ~ "VERY BITTER",
+                           TRUE ~ "Other"),
+         fontface = ifelse(group == "Other", "plain", "bold") )
+
+```
+
+```{r}
+set.seed(2022)
+
+plot <- ggraph(df_gg, layout = "fr") +
+  geom_edge_link(aes(edge_color = group),
+                 show.legend = F) +
+  geom_node_point(color = "#f4a460",
+                  size = 2,
+                  alpha = 0.7) +
+  geom_node_text(aes(label = name,
+                     color = node_group$group,
+                     fontface = node_group$fontface),
+                 family = "Gochi Hand", 
+                 size= 4.5,
+                 nudge_y = 0.4,
+                 check_overlap = T,
+                 show.legend = F) +
+  scale_color_manual(values = met.brewer("Isfahan2")) +
+  scale_edge_color_manual(values = met.brewer("NewKingdom")) +
+  labs(title = "Chocolates Characteristics",
+       subtitle = "Words linked to tasters' notes for\nover 40 chocolates\nrated <= 2 out of 5",
+       x = "",
+       y = "",
+       caption = "Source: Flavors of Cacao | Graphic: Sung Inkyung ") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "black",
+                                       color = NA),
+        plot.title = element_text(color = "gray90",
+                                  family = "Cantora One",
+                                  size = 20,
+                                  margin = margin(t = 10, b =7)),
+        plot.subtitle = element_text(color = "gray90",
+                                     family = "Cantora One",
+                                     size = 16,
+                                     lineheight = 0.9),
+        plot.caption = element_text(color = "gray90",
+                                    family = "Gochi Hand",
+                                    size = 9,
+                                    hjust = 0.95,
+                                    margin = margin(b = 10)),
+        axis.text = element_blank(),
+        panel.grid = element_blank())
+
+ggsave("W3_ChocolateBarRatings.png", width = 26, height = 18, units = "cm")
+```
+

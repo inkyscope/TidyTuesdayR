@@ -1,0 +1,84 @@
+---
+title: "W21 Beach Volleyball"
+author: "Sung Inkyung"
+date: '2020 5 24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytuesdayR)
+library(streamgraph)
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 21)
+```
+
+
+```{r}
+vb_matches <- tuesdata$vb_matches %>% 
+  mutate(id = row_number())
+```
+
+
+```{r}
+win <- vb_matches %>% 
+  select(player_1 = w_player1,player_2 =w_player2,
+         rank = w_rank,duration,year,gender,circuit,
+         tournament,match_num) %>% 
+  mutate(result = "win") 
+#Get losers
+lose <- vb_matches %>% 
+  select(player_1 = l_player1,player_2 = l_player2,
+         rank = l_rank,duration,year,gender,circuit,
+         tournament,match_num) %>% 
+  mutate(result = "lose") 
+
+#Combine teams
+teams_long <- rbind(win, lose) %>% 
+  mutate(result = if_else(result == "win" , 1, 0))
+  
+top_teams <- teams_long %>% 
+  mutate(team = paste0(player_1, " & ", player_2)) %>% 
+  filter(result == 1) %>% 
+  group_by(team) %>% 
+  summarise(count = n()) %>%  
+  ungroup() %>% 
+  arrange(-count) %>% 
+  top_n(20) %>% 
+  pull(team)
+
+
+top <- teams_long %>% 
+  mutate(team = paste0(player_1, " & ", player_2)) %>%
+  filter(result == 1) %>% 
+  transmute(team = if_else(team %in% top_teams,
+                           team, "Other"),
+            year) %>% 
+  group_by(team, year) %>% 
+  summarize(n = n()) %>% 
+  ungroup()
+  
+top %>% 
+  count(year, sort = T) %>% 
+  arrange(year)
+
+
+stream_plot <- top %>% 
+  streamgraph("team", "n", "year", 
+              offset = "zero", 
+              interpolate = "linear") %>% 
+  sg_axis_x(1, "year", "%Y") %>% 
+  sg_fill_tableau(palette = "tableau20") %>% 
+  sg_title(title = "Top 10 Team players in Beach Volleyball since 2000") %>% 
+  sg_legend(show = T, label = "Team Players: ") 
+```
+

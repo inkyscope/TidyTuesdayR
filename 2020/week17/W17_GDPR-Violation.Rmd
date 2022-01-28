@@ -1,0 +1,119 @@
+---
+title: "W17 GDPR Violation"
+author: "Sung Inkyung"
+date: '2020 4 26 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(showtext)
+
+font_add_google("Anton")
+font_add_google("Playfair Display")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+```
+
+
+```{r}
+gdpr_violations <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-21/gdpr_violations.tsv') %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y")) %>% 
+  filter(date >= "2019-01-01")
+
+```
+
+
+```{r}
+gdpr <- gdpr_violations %>% 
+  mutate(year = lubridate::year(date)) %>%
+  rename(country = name) %>% 
+  group_by(year, country) %>% 
+  summarise(fine = sum(price)) %>% 
+  ungroup() %>% 
+  filter(fine >= 1000000) %>% 
+  mutate(country = reorder(country, fine))
+
+
+europe_map <- map_data("world") %>% 
+  mutate(country = region) %>% 
+  filter(long >= -12, 
+         long <= 38,
+         lat >=  32,
+         lat <= 71)
+
+```
+### Source[CARTO color scales] (https://nowosad.github.io/rcartocolor/reference/carto_scale.html)
+### Source[tidytuesday by @sctyner] (https://twitter.com/hashtag/tidytuesday?f=live) 
+```{r}
+plot_europe <- gdpr %>% 
+  right_join(europe_map, by = "country") %>% 
+  ggplot(aes(long, lat, group = group, fill = fine)) +
+  geom_polygon(color = "white",
+               size = .2) +
+  rcartocolor::scale_fill_carto_c(
+    palette = 7, "Vivid",
+    trans = "log10",
+    na.value = "#dccccd",
+    guide = "colorbar",
+    breaks = c(3e+06, 1e+07, 3e+07),
+    labels = c("3M", "10M", "30M")
+  ) +
+  guides(fill = guide_colorbar(title = "Total fine",
+                               title.position = "top",
+                               title.hjust = .5,
+                               barheight = unit(3, "mm"),
+                               barwidth = unit(70, "mm"))) +
+  labs(title = "General Data Protection Regulation(GDPR) Violations by European Countries",
+       subtitle = "Total fines over one million euros between 2019 and 2020\nFrance has been most imposed followed by Italy, Germany and Austria",
+       caption = "Source: Privacy Affairs | Graphic: Sung Inkyung") +
+  coord_quickmap() +
+  theme_void() +
+  theme(legend.position = "bottom", 
+        legend.title = element_text(size = 9),
+        plot.title = element_text(family = "Anton",
+                                  size = 13, 
+                                  face = "bold",
+                                  hjust = .5,
+                                  margin = margin(t = 20, b = 10)),
+        plot.subtitle = element_text(family = "Playfair Display",
+                                     size = 11, 
+                                     hjust = .5,
+                                     margin = margin(b = 15)),
+        plot.caption = element_text(color = "gray45",
+                                    size = 7,
+                                    hjust = 0.5,
+                                    margin = margin(t = 15, b = 10)))
+
+ggsave("W17_GDPR-Violation.png", width = 20, height = 16, units = "cm")
+```
+
+
+```{r do not run}
+plot_fine <- gdpr_violations %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  group_by(year, name) %>% 
+  summarise(fine = sum(price)) %>% 
+  ungroup() %>% 
+  filter(fine >= 1000000) %>% 
+  mutate(name = reorder(name, fine)) %>% 
+  ggplot(aes(x = fine, y = name, fill = as.factor(year))) +
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_manual(values = c("#1626ac", "#ffa751")) +
+  scale_x_continuous(labels = dollar_format(suffix = "€", prefix = ""), 
+                     limits = c(0, 60000000),
+                     breaks = seq(0, 60000000, 10000000)) +
+  labs(x = "",
+       y = "",
+       title = "General Data Protection Regulation(GDPR) Violations in 2019 and 2020") +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+```
+

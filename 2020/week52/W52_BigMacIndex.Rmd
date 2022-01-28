@@ -1,0 +1,146 @@
+---
+title: "W52 Big Mac Index"
+author: "Sung Inkyung"
+date: '2020 12 30'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source [tidytuesday by Cederic Sherer] (https://github.com/Z3tt/TidyTuesday/blob/master/R/2020_52_BigMacIndex.Rmd)
+### Source[ggrepel package by Kamil slowikowski] (https://ggrepel.slowkow.com/articles/examples.html)
+### Source[color combination by long39ng] (https://github.com/long39ng/puig_orgaladhad/blob/main/2020_52_big_mac_index/README.md)
+```{r}
+library(tidyverse)
+library(ggtextures)
+library(ggtext)
+library(ggrepel)
+library(scales)
+library(showtext)
+
+font_add_google("Advent Pro")
+font_add_google("Teko")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+
+```{r}
+big_mac <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-12-22/big-mac.csv')
+```
+
+```{r}
+df_mac <- 
+  big_mac %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  dplyr::select(date, year, iso_a3, currency_code, name, dollar_price) %>% 
+  group_by(iso_a3, name, year) %>%  
+  summarize(price = mean(dollar_price)) %>% 
+  group_by(iso_a3) %>% 
+  filter(n() == 21)
+
+highlights <- c("CHN", "HKG", "JPN", "IDN", "KOR", "SGP", "THA", "TWN", "RUS", "MYS", "USA")
+
+n <- length(highlights)
+
+countries <- 
+  df_mac %>% 
+  filter(year == 2008) %>% 
+  pull(iso_a3)
+
+
+df_mac_2008 <- 
+  df_mac %>% 
+  group_by(iso_a3) %>%
+  filter(iso_a3 %in% countries) %>% 
+  mutate(
+    ref_year = 2008,
+    price_index = price[which(year == 2008)],
+    price_rel = price - price_index,
+    group = if_else(iso_a3 %in% highlights, iso_a3, "other"),
+    group = as.factor(group)
+  ) %>% 
+  mutate(
+    group = fct_relevel(group, "other", after = Inf),
+    country = if_else(year == 2020, name, NA_character_)
+  ) %>% 
+  ungroup() 
+
+```
+
+
+```{r}
+plot_mac <- ggplot(df_mac_2008 %>% filter(group != "other"), 
+       aes(year, price_rel, group = iso_a3)) + 
+  geom_vline(aes(xintercept = ref_year), 
+             color = "grey40",
+             linetype = "dotted",
+             size = 1.2) +
+  geom_line(data = df_mac_2008 %>% filter(group == "other"),
+            color = "grey75",
+            size = .4,
+            alpha = .7) +
+  geom_line(aes(color = group),
+            size = .9) +
+  annotate("text", x = 2008.15, y = -3.35, 
+           label = "2008",
+           family = "Teko",
+           size = 9,
+           color = "grey65",
+           hjust = 0) +
+  geom_text_repel(aes(color = group,
+                      label = country),
+                  family = "Teko",
+                  size = 6.5,
+                  direction = "y",
+                  xlim = c(2020.8, NA),
+                  hjust = 0,
+                  segment.size = .7,
+                  segment.alpha = .5,
+                  segment.linetype = "dotted",
+                  segment.curvature = -0.1,
+                  segment.ncp = 3,
+                  segment.angle = 20) +
+  coord_cartesian(clip = "off",
+                  ylim = c(-4, 3)) +
+  scale_x_continuous(expand = c(0.03, 0),
+                     limits = c(2000, 2023.5), 
+                     breaks = seq(2000, 2020, 5)) +
+  scale_y_continuous(expand = c(0, 0),
+                     breaks = seq(-4, 3, 1),
+                     labels = scales::dollar_format()) +
+  scale_color_manual(
+    values = c(rcartocolor::carto_pal(n = n, name = "Bold")[1:n-1], "grey50")
+  ) +
+  labs(x = "",
+       y = "",
+       title = "Comparison of Big Mac Price in Asia **Before/After 2008** Financial Crisis Year",
+       caption = "**Source**: TheEconomist | **Graphic**: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#292d3e"),
+        plot.title = element_markdown(colour = "#c3e88d",
+                                      family = "Advent Pro",
+                                      size = 24,margin = margin(b = 20)),
+        plot.caption = element_markdown(color = "#c792ea",
+                                        family = "Teko",
+                                        size = 11,
+                                        hjust = 0.95,
+                                        margin = margin(t = 20)),
+        axis.text.x = element_text(color = "#f07178",
+                                   family = "Poppins",
+                                   size = 10),
+        axis.text.y = element_text(color = "#82aaff",
+                                   family = "Poppins",
+                                   size = 12,
+                                   face = "bold"),
+        panel.grid = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("W52_BigMacIndex.png", width = 32, height = 20, units = "cm")
+```
+

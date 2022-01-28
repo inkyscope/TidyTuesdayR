@@ -1,0 +1,76 @@
+---
+title: "W14 Beer Production"
+author: "Sung Inkyung"
+date: '2020 4 5'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(showtext)
+
+font_add_google("Merriweather")
+font_add_google("Karla")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+brewing_materials <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/brewing_materials.csv')
+```
+
+
+```{r}
+type <- brewing_materials %>% 
+  filter(str_detect(type, "Barley") |
+           str_detect(type, "Corn") |
+           str_detect(type, "Hops") |
+           str_detect(type, "Malt") |
+           str_detect(type, "Rice") |
+           str_detect(type, "Sugar") |
+           str_detect(type, "Wheat")) %>% 
+  mutate(ym = make_datetime(year, month)) %>% 
+  mutate(diff_ytd = (ytd_current - ytd_prior_year) / 1000) %>% 
+  na.omit()
+
+```
+
+
+```{r}
+plot_type <- type %>% 
+  ggplot(aes(x = ym, y = ytd_current, fill = type)) +
+  geom_density(color = NA,
+               stat = "identity",
+               position = "fill") +
+  scale_fill_brewer(palette = "PuOr") +
+  labs(x = "",
+       y = "",
+       title = "Yearly Beer Ingredients Usage in USA 2008-2014",
+       subtitle = "Plot below shows that malt is an essential ingredient in beer types",
+       caption = "Source: TTB | Graphic: Sung Inkyung",
+       fill = "") +
+  theme_minimal() +
+  theme(legend.text = element_text(family = "Karla",
+                                   size = 9),
+        plot.title = element_text(color = "#814d30",
+                                  family = "Merriweather",
+                                  size = 18,
+                                  margin = margin(b = 7)),
+        plot.subtitle = element_text(color = "#f28e1c",
+                                     family = "Karla",
+                                     size = 13),
+        plot.caption = element_text(color = "#f28e1c",
+                                     family = "Karla",
+                                     size = 9),
+        panel.grid = element_blank())
+
+ggsave("W14_BeerProduciton.png", width = 28, height = 21, units = "cm")
+```
+

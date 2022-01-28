@@ -1,0 +1,79 @@
+---
+title: "W20 Volcanoes"
+author: "Sung Inkyung"
+date: '2020 5 18'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(showtext)
+
+font_add_google("Anton")
+font_add_google("Antonio")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+volcano <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-12/volcano.csv') %>% 
+  mutate(last_eruption_year = as.numeric(last_eruption_year)) %>% 
+  mutate(primary_volcano_type = str_remove(primary_volcano_type, "\\(.+\\)|\\?"),
+         primary_volcano_type = fct_lump(primary_volcano_type, 7))
+```
+
+
+```{r}
+world_map <- map_data("world")
+
+volcano_map <- volcano %>% 
+  filter(last_eruption_year >= 2000) %>% 
+  ggplot() +
+  geom_polygon(data = world_map, 
+               aes(long, lat, group = group),
+               fill = "gray30", color = "gray45", size = .1) +
+  geom_point(aes(longitude, latitude, color = primary_volcano_type), size = .5, alpha = .8) +
+  scale_color_viridis_d(option = "magma") +
+  guides(colour = guide_legend(override.aes = list(size = 3))) +
+  labs(title = "V O L C A N O E S",
+       subtitle = "2000 - 2020",
+       color = "Type",
+       caption = "Source: The Smithsonian Institute | Graphic: Sung Inkyung") +
+  coord_fixed() +
+  theme_void() +
+  theme(legend.title = element_text(color = "gray 90",
+                                    family = "Antonio",
+                                    size = 8.5),
+        legend.text = element_text(color = "gray 90",
+                                    family = "Antonio",
+                                    size = 9),
+        plot.background = element_rect(fill = "gray45",
+                                       color = NA),
+        panel.background = element_rect(fill = "gray45",
+                                        color = NA),
+        plot.title = element_text(color = "#d07e59",
+                                  family = "Anton",
+                                  size = 32,
+                                  hjust = 0.5,
+                                  margin = margin(b = 7)),
+        plot.subtitle = element_text(color = "#e6b9a5",
+                                  family = "Antonio",
+                                  size = 20,
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(color = "#a8a7a7",
+                                    family = "Antonio",
+                                    size = 7, 
+                                    hjust = 0.5),
+        plot.margin = margin(5, 20, 5, 20))
+  
+ggsave("W20_Volcanoes.png", width = 22, height = 16, units = "cm")
+
+```
+

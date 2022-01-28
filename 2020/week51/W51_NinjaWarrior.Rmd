@@ -1,0 +1,77 @@
+---
+title: "W51 Ninja Warrior"
+author: "Sung Inkyung"
+date: '2020 12 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggtext)
+library(widyr)
+library(tidylo)
+library(showtext)
+
+font_add_google("Bungee")
+font_add_google("Red Hat Text")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+```
+### Source[tidytuesda by Julia Silge] (https://gist.github.com/juliasilge/1ca5bcc988d568d84a323cfd042c63db)
+```{r}
+ninja_warrior <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-12-15/ninja_warrior.csv') 
+```
+
+
+```{r practice 2}
+ninja_warrior <- ninja_warrior %>%
+    mutate(round_stage = case_when(str_detect(round_stage, "National Finals") ~ "National Finals",
+                                   str_detect(round_stage, "Semi-Finals") ~ "Semi Finals",
+                                   str_detect(round_stage, "Finals") ~ "Finals",
+                                   str_detect(round_stage, "Qualifying") ~ "Qualifying"))
+
+
+df <- ninja_warrior  %>%
+  count(round_stage, obstacle_name, sort = TRUE) %>%
+    bind_log_odds(round_stage, obstacle_name, n) %>%
+    group_by(round_stage) %>%
+    slice_max(log_odds_weighted, n = 10, with_ties = FALSE) %>%
+    ungroup() %>%
+    mutate(obstacle_name = reorder_within(obstacle_name, log_odds_weighted, round_stage),
+           round_stage = fct_relevel(round_stage, "Qualifying", "Semi-Finals"))
+  
+  
+
+plot <- df %>% 
+  ggplot(aes(log_odds_weighted, obstacle_name, 
+             fill = round_stage)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~round_stage, scales = "free") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_reordered() +
+  scale_fill_manual(values = c("burlywood3", "darkolivegreen3", "darkorchid3", "cornflowerblue")) +
+  labs(x = "Weighted log odds",
+       y = "",
+       title = "Ninja Warrior Obstacles by Round Stage",
+       caption = "Source: Data.World | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(plot.title = element_text(family = "Bungee",
+                                  size = 18,
+                                  hjust = .5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(family = "Red Hat Text",
+                                    size = 9,
+                                    hjust = 1),
+        axis.text = element_text(family = "Red Hat Text",
+                                 size = 9),
+        panel.grid = element_blank()) 
+
+ggsave("W51_NinjaWarrior.png", width = 23, height = 18, units = "cm")
+```

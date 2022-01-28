@@ -1,0 +1,98 @@
+---
+title: "W44 Canadian Wind Turbines"
+author: "Sung Inkyung"
+date: '2020 11 11'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(ggthemes)
+library(showtext)
+
+font_add_google("Oswald")
+font_add_google("Karla")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+wind_turbine <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-27/wind-turbine.csv')
+
+wind_turbine %>% 
+  count(commissioning_date, sort = T)
+```
+
+
+```{r}
+wind_turbine <- wind_turbine %>% 
+  mutate(
+    commissioning_date = str_extract(commissioning_date, "[:digit:]+")) %>% 
+  mutate(commissioning_date = as.double(commissioning_date)) %>% 
+  distinct(project_name, province_territory, total_project_capacity_mw, commissioning_date)
+
+df <- wind_turbine %>% 
+  group_by(project_name) %>% 
+  filter(commissioning_date == min(commissioning_date)) %>% 
+  ungroup() %>% 
+  count(year = commissioning_date) %>% 
+  right_join(tibble(year = 1993:2019)) %>% 
+  mutate(n = replace_na(n, 0)) %>% 
+  arrange(year)
+
+df %>% 
+  summarise(avg = mean(n)) #average 9.96 
+  
+plot <- df %>% 
+  ggplot(aes(year, n)) +
+  geom_point(size = 2) +
+  geom_point(data = df %>% 
+               filter(year %in% c(2014, 2015)),
+             size = 3.5, 
+             color = "cadetblue4") +
+  geom_point(data = df %>% 
+               filter(n == 0),
+             size = 2.5,
+             color = "azure2") +
+  geom_hline(yintercept = 10, size = 1, color = "cadetblue") + 
+  geom_segment(aes(x = year, xend = year, y = n, yend = 10)) +
+  geom_segment(data = df %>% 
+                 filter(year %in% c(2014, 2015)),
+               aes(x = year, xend = year,
+                   y = n, yend = 10),
+                   color = "cadetblue4") +
+  geom_segment(data = df %>% 
+                 filter(n == 0),
+               aes(x = year, xend = year,
+                   y = n, yend = 10),
+               color = "azure2") +
+  scale_y_continuous(sec.axis = dup_axis()) +
+  scale_x_continuous(breaks = c(1995, 2000, 2005, 2010, 2015, 2019)) +
+  labs(title = "Number of New Wind Turbine Projects Commissioned from 1993 to 2019",
+       subtitle = "Average 10 projects have been commissioned per year since 1993",
+       caption = "Source: Canadian Wind Turbines | Graphic: Sung Inkyung") +
+  theme_fivethirtyeight() +
+  theme(plot.title = element_text(color = "cadetblue4",
+                                  family = "Oswald", 
+                                   size = 21,
+                                  margin = margin(b = 7)),
+        plot.subtitle = element_text(family = "Karla", 
+                                   size = 16,
+                                   margin = margin(b = 10)),
+        plot.caption = element_text(color = "azure4",
+                                    family = "Karala",
+                                    size = 9,
+                                    hjust = 1.025,
+                                    margin = margin(t = 15)),
+        plot.margin = margin(20, 20, 20, 20))
+      
+ggsave("W44_CanadianWindTurbines.png", width = 25, height = 21, units = "cm")  
+```
+

@@ -1,0 +1,128 @@
+---
+title: "W42 Datasaurus"
+author: "Sung Inkyung"
+date: '2020 10 17'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(gganimate)
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load(2020, week = 42)
+
+datasaurus <- tuesdata$datasaurus
+```
+
+
+```{r}
+cols <- rainbow(13)
+
+
+stats <- datasaurus %>% 
+  group_by(dataset) %>% 
+  summarise(mean_x = mean(x, na.rm = T),
+            mean_y = mean(y, na.rm = T),
+            sd_x = sd(x, na.rm = T),
+            sd_y = sd(y, na.rm = T),
+            coeff = cor(y, x))
+
+df <- datasaurus %>% 
+  left_join(stats) %>%
+  mutate(dataset = str_replace_all(dataset, "_", " "),
+         dataset = str_to_title(dataset))
+
+plot <- df %>% 
+  ggplot(aes(x = x, y = y,
+             color = dataset,
+             group = 1)) + 
+  geom_point(size = 5, 
+             alpha = .8) +
+  geom_text(x = 50, y = 50, 
+            hjust = 1, 
+            vjust = 0.5, 
+            size = 9,
+             aes(label = paste0(dataset,
+                                "\nMean x = ",
+                                "\nMean y = ",
+                                "\nSD x = ",
+                                "\nSD y = ",
+                                "\nCorr. = "
+                                )), 
+            check_overlap = T, 
+            color = "black") +
+  geom_text(x = 50, y = 50, 
+            hjust = 0, 
+            vjust = 0.5, 
+            size = 9, 
+            aes(label = paste0(" Dataset ",
+                               "\n", mean_x,
+                               "\n", mean_y,
+                               "\n", sd_x,
+                               "\n", sd_y,
+                               "\n", coeff
+            )), 
+            check_overlap = T, 
+            color = "bisque4") +
+  geom_text(x = 50, y = 50, 
+            hjust = 0, 
+            vjust = 0.5, 
+            size = 9, 
+            aes(label = paste0(" Dataset",
+                               "\n", trunc(mean_x * 100)/100,
+                               "\n", trunc(mean_y * 100)/100,
+                               "\n", trunc(sd_x * 100)/100,
+                               "\n", trunc(sd_y * 100)/100,
+                               "\n", trunc(coeff * 100)/1000
+            )), 
+            check_overlap = T, 
+            color = "black",) +
+  coord_equal(clip = "off") +
+  scale_x_continuous(limits = c(0, 125), 
+                     breaks = seq(0, 100, by = 20), 
+                     expand = c(.01, .01)) +
+  scale_y_continuous(limits = c(0, 101), 
+                     breaks = seq(0, 100, by = 20), 
+                     expand = c(.01, .01)) +
+  scale_color_manual(values = cols, 
+                     guide = "none") +
+  labs(x = " ",
+       y = " ",
+       title = "Same Stats Different Scatters",
+       caption = "Source: Alberto Cairo blogpost | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(plot.title = element_text(color = "antiquewhite4",
+                                  size = 50,
+                                  hjust = .5,
+                                  face = "bold",
+                                  margin = margin(b = 30)),
+        plot.caption = element_text(color = "antiquewhite4",
+                                    size = 22,
+                                    hjust = .5,margin = margin(t = 30))) +
+  transition_states(dataset, 10, 3) +
+  enter_fade() +
+  exit_shrink() +
+  ease_aes('cubic-in-out') 
+```
+
+
+```{r}
+library(gifski)
+
+anim <- animate(plot,
+                width = 1300, 
+                height = 1650, 
+                nframes = 100, 
+                fps = 5, 
+                end_pause = 5,
+                renderer = gifski_renderer("W42_Datasaurus.gif"))
+
+```
+

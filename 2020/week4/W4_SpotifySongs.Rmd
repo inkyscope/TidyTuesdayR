@@ -1,0 +1,157 @@
+---
+title: "SpotifySongs"
+author: "Sung Inkyung"
+date: '2020 1 24'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+###Source[blogpost by jake kaupp] (https://github.com/jkaupp/tidytuesdays/blob/master/2019/week14/R/analysis.R)
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(lubridate)
+library(paletteer)
+library(patchwork)
+library(showtext)
+
+font_add_google("Teko")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2020-01-21') 
+
+
+spotify_songs <- tuesdata$spotify_songs
+
+glimpse(spotify_songs)
+
+spotify_songs %>% 
+  count(playlist_genre, sort = TRUE)
+```
+
+```{r}
+spotify <- spotify_songs %>% 
+  rename(genre = playlist_genre,
+         subgenre = playlist_subgenre,
+         duration = duration_ms) %>%
+  mutate(track_album_release_date = as_date(track_album_release_date),
+         year = year(track_album_release_date),
+         genre = str_to_upper(genre)) %>% 
+  select(genre, year, danceability, energy, loudness, speechiness, liveness, valence, tempo, duration) %>% 
+  mutate_at(vars(-c(genre, year)), scale) %>% 
+  group_by(genre, year) %>% 
+  summarise_at(vars(everything()), mean) %>% 
+  pivot_longer(-c(genre, year), 
+               names_to = "feature", 
+               values_to = "mean") %>% 
+  mutate(feature = str_to_title(feature))
+```
+
+
+```{r}
+dark8equal = c("#1B9E77", "#666666", "#66A61E", "#7570B3", "#A6761D", "#D95F02", "#E6AB02", "#E7298A")
+
+genre_plot <- spotify %>% 
+  filter(between(year, 2015, 2020),
+         !is.na(year)) %>% 
+  ggplot(aes(genre, mean, group = year)) +
+  geom_path(show.legend = FALSE) +
+  geom_point(size = 1,
+             aes(color = genre)) +
+  facet_grid(year ~ feature) +
+  scale_color_manual(values = dark8equal) +
+  labs(x = " ",
+       y = " ") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        strip.text.x = element_text(family = "Poppins",
+                                    size = 8))
+
+guide <- spotify %>% 
+  filter(year == 2015, feature == "Danceability") %>% 
+  ggplot(aes(genre, mean, group = year)) + 
+  geom_path()+
+  geom_point(size = 3, aes(color = genre)) +
+  scale_color_manual(values = dark8equal) +
+  theme_void() +
+  theme(legend.title = element_blank(),
+        legend.text = element_text(family = "Poppins",
+                                   size = 10))
+```
+
+```{r}
+plot <- wrap_plots(list(guide, genre_plot),
+                   widths = c(0.25, 0.75)) +
+  plot_annotation(title = "Annual Feature Patterns in Playlist Genre",
+                  subtitle = "A colored dot represents each playlist genre.\nPath represents the mean of density in danceability of each genre in 2015.",
+                  caption = "Source: Spotify | Graphic: Sung Inkyung") &
+  theme(plot.title = element_text(family = "Teko",
+                                  size = 28),
+        plot.subtitle = element_text(family = "Poppins",
+                                    size = 16),
+        plot.caption = element_text(family = "Poppins",
+                                    size = 8))
+
+ggsave("W4_SpotifySongsPatterns.png", width = 28, height= 20, units = "cm")
+```
+
+
+```{r}
+genre <- spotify_songs %>% 
+  distinct(track_id, .keep_all = TRUE) %>% 
+  group_by(playlist_genre) %>%
+  summarise(n_songs = length(unique(track_name))) %>% 
+  filter(n_songs > 5)
+
+
+popularity <- spotify_songs %>% 
+  distinct(track_id, .keep_all = TRUE) %>% 
+  group_by(playlist_genre) %>%
+  summarise_at(vars(popularity = track_popularity, danceability, tempo, loudness, 
+                    duration = duration_ms, speechiness, valence, instrumentalness), 
+               mean, na.rm = TRUE) %>%
+  mutate_at(vars(-playlist_genre), scale) 
+
+genre_feature <- popularity %>% 
+  left_join(genre, by = "playlist_genre") %>% 
+  select(-n_songs) %>% 
+  pivot_longer(-playlist_genre) %>% 
+  mutate(name = str_to_title(name)) %>% 
+  ggplot(aes(name, value, fill = playlist_genre)) +
+  geom_col() +
+  coord_polar() +
+  facet_wrap(~playlist_genre) +
+  scale_fill_paletteer_d(palette = "jcolors::pal5") +
+  theme_minimal() +
+  labs(x = " ",
+       y = " ",
+       title = "Features by Playlist Genre",
+       caption = "Source: Spotify | Graphic: Sung Inkyung") +
+  theme(legend.position = "none",
+        plot.title = element_text(family = "Teko",
+                                  size = 32,
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(family = "Poppins",
+                                    size = 8), 
+        panel.spacing.x = unit(3, "lines"),
+        panel.spacing.y = unit(3, "lines"),
+        axis.text.x = element_text(family = "Poppins", 
+                                   size = 6),
+        axis.text.y = element_blank(),
+        strip.text = element_text(family = "Teko",
+                                  size = 17))
+
+ggsave("W4_SpotifySongs.png", width = 26, height= 20, units = "cm")
+```
+
+

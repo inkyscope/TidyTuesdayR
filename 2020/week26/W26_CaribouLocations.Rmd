@@ -1,0 +1,83 @@
+---
+title: "W26 CaribouLocations"
+author: "Sung Inkyung"
+date: '2020 6 27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(gghighlight)
+library(showtext)
+
+font_add_google("BenchNine")
+font_add_google("Lexend")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+locations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-23/locations.csv')
+
+
+tracks <- locations %>% 
+  mutate(seaon = fct_rev(season),
+         longitude = round(longitude, 2),
+         latitude = round(latitude, 2)) %>% 
+  distinct(season, study_site, longitude, latitude)
+```
+
+
+```{r}
+plot <- tracks %>% 
+  ggplot() +
+  geom_point(aes(longitude, latitude, group = study_site, color = study_site), size = 0.1) +
+  gghighlight(unhighlighted_params = list(color = "gray75"),
+              use_direct_label = F) +
+  scale_color_manual(values = c("#fbd082", "#dc4e84", "#2484bc", "#39805b", "#5f9b1b", "#5d5ced", "#39805b", "#b5ced8", "#e5d62e"),
+                     breaks = c("Graham", "Scott", "Moberly", "Burnt Pine", "Kennedy", "Qintette", "Narraway", "Hart Ranges")) +
+    facet_wrap(vars(season), ncol = 2) +
+  guides(color = guide_legend(title = "Herds",
+                              override.aes = list(size = 3))) +
+  coord_fixed(ratio = 1.5) +
+  labs(title = "Tracks of Woodland Caribou in Northern British Columbia,\na Canadian Province from 1988 to 2016",
+       caption = str_wrap("Source:Movebank | Graphic: Sung Inkyung")) +
+  theme_void() +
+  theme(legend.position = c(.55, .3),
+        legend.text = element_text(color = "#cee5ce",
+                                   family = "Lexend",
+                                   size = 11),
+        legend.title = element_text(color = "#cee5ce",
+                                    family = "Lexend",
+                                    size = 14,),
+        panel.spacing.x = unit(3, "lines"),
+        plot.background = element_rect(fill = "#a2a287",
+                                       color = NA),
+        strip.text = element_text(color = "#272c67",
+                                  family = "Lexend",
+                                  size = 18),
+        plot.title = element_text(color = "white",
+                                  family = "BenchNine",
+                                  size = 20,
+                                  hjust = .5,
+                                  lineheight = 1.1,
+                                  face = "bold",
+                                  margin = margin(b = 20)),
+        plot.caption = element_text(color = "gray85",
+                                    family = "BenchNine",
+                                    size = 11,
+                                    hjust = .5,
+                                    margin = margin(t = 30)),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("W26_CaribouLocations.png", width = 23, height = 21, units = "cm")
+
+```
+

@@ -1,0 +1,106 @@
+---
+title: "W49 Totonto Shelters"
+author: "Sung Inkyung"
+date: '2020 12 6'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggTimeSeries)
+library(ggtext)
+library(showtext)
+
+font_add_google("Oswald")
+font_add_google("Poppins")
+font_add_google("Jost")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+
+
+```{r}
+shelters <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-12-01/shelters.csv')
+
+shelters_year <- shelters %>% 
+  separate(occupancy_date, c("year", "month", "day"), sep = "-", remove = F) %>% 
+  filter(capacity != 0) %>%  
+  mutate(rate = (occupancy / capacity) * 100,
+         year = as.numeric(year)) %>% 
+  group_by(occupancy_date, year) %>% 
+  summarise(rate = round(mean(rate), 2))
+```
+
+```{r}
+yearl_avg <- shelters_year %>% 
+  group_by(year) %>% 
+  summarise(total_avg = round(mean(rate), 2))
+```
+
+
+```{r}
+plot <- shelters_year %>% 
+  ggplot_calendar_heatmap(cDateColumnName = "occupancy_date",
+                          cValueColumnName = "rate",
+                          dayBorderSize = .03,
+                          monthBorderSize = .5) +
+  scale_fill_viridis_c(option = "cividis") +
+  guides(fill = guide_colorbar(title = "Occupancy rate(%)",
+                               title.position = "top",
+                               barwidth = 15,
+                               barheight = .3)) +
+  facet_wrap(~ year, ncol = 1) +
+  labs(title = "Monthly Occupancy of Toronto Homeless Shelters (2017-2019)",
+       subtitle = "Yearly aveage of occupancy is around 95% for 3 consecutive years",
+       caption = "Source: opendatatoronto | Graphic: Sung Inkyung") +
+  theme(legend.position = "bottom",
+        legend.background = element_rect(fill = "#192072"), ###1f1e1b
+        legend.title = element_text(color = "#e0dbcc",
+                                    size = 9),
+        legend.title.align = 0.5,
+        legend.text = element_text(color = "#e0dbcc",
+                                   size = 10),
+        strip.background = element_rect(fill = alpha("#cea912", .7),
+                                        color = NA),
+        strip.text.x = element_text(color = "#f5f1e6",
+                                    family = "Poppins",
+                                    size = 14,
+                                    face = "bold"),
+        panel.spacing = unit(10, "mm"),
+        plot.background = element_rect(fill = "#192072",
+                                       color = NA),
+        panel.background = element_rect(fill = "#192072",
+                                       color = NA),
+        plot.title = element_text(color = "#cea912",
+                                  family = "Oswald",
+                                  size = 24,
+                                  hjust = 0.5,
+                                  margin = margin(t = 20, b = 7)),
+        plot.subtitle = element_text(color = "#cea912",
+                                     family = "Poppins",
+                                     size = 16,
+                                     hjust = 0.5,
+                                     margin = margin(b = 25)),
+        plot.caption = element_text(color = "gray65",
+                                    family = "Jost",
+                                    size = 11, margin = margin(t = 30, b = 10, r = 20)),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(colour = "#f5f1e6",
+                                   family = "Jost",
+                                   size = 11),
+        axis.text.y = element_text(colour = "#f5f1e6",
+                                   family = "Jost",
+                                   size = 11),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W49_TorontoShelters.png", width = 34, height = 24, units = "cm")
+```
+

@@ -1,0 +1,127 @@
+---
+title: "W43 Great American Beer Festival Data"
+author: "Sung Inkyung"
+date: '2020 11 9'
+output: html_document 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source [tidytuesday by Margaret Siple] (https://github.com/mcsiple/tidytuesday/blob/master/43_MoreBeer.R)
+```{r}
+library(tidyverse)
+library(ggtext)
+library(ggbeeswarm)
+library(patchwork)
+library(showtext)
+
+font_add_google("Oswald")
+font_add_google("Oxygen")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+
+
+```{r}
+beer_awards <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-20/beer_awards.csv') %>% 
+  mutate(state = str_to_upper(state))
+
+states_regions <- data.frame("state" = state.abb,
+                             "region" = state.region)
+```
+
+
+```{r}
+df_beer <- beer_awards %>% 
+  group_by(medal, state) %>% 
+  summarize(n = sum(n())) %>% 
+  ungroup() %>% 
+  left_join(states_regions) %>% 
+  mutate(region = case_when(state == "DC" ~ "South",
+                            TRUE ~ as.character(region))) 
+
+state_max <- df_beer %>% 
+  group_by(region) %>%
+  filter(n == max(n) & !is.na(region))
+```
+
+
+```{r}
+p1 <- df_beer %>% 
+  mutate(region = fct_relevel(region, "West", "North Central", "South", "Northeast")) %>% 
+  ggplot(aes(x = n, y = region,  
+             color = medal)) +
+  geom_quasirandom(method = "tukeyDense", 
+                   size = 2, 
+                   groupOnX = F) +
+  geom_text(data = state_max, 
+            aes(label = state), 
+            family = "Oxygen",
+            size = 4.5, 
+            fontface = "bold",
+            nudge_x = 13, 
+            show.legend = F) + 
+  labs(x = " ",
+       y = " ",
+       color = "") +
+  scale_color_manual(values = c("#ffd700", "#c0c0c0", "#cd7f32"),
+                     labels = c("Gold", "Silver", "Bronze")) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        axis.text.y = element_text(family = "Oxygen",
+                                  size = 11))
+```
+
+
+```{r}
+beer_year <- beer_awards %>% 
+  left_join(states_regions) %>% 
+  filter(!is.na(region)) %>% 
+  group_by(region, year, medal) %>% 
+  count() %>% 
+  ungroup() 
+  
+```
+
+
+```{r}
+p2 <- beer_year  %>% 
+  ggplot(aes(year, n, fill = medal)) +
+  geom_area(lwd = .3, color = "white") +
+  facet_wrap(~region, scales = "free_y", ncol = 1) +
+  scale_fill_manual(values = c("#ffd700", "#c0c0c0", "#cd7f32"),
+                    labels = c("Gold", "Silver", "Bronze")) +
+  labs(x = " ",
+       y = " ") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        strip.text = element_text(family = "Oxygen",
+                                  size = 11),
+        panel.grid = element_blank())
+
+```
+
+```{r}
+p1 + p2 + 
+  plot_layout(ncol = 2, 
+              guides = 'collect') +
+  plot_annotation(title = "Beer Festival Medals by US Regions",
+       subtitle = "Illustrated by number of medal awards (<span style = 'color:#ffd700'>**Gold**</span>, <span style = 'color:#c0c0c0'>**Silver**</span> and <span style = 'color:#cd7f32'>**Bronze**</span>)",
+       caption = "Source:The Great American Beer Festival | Graphic: Sung Inkyung") &
+  theme(legend.position = "none",
+        plot.title = element_text(family = "Oswald",
+                                  size = 20,
+                                  face = "bold",
+                                  hjust = 0.5),
+        plot.subtitle = element_markdown(family = "Oxygen",
+                                         size = 16,
+                                         hjust = 0.5),
+        plot.caption = element_text(family = "Oxygen",
+                                     size = 8,
+                                     hjust = 0.5))
+
+ggsave("W43_GreatAmericanBeerFestivalData.png", width = 30, height = 18, units = "cm")
+```
+

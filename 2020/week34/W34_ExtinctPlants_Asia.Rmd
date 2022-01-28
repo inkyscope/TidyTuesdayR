@@ -1,0 +1,127 @@
+---
+title: "W34 Extinct Plants"
+author: "Sung Inkyung"
+date: '2020 11 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by ljeamakaanyene] (aanyene/tidytuesday/blob/master/scripts/2020_17_plants_in_danger.Rmd)
+```{r}
+library(tidyverse)
+library(ggtext)
+library(ggimage)
+library(showtext)
+
+font_add_google("Bebas Neue")
+font_add_google("Poppins")
+font_add_google("Fira Sans Condensed")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+
+```
+
+
+```{r}
+plants <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-08-18/plants.csv')
+
+```
+
+
+```{r}
+extinct_plants <- plants %>% 
+  filter(red_list_category == "Extinct" & continent == "Asia") %>% 
+  select(binomial_name, country, continent, year_last_seen) %>% 
+  filter(!is.na(year_last_seen)) %>% 
+  mutate(year = case_when(
+    year_last_seen == "Before 1900" ~ 0,
+    year_last_seen == "1900-1919" ~ 15,
+    year_last_seen == "1920-1939" ~ 30,
+    year_last_seen == "1940-1959" ~ 45,
+    year_last_seen == "1960-1979" ~ 60,
+    year_last_seen == "1980-1999" ~ 75,
+    year_last_seen == "2000-2020" ~ 90)) %>% 
+  arrange(year) %>% 
+  group_by(year) %>% 
+  mutate(id = row_number())
+
+region <- unique(extinct_plants$country)
+
+region <- tibble(
+  country = unique(extinct_plants$country),
+  region = c("Southeast", "South", "South", "Southeast",
+             "West",  "East", "Southeast", "Southeast", 
+             "East", "South", "Southeast"))
+
+image <- c("C:/Users/inkyscope/Documents/projectR/datavizRscope/image/plant.png")
+```
+
+
+```{r}
+## color source:https://jaredhuling.org/jcolors/
+
+plot <- extinct_plants %>% 
+  left_join(region, by = "country") %>% 
+  ggplot() +
+  geom_text(aes(year, id, 
+                label = binomial_name),
+            family = "Fira Sans Condensed",
+            size = 4,
+            hjust = 0, 
+            fontface = "italic") +
+  geom_point(aes(x = year - .5, y = id, 
+                 color = region),
+             size = 3) +
+  geom_text(aes(x = year + 4.5, y = -.5,
+                label = year_last_seen),
+            family = "Poppins",
+            fontface = "bold",
+            size = 6) +
+  geom_point(aes(x = year + 1, 
+                 y = -.5),
+             size = 2, 
+             color = "#bdb76b", #dark kakhi
+             alpha = .05) +
+  geom_image(aes(x = year, y = -.5, 
+                 image = image),
+             size = .03) + 
+  scale_color_manual(values = c("#d10056","#5d8aa8", "#b8860b", "#004953"), #rubine_red, rackley, dark_goldenrod, midnight_green
+                     name = "Asia Regions",  
+                     labels = c("East", "West", "South", "Southeast")) +
+  scale_x_continuous(limits = c(-3, 100)) +
+  scale_y_reverse() +
+  labs(title = "Extinct Plants\nA s i a",
+       subtitle = "Extinct plants are listed by 11 Asian countries per their regions as follows;<br><span style = 'color:#d10056'>**East**: </span>China, Taiwan,<br><span style = 'color:#5d8aa8'>**West**: </span>Yemen,<br><span style = 'color:#b8860b'>**South**: </span>India, Bhutan, Sri Lanka,<br><span style='color:#004953'>**Southeast**: </span>Indnonasia, Malaysia, Vietnam, Myanmar, Philippines",
+       caption = "**Source**: IUCN Red List | **Graphic**: Sung Inkyung") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#ebe3d1"),
+        plot.background = element_rect(fill = "#ebe3d1",
+                                       color = NA),
+        plot.title = element_text(family = "Bebas Neue",
+                                  size = 40,
+                                  hjust = .5, 
+                                  face = "bold",
+                                  lineheight = 0.9,
+                                  margin = margin(t = 20, b = 7)),
+        plot.subtitle = element_markdown(family = "Poppins",
+                                         size = 18,
+                                     hjust = .5,
+                                     lineheight = 1.3,
+                                     margin = margin(b = 20)),
+        plot.caption = element_markdown(family = "Poppins",
+                                        size = 11,
+                                        hjust = .5,
+                                        margin = margin(t = 10)),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W34_ExtinctPlants_Asia.png", width = 40, height = 34, units = "cm")
+
+```
+

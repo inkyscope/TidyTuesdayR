@@ -1,0 +1,158 @@
+---
+title: "W36 Global crop yields"
+author: "Sung Inkyung"
+date: '2020 11 12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(rnaturalearth)
+library(sf)
+library(hrbrthemes)
+library(paletteer)
+library(patchwork)
+library(ggthemes)
+library(showtext)
+
+font_add_google("Bebas Neue")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+
+
+```{r}
+key_crop_yields <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-01/key_crop_yields.csv')
+```
+
+```{r}
+colnames(key_crop_yields) <- gsub(" \\(tonnes per hectare\\)","",colnames(key_crop_yields))
+
+world <- ne_countries(scale = "medium",
+                      returnclass = "sf")
+
+top_crops <- key_crop_yields %>% 
+  group_by(Entity) %>% 
+  pivot_longer(cols = 4:last_col(), 
+               names_to = "crop",
+               values_to = "yield") %>% 
+  group_by(Entity, Year) %>%
+  filter(yield == max(yield, na.rm = TRUE)) %>%   
+  filter(!is.na(Code)) %>% 
+  rename(name = Entity)
+
+
+top_crops_1961 <- top_crops %>% 
+  filter(Year == "1961") %>% 
+  left_join(world, ., by = "name") %>% 
+  filter(name != "Antarctica")
+
+top_crops_2018 <- top_crops %>% 
+  filter(Year == "2018") %>% 
+  left_join(world, ., by = "name") %>% 
+  filter(name != "Antarctica")
+
+top_crops %>% 
+  filter(Year == "1961",
+         crop == "Banana")
+```
+
+
+```{r}
+plot_1961 <- top_crops_1961 %>%
+  ggplot() +
+  geom_sf(aes(fill = crop), color = NA) +
+  scale_fill_paletteer_d("ggthemes::hc_default",
+                         breaks = c("Banana", "Cassava", "Maiz", "Potatoes", "Rice", "Wheat", "Barley", "Beans"),
+                    na.value = "gray60") +
+  labs(subtitle = "1961") +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#26211c", color = NA),
+        panel.background = element_rect(fill = "#26211c", color = NA),
+        plot.subtitle = element_text(color = "gray80",
+                                     family = "Bebas Neue",
+                                     size = 16,
+                                     face = "bold",
+                                     margin = margin(t = 20)),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major = element_blank())
+  
+  plot_2018 <- top_crops_2018 %>%
+  ggplot() +
+  geom_sf(aes(fill = crop), color = NA) +
+  scale_fill_paletteer_d("ggthemes::hc_default",
+                    breaks = c("Banana", "Cassava", "Maiz", "Potatoes", "Rice", "Wheat", "Barley", "Beans"),
+                    limits = c("Banana", "Cassava", "Maiz", "Potatoes", "Rice", "Wheat", "Barley", "Beans"),
+                    na.value = "gray60") +
+  labs(subtitle = "2018") +
+  theme(legend.title = element_blank(),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        legend.text = element_text(color = "gray80",
+                                   family = "Poppins",
+                                   size = 7), 
+        plot.background = element_rect(fill = "#26211c", color = NA),
+        panel.background = element_rect(fill = "#26211c", color = NA),
+        plot.subtitle = element_text(color = "gray80",
+                                     family = "Bebas Neue",
+                                     size = 16,
+                                     face= "bold",
+                                     margin = margin(t = 20)),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid.major = element_blank(),
+        plot.margin = margin(10, 10, 10, 10))
+  
+  plot_1961 / plot_2018 + 
+    plot_layout(guides = 'collect') +
+    plot_annotation(
+      title = "Global Crop Yields: Top Crops by Country",
+      subtitle = "Highest crop yield in 1961 and 2018\nPotatoes are generous plants among major crops over years.",
+      caption = "Source: Our World in Data | Graphic: Sung Inkyung") &
+    theme(plot.background = element_rect(fill = "#26211c", color = NA),
+         panel.background = element_rect(fill = "#26211c", color = NA),
+          plot.title = element_text(color = "gray95",
+                                    family = "Bebas Neue",
+                                    size = 20),
+          plot.subtitle = element_text(color = "gray95",
+                                       family = "Poppins",
+                                       size = 16),
+          plot.caption = element_text(color = "gray65",
+                                      family = "Poppins",
+                                      size = 9))
+  
+  ggsave("W36_GlobalCropYields.png", width = 21, height = 21, units = "cm")
+```
+
+```{r do not run}
+
+key_crop_yields %>% 
+  filter(Entity == "North Korea") %>% 
+  select(Rice, Entity,Year) %>% 
+  filter(Rice == 8.1273)
+
+
+key_crop_yields %>% 
+  filter(Entity %in% c("South Korea", "North Korea")) %>% 
+  group_by(Entity) %>%
+  pivot_longer(cols = 4:last_col(),
+               names_to = "type",
+               values_to = "yield") %>% 
+  filter(type %in% c("Barley", "Wheat", "Rice")) %>% 
+  ggplot(aes(Year, yield, color = type)) +
+  geom_line() +
+  facet_wrap(~ Entity) +
+  theme_economist() +
+  scale_color_economist() +
+  labs(x = "",
+       y = "tonnes per hectare",
+       title = "Major Crop Yields in Korean Peninsula")
+
+```

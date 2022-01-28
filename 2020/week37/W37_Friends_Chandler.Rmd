@@ -1,0 +1,122 @@
+---
+title: "friends"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidygraph)
+library(ggraph)
+library(ggtext)
+library(glue)
+library(showtext)
+
+font_add_google("Courier Prime")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+###Source[tidytuesday by jake kaupp] (https://github.com/jkaupp/tidytuesdays/blob/master/2020/week12/R/analysis.R)
+```{r}
+friends <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-09-08/friends.csv')
+```
+
+
+```{r}
+nodes <- friends %>% 
+  filter(speaker != "Scene Directions") %>% 
+  group_by(speaker) %>% 
+  summarize(no_of_lines = n()) %>% 
+  slice_max(n = 6, no_of_lines)
+```
+
+
+```{r}
+ep_list <- friends %>% 
+  distinct(season, episode, speaker) %>% 
+  semi_join(nodes) %>% 
+  mutate(temp = speaker) %>% 
+  group_by(season, episode) %>% 
+  summarize(to = list(toString(speaker)))
+```
+
+```{r}
+edges <- friends %>% 
+  distinct(season, episode, speaker) %>% 
+  semi_join(nodes) %>% 
+  inner_join(ep_list) %>% 
+  unnest(to) %>% 
+  separate_rows(to, sep = ",") %>% 
+  mutate(to = trimws(to)) %>% 
+  rename(from = speaker) %>% 
+  filter(from != to) %>% 
+  count(from, to, name = "size") %>% 
+  left_join(nodes, by = c("from" = "speaker")) %>% 
+  left_join(nodes, by = c("to" = "speaker")) %>% 
+  mutate(temp = if_else(no_of_lines.x > no_of_lines.y, paste0(to, from), paste0(from, to))) %>% 
+  distinct(temp, .keep_all = TRUE) %>% 
+  select(from, to, size)
+```
+
+
+```{r}
+graph <- tbl_graph(nodes, edges)
+
+core <- graph %>% 
+  activate(nodes) %>% 
+  mutate(degree = centrality_degree()) %>% 
+  as_tibble() %>% 
+  slice_max(n = 1, degree) %>% 
+  pull(speaker)
+```
+
+
+```{r}
+edge_pos <- which(nodes$speaker == core)
+```
+
+```{r}
+
+colors = c('#ff4238', '#ffdc00', '#42a2d6',  '#7a0006', "#fff5bd", "#00007e")
+
+arc_plot <- graph %>% 
+  activate(nodes) %>% 
+  mutate(color = if_else(speaker == core, "#42a2d6", "#ff423b"),
+         stroke = if_else(speaker == core, 2, 0.5),
+         alpha = if_else(speaker == core, 1, 0.5)) %>%
+  activate(edges) %>% 
+  mutate(edge_color = if_else(from == edge_pos | to == edge_pos, "#42a2d6", "#646881"),
+         edge_alpha = if_else(from == edge_pos | to == edge_pos, 1, 0.7),
+         edge_size = if_else(from == edge_pos | to == edge_pos, 2, 0.5)) %>% 
+  ggraph(layout = "linear") + 
+  geom_edge_arc(aes(edge_alpha = edge_alpha, edge_color = edge_color, edge_width = size), show.legend = FALSE) +
+  geom_node_point(aes(fill = "white", color = color, stroke = stroke), shape = 21, size = 30) +
+  geom_node_text(aes(label = speaker), family = "Courier Prime", size = 3.5) +
+  labs(x = NULL,
+       y = NULL,
+      title = glue("In <span style='color:#ff4238'>**F**</span><span style='color:#ffdc00'>**r**</span><span style='color:#42a2d6'>**i**</span><span style='color:#7a0006'>**e**</span><span style='color:#fff5bd'>**n**</span><span style='color:#00007e'></span><span style='color:#ff4238'>**d**</span>**s**</span>, **Chandler Bing** is the Glue Binding The Main 5 Characters Together"),
+      subtitle = "Illustrated below is an arc diagram of the core cast of characters in <span style='color:#ff4238'>**F**</span><span style='color:#ffdc00'>**r**</span><span style='color:#42a2d6'>**i**</span><span style='color:#7a0006'>**e**</span><span style='color:#fff5bd'>**n**</span><span style='color:#00007e'></span><span style='color:#ff4238'>**d**</span>**s**</span>. Chandler's importance was determined using degree centrality<br>for the presented characters. The thicker the edge, the more episodes the connected characters appear in together.",
+       caption = "**Data**: Friends | **Graphic**: Sung Inkyung") +
+  scale_edge_width_continuous(range = c(0.5, 6)) +
+  scale_edge_color_identity() +
+  scale_color_identity() +
+  scale_alpha_identity() +
+  scale_fill_identity() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title = element_markdown(family = "Courier Prime",
+                                      size = 20),
+        plot.subtitle = element_markdown(family = "Poppins",
+                                         size = 12),
+        plot.caption = element_markdown(family = "Courier Prime",
+                                        size = 11))
+
+ggsave("W37_Friends_Chandler.png", width = 35, height = 19, units = "cm")
+       
+```
+

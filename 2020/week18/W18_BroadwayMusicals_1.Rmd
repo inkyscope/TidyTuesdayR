@@ -1,0 +1,150 @@
+---
+title: "W18 Broadway Musicals"
+author: "Sung Inkyung"
+date: '2020 6 6'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggbump)
+library(ggtext)
+library(showtext)
+
+font_add_google("Oswald")
+font_add_google("Saira")
+font_add_google("Lora")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+grosses <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/grosses.csv')
+```
+
+
+```{r}
+top10_2019 <- grosses %>% 
+  mutate(year = year(week_ending)) %>% 
+  filter(year == 2019) %>% 
+  group_by(show) %>% 
+  summarise(gross = sum(weekly_gross)) %>% 
+  mutate(rank = rank(-gross, ties.method = "first")) %>% 
+  filter(rank < 11) %>% 
+  select(show)
+
+shows <- grosses %>% 
+  mutate(year = year(week_ending)) %>% 
+  filter(year >= 2010 & year <= 2019) %>% 
+  group_by(year, show) %>% 
+  summarise(gross = sum(weekly_gross)) %>% 
+  mutate(rank = rank(-gross, ties.method = "first")) %>% 
+  arrange(year, rank) %>% 
+  inner_join(top10_2019) 
+
+first_show <- shows %>% 
+  group_by(show) %>% 
+  mutate(first_year = rank(year)) %>% 
+  filter(first_year == 1)
+```
+
+```{r}
+plot <- shows %>% 
+  ggplot(aes(year, rank, color = show,
+             group = show)) +
+   annotate(
+    "text",
+    x = 2016,
+    y = 35,
+    label = "Broadway Musicals",
+    family = "Oswald",
+    fontface = "bold",
+    color = "gray20",
+    size = 73) +
+  geom_point(data = shows %>% filter(year == 2019),
+             size = 4,
+             shape = 21,
+             fill = "black",
+             stroke = 1) +
+  geom_point(data = first_show,
+             aes(year, rank), 
+             size = 3.5) +
+  geom_bump(smooth = 7, size = 1.2) +
+  geom_text(data = shows %>% filter(year == 2019),
+            aes(label = rank), 
+            color = "gray65",
+            family = "Saira",
+            size = 7,
+            vjust = .37) +
+  geom_text(data = first_show,
+            aes(label = rank), color = "gray65",
+            family = "Saira",
+            fontface = "bold",
+            size = 8,
+            hjust = 1.5) +
+  geom_text(data = shows %>% filter(year == 2019),
+            aes(label = str_trunc(show, 40)), 
+            family = "Saira",
+            size = 8,
+            hjust = 0,
+            nudge_x = .25, 
+            vjust = .25) +
+  scale_x_continuous(limits = c(2010, 2022),
+                     breaks = seq(2010, 2019, 3)) +
+  scale_y_reverse() +
+  scale_color_manual(
+    values = c("Hamilton" = "#a16526", 
+               "The Lion King" = "#f95404", 
+               "To Kill A Mockingbird" = "#676564", 
+               "Wicked" = "#4dc331", 
+               "Harry Potter and the Cursed Child, Parts One and Two" = "#d4af37", 
+               "Aladdin" = "#522a83", 
+               "Frozen" = "#ace5ee", 
+               "Ain't Too Proud-The Life and Times of the Temptations" = "#f81894",
+               "Dear Evan Hansen" = "#4372b6", 
+               "The Book of Mormon" = "#ffffff"), 
+    guide = F) +
+  coord_cartesian(clip = "off") +
+  labs(x = "",
+       y = "",
+       title = "Top 10 Broadway Musicals in 2019",
+       subtitle = "<span style='color:#a16526'>**Hamilton**</span>, <span style='color:#4372b6'>**Dear Evan Hansen**</span>, <span style='color:#676564'>**To Kill A Mockingbird**</span> jumped into the top 10 rank based total weekly gross($) drastically",
+       caption = "Source: Playbill | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "black",
+                                       color = "black"),
+    axis.text.y = element_text(color = "gray90",
+                               family = "Saira",
+                               size = 28, 
+                               margin = margin(r = 5)),
+    axis.text.x = element_text(color = "gray90",
+                               family = "Saira",
+                               size = 25),
+    plot.title = element_text(color = "gray95",
+                              family = "Oswald",
+                              size = 42,
+                              face = "bold",
+                              margin = margin(b = 7)),
+    plot.subtitle = element_markdown(color = "gray95",
+                                     family = "Lora",
+                                     size = 32,
+                                     margin = margin(b = 15)),
+    plot.caption = element_text(color = "gray45",
+                                family = "Saira",
+                                size = 21,
+                                hjust = .95,
+                                margin = margin(t = 20, b = 15)),
+    plot.margin = margin(20, 10, 10, 10))
+
+ggsave("W18_BroadwayMusicals_1.png", width = 70, height = 50, units = "cm")
+
+```
+

@@ -1,0 +1,167 @@
+---
+title: "W31 PalmerPenguins"
+author: "Sung Inkyung"
+date: '2020 8 1'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(ranger)
+```
+### source[tidymodels by julia silge] (https://juliasilge.com/blog/palmer-penguins/)
+
+```{r}
+penguins <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-28/penguins.csv')
+```
+
+
+```{r}
+penguins %>% 
+  filter(!is.na(sex),
+         !is.na(bill_length_mm),
+         !is.na(bill_depth_mm)) %>%
+  ggplot(aes(flipper_length_mm, bill_length_mm, color = sex, size = body_mass_g)) +
+  geom_point(alpha = .5) +
+  facet_wrap(~ species) +
+  scale_color_manual(values = c("#ab005a", "#1b5c9b")) +
+  theme_minimal()
+```
+
+
+```{r}
+df <- penguins %>% 
+  filter(!is.na(sex)) %>% 
+  select(-year, -island) %>% 
+  mutate_if(is.character, factor)
+```
+### Source[machine learning by KimSungBum] (https://youtu.be/lIT5-piVtRw)
+
+```{r build a model}
+
+set.seed(123)
+penguins_split <- initial_split(df, strata = sex)
+penguins_train <- training(penguins_split)
+penguins_test <- testing(penguins_split)
+
+set.seed(123)
+penguins_boot <- bootstraps(penguins_train)
+
+penguins_boot
+
+## Compare two different models, a logistic regression model and a random forest model
+
+glm_spec <- logistic_reg() %>% 
+  set_engine("glm")
+
+glm_spec
+
+
+rf_spec <- rand_forest() %>% 
+  set_mode("classification") %>% 
+  set_engine("ranger")
+
+rf_spec
+
+## workflow
+
+penguins_wf <- workflow() %>% 
+  add_formula(sex~.)
+
+penguins_wf
+
+
+## add a model, and the fit to each of the resamples
+## logistic regression
+
+glm_rs <- penguins_wf %>% 
+  add_model(glm_spec) %>% 
+  fit_resamples(resamples = penguins_boot,
+                control = control_resamples(save_pred = T))
+
+glm_rs
+
+## random forest
+rf_rs <- penguins_wf %>% 
+  add_model(rf_spec) %>% 
+  fit_resamples(
+    resamples = penguins_boot,
+    control = control_resamples(save_pred = T)
+  )
+
+rf_rs
+
+```
+
+
+```{r}
+## evaluate model
+
+collect_metrics(rf_rs)
+
+collect_metrics(glm_rs)
+```
+
+
+```{r}
+glm_rs %>% 
+  conf_mat_resampled()
+
+rf_rs %>% 
+  conf_mat_resampled()
+```
+
+
+```{r ROC curve}
+
+glm_rs %>% 
+  collect_predictions() %>% 
+  group_by(id) %>% 
+  roc_curve(sex, .pred_female) %>% 
+  ggplot(aes(1-specificity, sensitivity, color = id)) +
+  geom_abline(lty = 2, color = "gray70", size = .7) +
+  geom_path(show.legend = F, alpha = .6, size = .1) +
+  coord_equal() +
+  theme_minimal()
+           
+
+```
+
+
+```{r testing data}
+penguins_final <- penguins_wf %>% 
+  add_model(glm_spec) %>% 
+  last_fit(penguins_split)
+
+penguins_final
+```
+
+```{r}
+collect_metrics(penguins_final)
+```
+
+
+```{r}
+collect_predictions(penguins_final) %>% 
+  conf_mat(sex, .pred_class)
+
+penguins_final$.workflow[[1]] %>% 
+  tidy(exponentiate = T)
+```
+
+
+```{r}
+penguins %>% 
+  filter(!is.na(sex)) %>% 
+  ggplot(aes(bill_depth_mm, bill_length_mm, color = sex, size = body_mass_g)) +
+  geom_point(alpha = .5) +
+  facet_wrap(~ species) +
+  scale_color_manual(values = c("#ab005a", "#1b5c9b")) +
+  theme_minimal()
+```
+

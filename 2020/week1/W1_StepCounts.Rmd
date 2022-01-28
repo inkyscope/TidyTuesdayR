@@ -1,0 +1,118 @@
+---
+title: "W1 Step Counts"
+author: "Sung Inkyung"
+date: '2022 1 28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by @geokaramanis](https://github.com/gkaramanis/tidytuesday/blob/master/2021/2021-week41/seafood_consumption.R)
+```{r}
+library(tidyverse)
+library(lubridate)
+library(poissoned)
+library(showtext)
+
+font_add_google("Russo One")
+font_add_google("Oxygen")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+```
+
+
+```{r}
+df <- read.csv("C:/Users/inkyscope/Documents/projectR/30DayChartChallenge/data/inkystepcounts.csv")
+
+df_plot <- df %>% 
+  mutate(year = year(date),
+         month = month(date),
+         week = week(date),
+         day = factor(day,
+                      levels = rev(c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")))) %>% 
+  filter(year >= 2016) %>% 
+  group_by(year, month) %>% 
+  summarize(med_steps = median(steps)) %>% 
+  ungroup() %>% 
+  mutate(month = factor(month.abb[month], levels = month.abb))
+```
+
+
+```{r}
+# create poins with {poissond}
+
+plot_poissond <- df_plot %>% 
+  rowwise() %>% 
+  mutate(
+    # Divide by 30 to create less points, otherwise to many
+    s = sqrt(med_steps / 30),
+    # Crerate list with all points for every row
+    pnts = list(poisson_disc(ncols = s, nrows = s, cell_size = 1 / s))
+  ) %>% 
+  ungroup() %>% 
+  unnest() %>% 
+  # Add random angle for each point
+  mutate(angle = runif(1, 0, 360)) %>% 
+  ungroup()
+```
+
+
+```{r}
+# Fonts and colors
+f1 = "Russo One"
+f2 = "Oxygen"
+
+col_ground = "azure2"
+col_step = "darkorange4"
+col_bg = "deepskyblue4"
+col_bg2 = "burlywood1"
+
+# Plots
+ggplot() +
+  # Background for points
+  geom_tile(data = plot_poissond,
+            aes(0.5, 0.5, width = 1.07, height = 1.07),
+            fill = col_ground, color = "azure", 
+            size = 0.5, stat = "unique") +
+  geom_text(data = df_plot,
+            aes(0.5, -0.23, label = format(round(med_steps, -1), big.mark = " ")), 
+            alpha = 1, family = f2, fontface = "bold", size = 5, vjust = 0, color = col_ground) +
+  geom_point(data = plot_poissond,
+             aes(x, y, angle = angle), color = col_step,  pch = 2, size = 0.3) +
+  facet_grid(year ~ month, switch = "both") +
+  labs( title = "Personal Step counts",
+        subtitle = "Median step counts by year (2016-2021)",
+        caption = "Source: Personal Daily Record | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(panel.background = element_rect(fill = col_bg),
+        plot.background = element_rect(fill = col_bg2, color = NA),
+        strip.text.x = element_text(color = col_bg,
+                                    family = f1,
+                                  size = 12,
+                                  face = "bold",
+                                  margin = margin(t = 10)),
+        strip.text.y = element_text(color = col_bg,
+                                    family = f1,
+                                  size = 12,
+                                  face = "bold",
+                                  margin = margin(r = 10)),
+        strip.background = element_blank(),
+        plot.title = element_text(family = f1, 
+                                   size = 40,
+                                   color = col_step,
+                                  margin = margin(b = 7)),
+        plot.subtitle = element_text(family = f1, 
+                                   size = 20,
+                                   color = col_step,
+                                   margin = margin(b = 15)),
+        plot.caption = element_text(family = f2, 
+                                   size = 11,
+                                   color = col_step,
+                                   margin = margin(t = 20, b = 10)),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("W1_StepCounts.png", width = 38, height = 28, units = "cm")
+```

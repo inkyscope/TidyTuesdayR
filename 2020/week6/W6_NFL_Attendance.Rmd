@@ -1,0 +1,95 @@
+---
+title: "NFL Attendance"
+author: "Sung Inkyung"
+date: '2020 12 31'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by jwatzek] (https://github.com/jwatzek/tidytuesday/blob/master/scripts/2020-06_nfl_attendance.R)
+```{r}
+library(tidyverse)
+library(scales)
+library(showtext)
+
+font_add_google("Graduate")
+font_add_google("Karla")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+
+
+```{r}
+attendance <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-04/attendance.csv')
+
+```
+
+```{r}
+nfl <- attendance %>% 
+  group_by(team_name, year) %>% 
+  filter(row_number() == 1) %>% 
+  ungroup() %>% 
+  mutate(name = glue::glue("{team} {team_name}")) %>% 
+  pivot_longer(home:away, names_to = "location", values_to = "attendance") %>% 
+  mutate(attendance = attendance/1e3, 
+         location = factor(toupper(location), 
+                           levels = c("HOME", "AWAY"))) %>% 
+  complete(name, year, location)
+
+```
+
+
+```{r}
+plot <- nfl %>% 
+  ggplot(aes(year, fct_rev(name))) +
+  geom_tile(aes(fill = attendance), col = "black", size = .04, alpha = .8) +
+  scale_x_continuous(expand = c(.005, .005),
+                     limits = c(2000, 2020),
+                     breaks = seq(2000, 2020, by = 5)) +
+  scale_color_identity() +
+  scale_fill_gradientn(limits = c(300, 700),
+                       breaks = seq(300, 700, 100),
+                       labels = unit_format(unit = "k"),
+                       colors = terrain.colors(100),
+                       na.value = 'gray75') +
+  guides(fill = guide_colorbar(title = "Attendance",
+                               title.position = "top", 
+                               barwidth = 13,
+                               barheight = .5)) +
+  facet_wrap(~location) +
+  coord_equal() +
+  labs(x = "",
+       y = "",
+       title = "NFL Attendance by Location",
+       caption = "Source: Pro Football Reference | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title.align = 0.5,
+        legend.title = element_text(family = "Karla",
+                                    size = 12),
+        legend.text = element_text(family = "Karla",
+                                    size = 13),
+        plot.title = element_text(family = "Graduate",
+                                  size = 26,
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  margin = margin(b = 20)),
+        plot.caption = element_text(family = "Karla",
+                                    size = 12, color = "gray40",
+                                    hjust = 0.95,
+                                    margin = margin(t = 20)),
+        strip.text = element_text(family = "Graduate",
+                                  size = 15,
+                                  face = "bold"),
+        axis.text.y = element_text(family = "Karla",
+                                   size = 13),
+        panel.spacing = unit(1.5, "lines"),
+        panel.grid = element_blank(),
+        plot.margin = margin(10, 10, 10, 10))
+  
+ggsave("W6_NFL_Attendance.png", width = 26, height = 30, units = "cm")
+```

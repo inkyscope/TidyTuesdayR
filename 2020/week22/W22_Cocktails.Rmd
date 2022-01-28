@@ -1,0 +1,185 @@
+---
+title: "W22 Cocktails"
+author: "Sung Inkyung"
+date: '2020 5 27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidygraph)
+library(ggtext)
+library(igraph)
+library(ggraph)
+library(showtext)
+
+font_add_google("Comfortaa")
+font_add_google("Fjalla One")
+font_add_google("Josefin Sans")
+
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+boston_cocktails <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-26/boston_cocktails.csv')
+
+```
+
+
+```{r}
+color_cocktail <- c("Pink Lemonade", "Purple Pancho", 
+                    "Purple Passion Iced Tea", "Red Swizzle", "Golden Dawn",
+                    "Golden Eclipse", "Green Dragon Cocktail", "Green Fizz", 
+                    "Greenpoint", "Pink Rose Fizz", "Silver King Cocktail",
+                    "White Lion Cocktail", "White Rose Cocktail", "Yellow Rose Of Texas", 
+                    "Blue Devil Cocktail", "Blue Lagoon", "Blue Margarita", 
+                    "Pink Creole", "Pink Lady Cocktail","Pink Paradise", 
+                    "Purple Passion", "Red Apple","Red Raider", 
+                    "Violet Fizz", "Violet Fizz Juice", "White Lady Cocktail", 
+                    "White Lily Cocktail", "White Spider","Yellow Rattler", 
+                    "Black Cherry Chocolate", "Black Hawk", "Black Magic", 
+                    "Blue Bird", "Blue Canary", "Brown Cocktail", "Green Devil",
+                    "Green Opal", "Green Opal Cocktail", "Orange Blossom Cocktail", 
+                    "Orange Gin Fizz", "Orange Smile", "Pink Pussycat", 
+                    "Pink Squirrel Cocktail", "Purple Mask", "White Elephant", 
+                    "White Plush", "Yellowjacket","Black Hawk Cocktail", 
+                    "Black Russian", "Black Velvet", "Orange Gin Collins", 
+                    "Orange Gin Rickey", "White Lady", "White Russian", 
+                    "Orange Gin Highball", "Purple Twister")
+```
+
+```{r}
+nodes <- boston_cocktails %>% 
+  distinct(name, ingredient) %>% 
+  count(name, sort = T) %>% 
+  filter(n >= 5) %>% 
+  filter(name %in% color_cocktail)
+ 
+cocktail_list <- boston_cocktails %>% 
+  distinct(name, ingredient) %>% 
+  semi_join(nodes) %>% 
+  mutate(temp = name) %>% 
+  group_by(ingredient) %>% 
+  summarize(to = list(name))
+  
+edges <- boston_cocktails %>% 
+  distinct(name, ingredient) %>% 
+  semi_join(nodes) %>% 
+  inner_join(cocktail_list) %>% 
+  unnest(to) %>% 
+  separate_rows(to, sep = ",") %>% 
+  rename(from = name) %>% 
+  filter(from != to) %>% 
+  count(from, to, name = "size") %>% 
+  mutate(temp = ifelse(from > to, paste0(to, from), paste0(from, to))) %>% 
+  distinct(temp, .keep_all = T) %>% 
+  select(-temp)
+
+graph <- tbl_graph(nodes, edges)
+
+top <- graph %>% 
+  activate(nodes) %>% 
+  mutate(degree = centrality_degree()) %>% 
+  as_tibble() %>% 
+  top_n(1, degree) %>% 
+  pull(name)
+
+edge_pos <- which(nodes$name == top)
+
+```
+
+```{r}
+cocktail_plot <- graph %>% 
+  activate(nodes) %>% 
+  mutate(color = if_else(name == top, "darkgoldenrod3", "darkblue"),
+         stroke = if_else(name == top, 2, .5),
+         alpha = if_else(name == top, 1, .8)) %>%
+  activate(edges) %>% 
+  mutate(edge_color = if_else(from == edge_pos | to == edge_pos, "darkgoldenrod3", "bisque4"),
+         edge_alpha = if_else(from == edge_pos | to == edge_pos, 1, 0.7),
+         edge_size = if_else(from == edge_pos | to == edge_pos, 2, 0.5)) %>% 
+  ggraph(layout = "linear") + 
+  geom_edge_arc(aes(edge_alpha = edge_alpha,
+                    edge_color = edge_color, 
+                    edge_width = size), 
+                show.legend = FALSE) +
+  geom_node_point(aes(fill = "bisque3", color = color, 
+                      stroke = stroke), 
+                  shape = 21, 
+                  size = 9) +
+  geom_node_text(aes(label = name), repel = T, color = "white", family = "Josefin Sans", size = 6) +
+  labs(x = NULL,
+       y = NULL,
+       title = "Boston Cocktail Names with Colors",
+       subtitle = "<span style='color:darkgoldenrod3'>**Golden Dawn**</span><span style = 'color:bisque2'> is most connected in relation to Boston cocktail names with colors.</span>",
+       caption = "Source: Kaggle & Kaggle | Graphic: Sung Inkyung") +
+  scale_edge_width_continuous(range = c(0.5, 6)) +
+  scale_edge_color_identity() +
+  scale_color_identity() +
+  scale_alpha_identity() +
+  scale_fill_identity() +
+  theme(plot.background = element_rect(fill = "darkorchid4", color = NA),
+        panel.background = element_rect(fill = "darkorchid4", color = NA),
+        plot.title = element_text(color = "darkseagreen2",
+                                  family = "Comfortaa",
+                                  size = 30, face = "bold",
+                                  margin = margin(b = 10)),
+        plot.subtitle = element_markdown(family = "Fjalla One",
+                                         size = 21,
+                                         margin = margin(b = 15)),
+        plot.caption = element_text(color = "azure3",
+                                    family = "Josefin Sans",
+                                size = 13,
+                                hjust = 1,
+                                margin = margin(t = 20, b = 10)),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        plot.margin = margin(10, 20, 10, 20))
+        
+        
+ggsave("W22_Cocktails.png", width = 50, height = 28, units = "cm")
+```
+
+
+```{r do not run}
+# color based cocktails
+cocktail_colors <- boston_cocktails %>% 
+  filter(name %in% color_cocktail)
+
+pairs <- cocktail_colors %>% 
+  distinct(name, ingredient) %>% 
+  mutate(ingredient = tolower(ingredient)) %>% 
+  add_count(ingredient) %>% 
+  filter(n >= 3) %>% 
+  pairwise_cor(ingredient, name, sort = T)
+
+gin_plot <- pairs %>% 
+  filter(item1 == "gin") %>% 
+  head(10) %>% 
+  mutate(item2 = fct_reorder(item2, correlation)) %>% 
+  ggplot(aes(correlation, item2)) +
+  geom_col() +
+  labs(title = "What ingredients are most correlated with gin?") +
+  theme_minimal()
+
+
+pairs %>% 
+  head(150) %>% 
+  graph_from_data_frame() %>% 
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_color = correlation), edge_width = 1) +
+  geom_node_point(aes(label = name), repel = T) +
+  geom_node_text(aes(label = name), repel = T) +
+  scale_edge_color_continuous(low = "#feab8a", high = "#213e52") +
+  labs(title = "Correlation of  Boston Cocktails Names including Colors",
+       caption = "Source: Kaggle & Kaggle | Graphic: Sung Inkyung") +
+  theme_void()
+```
+

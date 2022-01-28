@@ -1,0 +1,91 @@
+---
+title: "W7 Booking Hotels"
+author: "Sung Inkyung"
+date: '2020 2 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggalluvial)
+library(showtext)
+
+font_add_google("Rajdhani")
+font_add_google("Lato")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+hotels <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-11/hotels.csv")
+```
+
+
+```{r}
+hotel_booked <- hotels %>% 
+  filter(is_canceled == 0) %>% 
+  mutate(children = case_when(
+      children + babies > 0 ~ "children",
+      TRUE ~ "none"),
+      required_car_parking_spaces = case_when(
+      required_car_parking_spaces > 0 ~ "parking",
+      TRUE ~ "none")) %>% 
+  select(-is_canceled, -reservation_status, -babies)
+
+```
+
+```{r}
+plot <- hotel_booked %>% 
+  mutate(arrival_date_month = factor(arrival_date_month,
+                                     levels = month.name)) %>% 
+  count(hotel, arrival_date_month, children) %>% 
+  group_by(hotel, children) %>% 
+  mutate(proportion = n / sum(n)) %>% 
+  ggplot(aes(y= proportion, axis1 = arrival_date_month, 
+             axis2 = hotel)) +
+  geom_alluvium(aes(fill = children))+
+  geom_stratum(fill = "grey70", color = "grey20", 
+               size = 0.1, width = 0.4) +
+  geom_text(stat = "stratum",
+            family = "Rajdhani",
+            color = "gray20",
+            size = 4,
+            infer.label = TRUE) +
+  scale_x_discrete(limits = c("Children", "Hotel"),
+                   expand = c(.05, .05),
+                   position = "top") +
+  scale_fill_manual(values = c("#aadd33", "#99aaaa"),
+                    name = "Children") +
+  guides(fill = guide_legend(title.position = "top",
+                               title.hjust = 0.5, 
+                               label.position = "bottom")) +
+  theme_void() +
+  labs(x = " ",
+       y = " ",
+       title = "Monthly Distribution of Booking Hotels",
+       subtitle = "Summer is a peak season to book hotels with children") +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(6, "lines"),
+        legend.key.height = unit(0.75, "lines"),
+        legend.spacing.x = unit(0.5, 'cm'),
+        legend.title = element_text(size = 10, face = "bold"),
+        legend.text = element_text(size = 9),
+        plot.title = element_text(family = "Rajdhani",
+                                  size = 23,
+                                  face = "bold",
+                                  hjust = 0.5),
+        plot.subtitle = element_text(family = "Lato",
+                                  size = 15.5,
+                                  hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank()) 
+    
+ggsave("W7_Hotelbookings.png", width = 22, height = 16, units = "cm")
+
+```

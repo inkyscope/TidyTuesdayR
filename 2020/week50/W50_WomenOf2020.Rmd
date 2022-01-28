@@ -1,0 +1,178 @@
+---
+title: "W50 Women of 2020"
+author: "Sung Inkyung"
+date: '2020 12 14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(rnaturalearth)
+library(tidygraph)
+library(ggraph)
+library(ggimage)
+library(ggtext)
+library(glue)
+library(showtext)
+
+font_add_google("Julius Sans One")
+font_add_google("Merriweather Sans")
+font_add_google("Rajdhani")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+```
+### Source[tidytuesday by Jake Kaupp] (https://github.com/jkaupp/tidytuesdays/blob/master/2020/week50/R/analysis.R)
+### Source[tidytuesday by Kaustav Sen] (https://github.com/kaustavSen/tidytuesday/blob/master/2020/week_50_women_2020.R)
+### Source[tidytuesday by geo karamanis] (https://github.com/gkaramanis/tidytuesday/blob/master/2020-week50/women.R)
+
+```{r}
+
+women <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-12-08/women.csv')
+
+countries <- 
+  rnaturalearth::ne_countries(returnclass = "sf") %>% 
+  as_tibble() %>%
+  select(name, continent) %>% 
+  mutate(
+    name = case_when(
+      name == "United States" ~ "US",
+      name == "United Kingdom" ~ "UK",
+      name == "United Arab Emirates" ~ "UAE",
+      name == "Dem. Rep. Korea" ~ "South Korea",
+      name == "Ireland" ~ "Republic of Ireland",
+      name == "Dem. Rep. Congo" ~ "DR Congo",
+      TRUE ~ name
+    )
+  ) %>% 
+  add_row(
+    name = c("Iraq/UK", "Hong Kong", "Exiled Uighur from Ghulja (in Chinese, Yining)", "Northern Ireland", "Wales, UK", "Singapore"),
+    continent = c("Asia", "Asia", "Asia", "Europe", "Europe", "Asia")
+  )
+```
+
+
+```{r}
+women <- women %>% 
+  left_join(countries, by = c("country"=  "name")) %>% 
+  filter(name != "Unsung hero") %>% 
+  mutate(
+    continent = case_when(
+      continent == "North America" ~ "North\nAmerica",
+      continent == "South America" ~ "South\nAmerica",
+      TRUE ~ continent
+    ),
+    continent_category = as.character(glue("{continent}_{category}"))
+  )
+```
+
+
+```{r}
+nodes <- 
+  tibble(
+  node = c("root", unique(women$continent), unique(women$continent_category))
+  ) %>% 
+  mutate(
+    levels = case_when(
+      node == "root" ~ 1,
+      node %in% unique(women$continent) ~ 2,
+      node %in% unique(women$continent_category) ~ 3,
+      TRUE ~ 4
+    )
+  ) %>% 
+  left_join(
+    count(women, continent, category, name = "number") %>% 
+      mutate(continent_category = as.character(glue("{continent}_{category}"))),
+    by = c("node" = "continent_category")
+  ) %>% 
+  mutate(
+    continent = factor(continent, levels = c("Africa", "Asia", "Europe", "North\nAmerica", "South\nAmerica", "Oceania")),
+    continent = fct_rev(continent)
+  ) %>% 
+  arrange(levels, continent, category)
+```
+
+```{r}
+edges_level_1 <- women %>% 
+  distinct(continent) %>% 
+  mutate(from = "root") %>% 
+  rename(to = continent)
+
+edges_level_2 <- 
+  women %>%
+  distinct(continent, continent_category) %>% 
+  arrange(continent, continent_category) %>%
+  select(from = continent, to = continent_category)
+
+color_edges <- tibble(
+  continent = c("Africa", "Asia", "Europe", "North\nAmerica", "South\nAmerica", "Oceania"),
+  color = c("#fd6a02", "#f9d71c", "#0504aa", "#0cbb06", "#ff007f", "#ff0000"))
+
+
+edges <- 
+  bind_rows(edges_level_1, edges_level_2) %>% 
+  left_join(color_edges, by = c("to" = "continent")) %>% 
+  left_join(color_edges, by = c("from" = "continent")) %>% 
+  mutate(color = coalesce(color.x, color.y)) %>% 
+  select(-color.x, -color.y)
+
+graph_data <- tbl_graph(nodes, edges)
+
+img <- here::here("2020", "images", "Unsung hero.png")
+
+ggraph(graph_data, layout = "partition") +
+  geom_edge_diagonal(aes(color = color), alpha = 0.5) +
+  geom_node_text(aes(x = x, y = y, 
+                     label = category, 
+                     filter = levels == 3, color = continent), 
+                 family = "Rajdhani",
+                 size = 11, 
+                 fontface = "bold",
+                 hjust = 1, vjust = 0.5, lineheight = 0.9) +
+  geom_node_text(aes(label = node, filter = levels == 2, color = node), 
+                 family = "Merriweather Sans",
+                 size = 9, vjust = 0.5, fontface = "bold") +
+  geom_node_point(aes(filter = levels == 2, color = node), size = 60, alpha = 0.4) +
+  geom_node_point(aes(filter = levels == 2, color = node), size = 64, shape = 1) +
+  geom_node_range(aes(y = y + 0.02, yend = y + 1.5 * number/max(nodes$number, na.rm = TRUE), 
+                      x = x, xend = x, filter = levels == 3, color = continent), 
+                  size = 9) +
+  geom_node_text(aes(x = x, y = y + 1.5 * number/max(nodes$number, na.rm = TRUE), 
+                     label = number, filter = levels == 3, color = continent), 
+                 nudge_y = 0.025, size = 10,
+                 family = "Rajdhani",
+                 fontface = "bold", 
+                 hjust = 0, 
+                 vjust = 0.5) +
+  geom_image(data = filter(nodes, levels == 1), 
+             aes(x = 10, y = 1.32, image = img), 
+             size = 0.09, asp = 1.8) + 
+  scale_color_manual(values = c("Africa" = "#fd6a02", 
+                                "Asia" = "#f9d71c", 
+                                "Europe" = "#0504aa", 
+                                "North\nAmerica"= "#0cbb06", 
+                                "South\nAmerica" = "#ff007f", 
+                                "Oceania" = "#ff0000")) +
+  scale_edge_color_identity() +
+  coord_flip() +
+  labs(title = "100 Women of 2020 Revealed by BBC",
+       caption = "**Source:** BBC | **Graphic:** Sung Inkyung") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#fffdfa",
+                                        color = "transparent"),
+        plot.title = element_markdown(color = "#2A363B", 
+                                      family = "Julius Sans One", 
+                                      size = 60, hjust = 0.5),
+        plot.caption = element_markdown(color = "grey45", 
+                                        family = "Rajdhani",
+                                        size = 28),
+        plot.margin = margin(30, 30, 30, 30)) 
+
+ggsave("W50_WomenOf2020.png", width = 65, height = 60, units = "cm")
+
+```
+

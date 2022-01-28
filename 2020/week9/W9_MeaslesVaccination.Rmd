@@ -1,0 +1,74 @@
+---
+title: "W9 Measles Vaccination"
+author: "Sung Inkyung"
+date: '2020 2 29'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(ggtext)
+library(showtext)
+
+font_add_google("Merriweather")
+font_add_google("Quicksand")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+```{r}
+measles <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-25/measles.csv')
+
+measles %>% 
+  filter(!is.na(city)) %>% 
+  count(mmr, sort = TRUE) 
+```
+
+
+```{r}
+measles_vac <- measles %>% 
+  filter(mmr > 0) %>% 
+  drop_na(enroll) %>% 
+  mutate(threshold = ifelse(mmr > 95, "pass", "fail")) %>% 
+  group_by(city) %>% 
+  mutate(avg = mean(mmr))
+
+n_distinct(measles_vac$city)
+```
+
+
+```{r}
+measles_vac %>% 
+  ggplot(aes(enroll, mmr, color = threshold)) +
+  geom_point(alpha = 0.2,
+             show.legend = FALSE) +
+  scale_color_manual(values = c("pass" = "#32a852", "fail" = "#d31a2c")) +
+  scale_y_continuous(breaks = seq(0, 100, 20)) +
+  geom_hline(yintercept = 95, linetype = 2, size = 0.75, color = "#5a175d") +
+  labs(x = "School enrollment",
+       y = "MMR immunisation rate(%)",
+       title = "Average Rates of Measles, Mumps, and Rubella (MMR)\nImmunisation Across US Schools in 3207 cities",
+       subtitle = "Accoridng to the CDC, <span style = 'color:#5a175d'>**95%**</span> of a population needs to be vaccinated to stop<br>the spread of measles and preserve herd immunity.<br>Many cities appear to fall below this threshold.",
+       caption = "Source: The Wall Street Journal\nGraphic: Sung Inkyung") +
+  theme_minimal()+
+  theme(plot.title = element_text(family = "Merriweather",
+                                  size = 16),
+        plot.subtitle = element_markdown(family = "Quicksand",
+                                         size = 12,
+                                         lineheight = 1.1,
+                                         margin = margin(b = 15)),
+        plot.caption = element_text(family = "Quicksand",
+                                    size = 8, color = "gray40",
+                                    margin = margin(t = 15)),
+        plot.margin = margin(10, 10, 10, 10),
+        axis.title.y = element_text(size = 9),
+        axis.title.x = element_text(size = 9))
+
+ggsave("W9_MeaslesVaccination.png", width = 19, height = 17, units = "cm")
+```

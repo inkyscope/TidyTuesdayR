@@ -1,0 +1,116 @@
+---
+title: "AusFires"
+author: "Sung Inkyung"
+date: '2020 1 14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(lubridate)
+library(scales)
+library(glue)
+library(patchwork)
+library(cowplot)
+```
+
+### Source[#TidyTuesday by @geokaramanis] (https://github.com/gkaramanis/tidytuesday/tree/master/2020-week02)
+```{r}
+rainfall <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-07/rainfall.csv')
+
+```
+
+```{r}
+yearly_rainfall <- rainfall %>% 
+  na.omit() %>% 
+  filter(year < 2020) %>% 
+  group_by(city_name, year, month) %>%
+  summarise(rainfall = mean(rainfall, na.rm = T)) %>% 
+  group_by(city_name, year) %>% 
+  summarise(rainfall_total = sum(rainfall, na.rm = T)) %>% 
+  ungroup()
+
+yearly_rainfall %>% 
+  filter(rainfall_total == min(rainfall_total))
+
+```
+
+
+```{r}
+yearly_rainfall_plot <- rainfall %>% 
+  group_by(year, month) %>% 
+  summarise(rainfall = mean(rainfall, na.rm = T)) %>%
+  group_by(year) %>%
+  summarise(rainfall = sum(rainfall, na.rm = T)) %>%
+  filter(year >= 1900 & year < 2020) %>%
+  ungroup() %>% # 1957: 17.9mm
+  ggplot(aes(year, rainfall)) +
+  geom_point(color =  "#afc3cc",
+             na.rm = TRUE) +
+  geom_path(color =  "#afc3cc",
+            na.rm = TRUE) +
+  geom_mark_circle(aes(filter = year == 1957,
+                       label = glue("total rainfall: {round(rainfall, 2)} mm")),
+                   label.buffer = unit(3, "cm"),
+                   label.fontface = 10,
+                   con.linetype = 2) +
+  geom_mark_circle(aes(filter = year == 2019,
+                       label = glue("total rainfall: {round(rainfall, 2)} mm"),
+                       description = "Annual rainfall at a 60-year low"),
+                   label.buffer = unit(3, "cm"),
+                   label.fontface = 10,
+                   con.linetype = 2) +
+  scale_x_continuous(limits = c(1900, 2020),
+                     breaks = seq(1900, 2020, 10)) +
+  scale_y_continuous(limits = c(0, 50),
+                     breaks = seq(0, 50, 10)) +
+  labs(x = "",
+       y = "rainfall (mm)",
+       title = "Yearly average rainfall variability in Australia from 1900 to 2019",
+       subtitle = "2019 was Australia's driest year on record since 1957(17.97 mm)") +
+  theme_minimal_grid(12)
+```
+
+```{r}
+city_rainfall <- yearly_rainfall %>% 
+  ggplot() +
+  geom_linerange(aes(x = year, ymin = 0, ymax = rainfall_total),
+                 color = "#afc3cc") +
+  scale_x_continuous(expand = c(0, 0),
+                     breaks = seq(1870, 2020, 20)) +
+  scale_y_reverse(expand = c(0, 0)) +
+  facet_wrap(~city_name, ncol = 3) +
+  labs(x = " ",
+       y = "Rainfall(mm)",
+       title = "Yearly average rainfall by Australia cities from 1870 to 2019",
+       caption = "Source: Austrian Bureau of Meteorology") +
+ # theme_linedraw() +
+  theme(panel.background = element_rect(fill = "#e25822", 
+                                        color = "#e25822"),
+        panel.spacing = unit(1, "lines"),
+        strip.background = element_rect(fill = "#afc3cc",
+                                        color = "#afc3cc"),
+        strip.text = element_text(size = 13,
+                                  face = "bold",
+                                  color = "#60709c"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 9),
+        axis.text.x = element_text(size = 7),
+        plot.caption = element_text(color = "#60709c"))
+```
+
+
+```{r}
+plot <- (yearly_rainfall_plot/city_rainfall)
+
+ggsave("W2_AustraliaRainfall.png", width = 25, height = 23, units = "cm")
+
+```
+
