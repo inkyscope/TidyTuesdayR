@@ -1,0 +1,105 @@
+---
+title: "W36 Medium Article Metadata"
+author: "sung inkyung"
+date: '2020 4 5'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source [tidytuesday by david robinson] (https://github.com/dgrtwo/data-screencasts/blob/master/medium-datasci.Rmd)
+```{r}
+library(tidyverse)
+library(ggrepel)
+library(tidytext)
+library(widyr)
+library(ggraph)
+library(igraph)
+library(showtext)
+
+font_add_google("Staatliches")
+font_add_google("Saira")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+medium_datasci <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-12-04/medium_datasci.csv")
+```
+
+
+```{r}
+medium_processed <- medium_datasci %>% 
+  select(-x1) %>% 
+  mutate(post_id = row_number())
+
+medium_processed %>% 
+  summarize_at(vars(starts_with("tag_")), sum)
+
+
+medium_words <- medium_processed %>% 
+  filter(!is.na(title)) %>% 
+  select(post_id,
+         title, 
+         subtitle, 
+         year, 
+         reading_time, 
+         claps) %>% 
+  unnest_tokens(word, title) %>% 
+  anti_join(stop_words, by = "word") %>% 
+  filter(!(word %in% c("de", "la", "para")),
+         str_detect(word, "[a-z]"))
+
+medium_words_count <- medium_words %>%
+  add_count(word) %>%
+  filter(n >= 500)  
+
+tag_claps <- medium_words_count %>% 
+  group_by(word) %>% 
+  summarize(median_claps = median(claps),
+            occurrences = n()) %>% 
+  arrange(desc(median_claps)) 
+
+```
+
+
+```{r}
+top_word_cors <- medium_words_count %>% 
+  select(post_id, word) %>% 
+  pairwise_cor(word, post_id, sort = TRUE) %>% 
+  slice_max(n = 100, order_by = correlation)
+
+vertices <- tag_claps %>% 
+  filter(word %in% top_word_cors$item1 | word %in%top_word_cors$item2)
+
+set.seed(123)
+
+plot <- top_word_cors %>% 
+  graph_from_data_frame(vertices = vertices) %>% 
+  ggraph() +
+  geom_edge_link() +
+  geom_node_point(aes(size= occurrences, color = median_claps)) +
+  geom_node_text(aes(label = name), family = "Saira", size = 5.5, hjust = 1,
+                 repel = TRUE) +
+  scale_color_gradient(low = "#104e8b",
+                       high = "#ffce00") +
+  labs(title = "Pairwise Correlation of Words in the Titles of Medium Data Science Articles",
+       caption = "Source: kaggle.com | Graphic: Sung Inkyung",
+       size = "Occurrences",
+       color = "Median of Claps") +
+  theme_void() +
+  theme(plot.title = element_text(family = "Staatliches",
+                                  size = 25,
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(family = "Saira",
+                                    size = 13,
+                                    color = "gray45"),
+        plot.margin = margin(20, 20, 20, 20)) 
+
+ggsave("W36_Medium Article Metadata.png", width = 30, height = 30, units = "cm")
+```
+

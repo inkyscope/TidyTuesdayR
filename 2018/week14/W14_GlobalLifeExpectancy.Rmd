@@ -1,7 +1,7 @@
 ---
-title: "Untitled"
+title: "W14 Global Life Expectancy"
 author: "Sung Inkyung"
-date: '2020 8 17 '
+date: '2020 8 17'
 output: html_document
 ---
 
@@ -12,28 +12,29 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(tidyverse)
 library(countrycode)
+library(viridis)
+library(showtext)
+
+font_add_google("Bebas Neue")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
 ```
 
 
 ```{r}
 life_expectancy <- read.csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2018/2018-07-03/week14_global_life_expectancy.csv")
 
-life_expectancy <- life_expectancy %>% 
+df <- life_expectancy %>% 
   mutate(continent = countrycode(sourcevar = country,
                                  origin = "country.name",
                                  destination = "continent")) %>% 
   filter(!is.na(continent))
-
-life_expectancy %>% 
-  count(year, sort = T) %>% 
-  arrange(year)
-
-
 ```
-```{r}
-library(viridis)
 
-plot_life <- life_expectancy %>% 
+```{r}
+plot_life <- df %>% 
   filter(year > 1950) %>% 
   ggplot(aes(code, year, fill = life_expectancy)) +
   geom_tile() +
@@ -48,25 +49,36 @@ plot_life <- life_expectancy %>%
                                title.position = "top")) +
   labs(x = "",
        y = "",
-       title = "Global Life Expectancy from 1950 to 2015",
+       title = "Global Life Expectancy 1950 - 2015",
        caption = "Source: oneworldindata.org | Graphic: Sung Inkyung") +
   theme_minimal() +
   theme(legend.position = "bottom",
         legend.direction = "horizontal",
         legend.key.width = unit(3.5, "line"),
         legend.key.height = unit(.7, "line"),
-        plot.title = element_text(size = 22,
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 11),
+        plot.title = element_text(family = "Bebas Neue",
+                                  size = 35,
                                   face = "bold",
-                                  margin = margin(b = 18)),
-        axis.text.x = element_text(angle = 90, 
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        plot.caption  = element_text(family = "Poppins",
+                                     size = 12,
+                                     color = "gray45",
+                                     margin = margin(t = 10)),
+        axis.text.x = element_text(family = "Poppins",
+                                   angle = 90, 
                                    vjust = .5, 
-                                   size = 6),
-        axis.text.y = element_text(size = 7),
+                                   size = 9),
+        axis.text.y = element_text(family = "Poppins",
+                                   size = 9),
         axis.ticks = element_line(color = "gray60"),
-        strip.text.x = element_text(size = 12, 
+        strip.text.x = element_text(family = "Bebas Neue",
+                                    size = 17, 
                                     hjust = 0, 
                                     face = "bold"))
   
-  ggsave(here::here("2018", "week_14", "W14_GlobalLifeExpectancy.png"), width = 21, height = 27, units = "cm")
+  ggsave("W14_GlobalLifeExpectancy.png", width = 35, height = 30, units = "cm")
 ```
 

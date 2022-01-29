@@ -1,7 +1,7 @@
 ---
-title: "AlcoholConsumption"
+title: "W13 Alcohol Consumption"
 author: "Sung Inkyung"
-date: '2020 8 20 '
+date: '2020 8 20'
 output: html_document
 ---
 
@@ -11,11 +11,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(tidyverse)
+library(showtext)
+
+font_add_google("Bebas Neue")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
 ```
 
 
 ```{r}
-alcohols <- read.csv(here::here("2018/week_13/AlcoholConsumption.csv"))
+alcohols <- read.csv("C:/Users/inkyscope/Documents/projectR/datavizRscope/2018/week13/data/AlcoholConsumption.csv")
 ```
 
 
@@ -33,14 +40,19 @@ df <- alcohols %>%
 
 
 ```{r}
+f1 = "Bebas Neue"
+f2 = "Poppins"
+
 plot_beer <- df %>% 
   filter(alcohol == "beer_servings") %>% 
   ggplot(aes(axis_x, axis_y)) +
-  geom_point(aes(size = value)) +
+  geom_point(aes(size = value),
+             color = "darkgoldenrod2") +
   scale_size(range = c(0, 17)) +
   geom_text(aes(label = label),
-            size = 2.5, 
-            nudge_y = -0.4) +
+            family = f2,
+            size = 3.5, 
+            nudge_y = -0.5) +
   labs(x = "",
        y = "",
        title = "Beer Consumption by Country",
@@ -49,26 +61,32 @@ plot_beer <- df %>%
   theme_minimal() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
-        plot.title = element_text(size = 25, 
+        plot.title = element_text(family = f1, 
+                                  size = 35, 
                                   face = "bold",
                                   hjust = .5),
-        plot.subtitle = element_text(size = 13,
+        plot.subtitle = element_text(family = f2,
+                                     size = 20,
                                      hjust = .5),
-        plot.caption = element_text(size = 9),
+        plot.caption = element_text(family = f2,
+                                    size = 12,
+                                    color = "gray45"),
         axis.text = element_blank(),
         plot.margin = margin(20, 10, 10, 10))
 
-ggsave(here::here("2018", "week_13", "W13_BeerConsumtion.png"),  width = 22, height = 30, units = "cm", dpi = 300)
+ggsave("W13_BeerConsumption.png",  width = 30, height = 32, units = "cm", dpi = 300)
 ```
 
 ```{r}
 plot_wine <- df %>% 
   filter(alcohol == "wine_servings") %>% 
   ggplot(aes(axis_x, axis_y)) +
-  geom_point(aes(size = value)) +
+  geom_point(aes(size = value),
+             color = "deeppink4") +
   scale_size(range = c(0, 17)) +
   geom_text(aes(label = label),
-            size = 2.5, 
+            family = f2,
+            size = 3.5, 
             nudge_y = -0.5) +
   labs(x = "",
        y = "",
@@ -78,26 +96,32 @@ plot_wine <- df %>%
   theme_minimal() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
-        plot.title = element_text(size = 25, 
+        plot.title = element_text(family = f1,
+                                  size = 35, 
                                   face = "bold",
                                   hjust = .5),
-        plot.subtitle = element_text(size = 13,
+        plot.subtitle = element_text(family = f2,
+                                     size = 20,
                                      hjust = .5),
-        plot.caption = element_text(size = 9),
+        plot.caption = element_text(family = f2,
+                                    size = 12,
+                                    color = "gray45"),
         axis.text = element_blank(),
         plot.margin = margin(20, 10, 10, 10))
 
-ggsave(here::here("2018", "week_13", "W13_WineConsumtion.png"),  width = 22, height = 30, units = "cm", dpi = 300)
+ggsave("W13_WineConsumption.png",  width = 40, height = 33, units = "cm")
 ```
 
 ```{r}
 plot_spirit <- df %>% 
   filter(alcohol == "spirit_servings") %>% 
   ggplot(aes(axis_x, axis_y)) +
-  geom_point(aes(size = value)) +
+  geom_point(aes(size = value),
+             color = "aquamarine3") +
   scale_size(range = c(0, 17)) +
   geom_text(aes(label = label),
-            size = 2.5, 
+            family = f2,
+            size = 3.5, 
             nudge_y = -0.4) +
   labs(x = "",
        y = "",
@@ -107,15 +131,19 @@ plot_spirit <- df %>%
   theme_minimal() +
   theme(legend.position = "none",
         panel.grid = element_blank(),
-        plot.title = element_text(size = 25, 
+        plot.title = element_text(family = f1,
+                                  size = 35, 
                                   face = "bold",
                                   hjust = .5),
-        plot.subtitle = element_text(size = 13,
+        plot.subtitle = element_text(family = f2,
+                                     size = 20,
                                      hjust = .5),
-        plot.caption = element_text(size = 9),
+        plot.caption = element_text(family = f2,
+                                    size = 12,
+                                    color = "gray45"),
         axis.text = element_blank(),
         plot.margin = margin(20, 10, 10, 10))
 
-ggsave(here::here("2018", "week_13", "W13_SpiritConsumtion.png"),  width = 22, height = 30, units = "cm", dpi = 300)
+ggsave("W13_SpiritConsumption.png",  width = 35, height = 32, units = "cm")
 ```
 
