@@ -1,0 +1,110 @@
+---
+title: "W20 Nobel Prize Winners"
+author: "sung inkyung"
+date: "2019 5 27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source[datascreencast by david robinson](https://github.com/dgrtwo/data-screencasts/blob/master/nobel-prize.Rmd)        
+```{r}
+library(tidyverse)
+library(ggtext)
+library(lubridate)
+library(gghighlight)
+library(MetBrewer)
+library(patchwork)
+library(showtext)
+
+font_add_google("Anton")
+font_add_google("Fira Sans Condensed")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+```{r}
+nobel_winners <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-14/nobel_winners.csv") %>% 
+  distinct(full_name, prize_year, category, .keep_all = TRUE) %>%   
+  mutate(decade = 10 * (prize_year %/% 10),
+         age = prize_year - year(birth_date))
+```
+
+
+```{r}
+p1 <- nobel_winners %>% 
+  group_by(decade, category) %>% 
+  count(decade, category) %>% 
+  mutate(percent = n / sum(n)) %>% 
+  ungroup() %>% 
+  ggplot(aes(decade, n, fill = category)) +
+  geom_col(show.legend = F) + 
+  scale_fill_manual(values = met.brewer("Juarez")) +
+  gghighlight() +
+  facet_wrap(~category) +
+  labs(title = "Category distribution in Nobel prize",
+       x = " ",
+       y = " ") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(family = "Anton",
+                                  size = 18,
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        strip.text = element_text(family = "Fira Sans Condensed",
+                                  size = 12,
+                                  face = "bold"),
+        axis.text.x = element_text(family = "Fira Sans Condensed",
+                                   size = 9,
+                                   color = "gray40"),
+        axis.text.y = element_text(family = "Fira Sans Condensed",
+                                   size = 10,
+                                   color = "gray40"),
+        panel.grid = element_blank()) 
+
+p2 <- nobel_winners %>% 
+  group_by(decade, category) %>% 
+  count(decade,
+        category,
+        gender= coalesce(gender, laureate_type)) %>% 
+  mutate(percent = n / sum(n)) %>% 
+  ungroup() %>% 
+  ggplot(aes(decade, n, fill = gender)) +
+  geom_col(show.legend = F) + 
+  scale_fill_manual(values = c("#ff73c1", "#0096b7", "#f7c56e")) +
+  gghighlight() +
+  facet_wrap(~ category) +
+  labs(title = "<span style = 'color:#ff73c1'>Female</span>, <span style = 'color:#0096b7'>Male</span>, <span style = 'color:#f7c56e'>Organization</span> distribution in nobel prize",
+       x = " ",
+       y = " ") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_markdown(family = "Anton",
+                                      size = 18,
+                                      hjust = 0.5,
+                                      margin = margin(b = 15)),
+        strip.text = element_text(family = "Fira Sans Condensed",
+                                  size = 12,
+                                  face = "bold"),
+        axis.text.x = element_text(family = "Fira Sans Condensed",
+                                   size = 9,
+                                   color = "gray40"),
+        axis.text.y = element_text(family = "Fira Sans Condensed",
+                                   size = 10,
+                                   color = "gray40"),
+        panel.grid = element_blank()) 
+
+patchwork <- p1 + p2
+
+patchwork + plot_annotation(
+  caption = "Source: Kaggle | Graphic: Sung Inkyung") &
+  theme(plot.caption = element_text(family = "Fira Sans Condensed",
+                                    size = 12, 
+                                    color = "grey45"),
+        panel.spacing = unit(1.2, "lines"),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W20_NobelPrizeWinners.png", width = 40, height = 20, units = "cm")
+```

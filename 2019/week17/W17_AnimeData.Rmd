@@ -1,0 +1,126 @@
+---
+title: "W17 Anime Data"
+author: "Sung Inkyung"
+date: '2019 10 28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggtext)
+library(lubridate)
+library(cowplot)
+library(patchwork)
+library(showtext)
+
+font_add_google("Oswald")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+```{r}
+anime <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-23/tidy_anime.csv") 
+```
+
+```{r}
+top_genres <- anime %>% 
+  mutate(year = year(start_date)) %>% 
+  group_by(genre) %>% 
+  tally() %>% 
+  arrange(-n) %>% 
+  top_n (20)%>% 
+  inner_join(anime) %>% 
+  mutate(title = coalesce(title_english, name)) %>% 
+  filter(type !="Unknown",
+         genre != "NA") %>% 
+  select(-c("name", "title_synonyms", "title_japanese", "background", "premiered", "broadcast",  "related", "airing")) %>% 
+  distinct(title, .keep_all = TRUE)
+```
+
+```{r}
+dokgotak <- png::readPNG("C:/Users/inkyscope/Documents/projects/tidytuesday/image/Dokgotak.png")
+a <- grid::rasterGrob(dokgotak, interpolate = T)
+
+p1 <- lm(score ~ genre, top_genres) %>%
+  tidy(conf.int = TRUE) %>% 
+  filter(term != "(Intercept)") %>% 
+  arrange(desc(estimate)) %>% 
+  extract(term, c("category", "term"), "^([a-z]+)([A-Z].*)") %>%
+  mutate(term = fct_reorder(term, estimate)) %>% 
+  ggplot(aes(estimate, term, color = term)) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high)) +
+  geom_vline(lty = 2, xintercept = 0) +
+  annotation_custom(a, xmin = -3, xmax = -1, ymin = 3.7, ymax = 16) +
+  scale_x_continuous(breaks = seq(-3, 2, 1)) +
+  geom_hline(yintercept = 0,
+             size = 7,
+             color = "black") +
+  labs(x = "Estimated effect on anime score",
+       y = "") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "white"),
+        axis.text.y = element_text(family = "Poppins",
+                                 size = 10),
+        axis.text.x = element_text(family = "Poppins",
+                                 size = 8))
+```
+
+```{r}
+anime_syn <-  anime %>% 
+  filter(genre == c("Shonen", "Seinen")) %>% 
+  select(name, genre, score, synopsis) %>% 
+  filter(!is.na(synopsis),
+         !is.na(score)) %>% 
+  unnest_tokens(word, synopsis) %>% 
+  anti_join(stop_words) %>% 
+  filter(!str_detect(word, "[0-9]"), 
+         !str_detect(word, "takumi|fujiwara|keisuke|ryousuke|takahashi|takumi|ssr|todo|juku|dr|kenzo|tenma|dr|source|mal|written|rewrite|japan|ann|tokyo|manga")) 
+  
+
+p2 <- anime_syn %>% 
+  count(word) %>% 
+  mutate(word = fct_reorder(word, n)) %>% 
+  top_n(20) %>% 
+  ggplot(aes(x = word, y = n), group = 1) +
+  geom_bar(stat = "identity",
+           fill = "#425e78",
+           show.legend = FALSE) +
+  coord_flip()+
+  labs(x = "",
+       y = "Word frequency") +
+  theme_half_open(12) +
+  theme(axis.text.y = element_text(family = "Poppins",
+                                 size = 10),
+        axis.text.x = element_text(family = "Poppins",
+                                 size = 8))
+```
+
+```{r}
+patchwork <-  p1 + p2
+patchwork + plot_annotation(
+       title = "Coefficients that predict anime score across genres",
+       subtitle = "Anime genres with the highest coefficient  are *Shounen* and *Seinen*. *Shounen* is targeted for teenage  boys and <br> *Seinen* toward young adult men. Image below is Dokgo Tak, a main character of Korean animated film listed <br> under *Shounen* and *Sports* genre. He has a rebellious spirit against social conventions and refuses to give up <br> and renew its commitment to overcoming difficulties. Its corresponding topics like friendship, family are reflected <br> in the word frequency plot from the synopsis of the relevant genres.",
+       caption = "Data: myanimelist.net | Image: koreatimes.co.kr\nGraphic: Sung Inkyung") &
+  theme(plot.title = element_text(family = "Oswald",
+                                  size = 22,
+                                  margin = margin(b = 9)),
+        plot.subtitle = element_markdown(family = "Poppins",
+                                         size = 12,
+                                         lineheight = 1.1,
+                                         margin = margin(b = 15)),
+        plot.caption = element_text(family = "Poppins",
+                                    size = 8.5,
+                                    hjust = 1,
+                                    color = "gray45"))
+
+ggsave("W17_AnimDeData_DokgoTak.png", width = 30, height = 20, units = "cm")
+```
+

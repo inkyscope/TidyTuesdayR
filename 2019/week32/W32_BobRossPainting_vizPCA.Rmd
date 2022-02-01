@@ -1,0 +1,100 @@
+---
+title: "W32 Bob Ross Painting_vizPCA"
+author: "Sung InKyung"
+date: '2019 8 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### sources:[data screencast by david robinson](https://youtu.be/sD993H5FBIY),
+
+### [Articles - Principal Component Methods in R: Practical Guide PCA - Principal Component Analysis Essentials] (http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/)
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(scales)
+library(FactoMineR)
+library(factoextra)
+theme_set(theme_minimal())
+
+bob_ross <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-06/bob-ross.csv")
+```
+
+```{r}
+bob_ross_gathered <- bob_ross %>% 
+  janitor::clean_names() %>%
+  gather(element, present, -episode, -title) %>% 
+  filter(present == 1) %>% 
+  mutate(title = str_to_title(str_remove_all(title, '"')),
+         element = str_to_title(str_replace(element, "_", " "))) %>% 
+  select(-present) %>% 
+  extract(episode, c("season", "episode_number"), "S(.*)E(.*)", convert = TRUE, remove = FALSE) %>% 
+  arrange(season, episode_number)
+```
+
+### How have Ross's paintings been changing over sereies?
+```{r}
+by_season_element <- bob_ross_gathered %>% 
+  filter(!element %in% c("Tree", "Mountain")) %>% 
+  group_by(season) %>% 
+  mutate(number_episodes = n_distinct(episode)) %>%  
+  count(season, element, number_episodes, sort = TRUE) %>% 
+  mutate(prc_included = n / number_episodes) %>% 
+  group_by(element) %>% 
+  mutate(element_total = sum(n)) %>% 
+  ungroup()
+```
+
+```{r}
+by_season_element %>% 
+  filter(element_total >=50) %>% 
+  ggplot(aes(season, prc_included, color = element)) +
+  geom_line() +
+  geom_smooth(show.legend = FALSE) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  expand_limits(y=0) +
+  facet_wrap(~element, ncol = 6) +
+  theme(legend.position = "none")
+```
+
+```{r}
+season_element <-  by_season_element %>%
+  filter(n >=5) %>% 
+  select(season, element, n) %>% 
+  arrange(season)
+
+season_element_spread <- season_element %>% 
+  spread(element, n) %>% 
+  mutate_all(~replace(., is.na(.), 0))
+
+element_active <- season_element_spread[, 2:16]
+element_season <- season_element_spread[, 1]
+
+head(element_active[, 2:15], 4)
+
+
+element_pca <- PCA(element_active, 
+                   ncp = 4,
+                   graph = FALSE)
+
+# Total cos2 of variables on Dim.1 and Dim.2
+fviz_cos2(element_pca, choice = "var",)
+```
+
+
+```{r}
+fviz_pca_var(element_pca,
+             col.var = "cos2",
+             gradient.cols = c("#1b5b83", "#edc951", "#b30000"),
+             repel = TRUE) +
+    theme(plot.background = element_rect(fill = "cornsilk",
+                                         color = NA),
+          plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W32_BobRossPainting_vizPCA.png", width = 20, height = 20, units = "cm")
+```
+
+

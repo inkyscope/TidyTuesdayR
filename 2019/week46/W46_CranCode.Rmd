@@ -1,0 +1,82 @@
+---
+title: "W46 CRAN code"
+author: "Sung Inkyung"
+date: '2019 11 27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### source[blog @philippe] (https://www.pmassicotte.com/post/analyzing-the-programming-languages-used-in-r-packages/)
+### source[tidytuesday screencast: analyzing code in CRAN packages by david robinson] (https://youtu.be/dr4qw8o0nYU)
+```{r}
+library(tidyverse)
+library(tidytext)
+library(cowplot)
+library(ggtext)
+library(ggchicklet)
+library(paletteer)
+library(glue)
+library(showtext)
+
+font_add_google("Teko")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+cran_code <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-11-12/loc_cran_packages.csv")
+```
+```{r}
+packages <- tidyverse_packages() %>% 
+  str_extract("[a-z\\d]+")
+
+```
+
+
+```{r}
+# Programming languages used by the package included in the tidyverse 
+
+plot <- cran_code %>% 
+  filter(pkg_name %in% packages) %>% 
+  mutate(language = case_when(
+    language %in% c("C++", "C", "C/C++ Header") ~ "C++",
+    TRUE ~ language
+  )) %>%
+  mutate(pkg_name = fct_reorder(pkg_name, code, sum),
+         language = fct_lump(language, 5),
+         language = fct_reorder(language, code, sum))%>% 
+  ggplot(aes(pkg_name, code,
+             fill = language)) +
+  geom_chicklet(size = 0.1) +
+  coord_flip() +
+  labs(x = " ",
+       y = " ",
+       title = "Programming languages used in the tidyverse package",
+       subtitle = "Illustrated below is the packages by language: most of packages in tidyverse have **R**<br> while **haven** package uses **C++** primarily.",
+       caption = "Source: CRAN | Graphic: Sung Inkyung") +
+  scale_fill_paletteer_d("yarrr::appletv")+
+  scale_y_continuous(expand = c(0, 0.1),
+                     labels = scales::comma) +
+  guides(fill = guide_legend(reverse = TRUE, nrow = 1, byrow = TRUE)) + 
+  theme_minimal_vgrid() +
+  theme(legend.position = "bottom",
+        legend.title = element_text(family = "Poppins", size = 10),
+        legend.text = element_text(family = "Teko", size = 10.5),
+        plot.background = element_blank(),
+        plot.title = element_markdown(family = "Teko", size = 24,
+                                      margin = margin(b = 15)),
+        plot.subtitle = element_markdown(family = "Poppins", size = 13,
+                                         lineheight = 1.1,
+                                         margin = margin(b = 25)),
+        plot.caption = element_text(family = "Teko", size = 10, color = "gray45"),
+        axis.text.y = element_text(family = "Teko", size = 13),
+        axis.text.x = element_text(family = "Poppins", size = 11))
+
+ggsave("W46_ProgrammingLanguageinTidyverse.png", width = 24, height = 20, units = "cm")
+```
+

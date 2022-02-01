@@ -1,0 +1,118 @@
+---
+title: "W19 Student Teacher Ratios"
+author: "Sung Inkyung"
+date: '2019 7 1'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(countrycode)
+library(ggbeeswarm)
+library(patchwork)
+library(showtext)
+
+font_add_google("Bebas Neue")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+```
+
+```{r data}
+student_ratio <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-07/student_teacher_ratio.csv")
+```
+```{r}
+#get country codes + continents information 
+codes <- 
+  codelist %>%
+  mutate(country.name = country.name.en) %>% 
+  select(iso3c, country.name, region, continent)
+```
+
+```{r}
+#calculate summary statistics for each indicator and country
+student_code <- student_ratio %>%
+  group_by(indicator, year, country, country_code) %>% 
+  summarise(avg = mean(student_ratio, na.rm = TRUE),
+            median = median(student_ratio, na.rm = TRUE))%>% 
+  left_join(., codes, by = c("country_code" = "iso3c")) %>%
+  filter(!is.na(continent)) %>% 
+  filter(median < 75) %>% 
+  ungroup() %>% 
+  mutate(indicator = fct_relevel(indicator, 
+                                 "Tertiary Education",
+                                 "Post-Secondary Non-Tertiary Education", 
+                                 "Upper Secondary Education",
+                                 "Secondary Education", 
+                                 "Lower Secondary Education",
+                                 "Primary Education",
+                                 "Pre-Primary Education"))
+
+```
+### source:[PAULVANDERLAKEN.COM](https://paulvanderlaken.com/2019/01/25/visualization-innovation-waffleplots-and-swarmplots-aka-beeplots/)
+```{r}
+tol5qualitative=c("#332288", "#88CCEE", "#117733", "#DDCC77", "#CC6677")
+
+student_plot <- student_code %>% 
+  drop_na() %>% 
+  ggplot() +
+  geom_quasirandom(aes(x = indicator, 
+                       y = median, 
+                       color = continent),
+                   cex = 1.5) + #groupOnX = FALSE
+  coord_flip() +
+  scale_color_manual(values = tol5qualitative) +
+  guides(colour = guide_legend(override.aes = list(size=3))) +
+  labs(x = " ",
+       y = "Student to teacher ratio") +
+  theme(plot.background = element_blank(),
+        line = element_blank(),
+        panel.border = element_rect(colour = NA),
+        axis.text = element_blank()) +
+  theme_minimal()
+
+
+title <- ggplot(data.frame(x = 1:1.5, y = 1:10)) +
+  labs(x = NULL, y = NULL,
+        title = "Global student to teacher ratios 2012-2018", 
+       subtitle = "Student to teacher ratio per continent and education levels") +
+  theme(plot.background = element_rect(fill = "#F6FCF8"),
+        line = element_blank(),
+        panel.border = element_rect(colour = NA),
+        plot.title = element_text(color = "gray20",
+                                  family = "Bebas Neue",
+                                  size = 38,
+                                  face = "bold"),
+        plot.subtitle = element_text(family = "Poppins",
+                                     size = 14),
+        axis.text = element_blank()) +
+  theme_minimal()
+
+
+caption <- 
+  ggplot(data.frame(x = 1:1.5, y = 1:10)) +
+  labs(x = NULL, y = NULL,     
+       caption = "Source: UNESCO Institute of Statistics") +
+  theme(panel.background = element_rect(fill = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        line = element_blank(),
+        panel.border = element_rect(colour = NA),
+        plot.caption = element_text(color = "grey45",
+                                    family = "Poppins",
+                                    size = 8),
+        axis.text = element_blank())
+  
+
+Patchwork <- title + student_plot + caption + plot_layout(width = c(0, 1, 0.2))
+
+ggsave("W19_GlobalStudenTeacherRatios.png", width = 26, height = 16, units = "cm")
+
+```
+
+

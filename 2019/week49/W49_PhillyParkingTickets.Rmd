@@ -1,0 +1,180 @@
+---
+title: "W49_Philly Parking Tickets"
+author: "Sung Inkyung"
+date: '2019 12 5'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(scales)
+library(patchwork)
+library(paletteer)
+library(showtext)
+
+font_add_google("Lora")
+font_add_google("Oxygen")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+```{r}
+tickets <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-12-03/tickets.csv") 
+```
+
+
+```{r}
+agency <- tickets %>% 
+  mutate(day = as.factor(wday(issue_datetime, label = TRUE, abbr = TRUE)),
+         month = as.numeric(month(issue_datetime, label = TRUE, abbr = TRUE)),
+         hour = as.factor(hour(issue_datetime)),
+         date = date(issue_datetime))
+
+wday <- agency %>% 
+  group_by(day, hour) %>% 
+  summarise(total = sum(fine, 
+                        na.rm = TRUE),
+            n = n(),
+            avg = total / n) %>% 
+  ungroup() %>% 
+  mutate(day = case_when(
+    day == "일" ~ "Sun",
+    day == "월" ~ "Mon",
+    day == "화" ~ "Tue",
+    day == "수" ~ "Wed",
+    day == "목" ~ "Thu",
+    day == "금" ~ "Fri",
+    day == "토" ~ "Sat"
+  ),
+ day = factor(day,levels = rev(c("Sun", "Mon", "Tue", "Wed","Thu", "Fri", "Sat"))))
+```
+
+
+```{r}
+p1 <- wday %>% 
+  ggplot(aes(hour, day, fill = avg)) +
+  geom_tile(color = "white", size = 0.1) +
+  coord_equal() +
+  scale_fill_paletteer_c("gameofthrones::targaryen2",
+                         name = "Fine avg") +
+  guides(fill = guide_colorbar(title.position = "top",
+                               barwidth = 9,
+                               barheight = .3)) +
+  labs(x = "",
+       y = "",
+       title = "Parking ticket fines over day",
+       subtitle = "Saturday morning is idle on issuing parking ticket") +
+  theme(legend.position = "bottom",
+        legend.title.align = 0.5,
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 7),
+        panel.background = element_blank(),
+        plot.title = element_text(family = "Lora", size = 12, hjust = 0.5),
+        plot.subtitle = element_text(family = "Oxygen", size = 10, hjust = 0.5),
+        panel.grid = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank())
+
+  
+p2 <- wday %>% 
+  ggplot(aes(hour, day, fill = n)) +
+  geom_tile(color = "white", size = 0.1) +
+  scale_fill_paletteer_c("gameofthrones::targaryen2",
+                         name = "Frequency") +
+  guides(fill = guide_colorbar(title.position = "top",
+                               barwidth = 9 ,
+                               barheight = .3)) +
+  labs(x = "Hour of day",
+       y = "",
+       title = "Parking ticket frequency over day",
+       subtitle = "Daily activities are peaked around lunch time during\nweekdays according to the number of parking tickets") +
+  theme(legend.position = "bottom",
+        legend.title.align = 0.5,
+        legend.title = element_text(size = 9),
+        legend.text = element_text(size = 7),
+        panel.background = element_blank(),
+        plot.title = element_text(family = "Lora", size = 12, hjust = 0.5),
+        plot.subtitle = element_text(family = "Oxygen", size = 10, hjust = 0.5),
+        panel.grid = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank())
+```
+
+
+```{r}
+p3 <- wday %>% 
+  ggplot(aes(hour, avg)) +
+  geom_bar(aes(hour, n, fill = n), stat = "identity") +
+  scale_fill_paletteer_c("gameofthrones::targaryen2",
+                         name = "Frequency") +
+  scale_x_discrete(breaks = seq(0, 23, 1)) +
+  coord_polar(start = -0.15) + # learning point!!
+  labs(x = "",
+       y = "",
+       title = "Number of parking tickets by hour of day") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.background = element_blank(),
+        plot.title = element_text(family = "Lora", size = 12, hjust = 0.5),
+        panel.grid = element_line(color = "#dedede", size = 0.1, 
+                                  linetype = "dotted"),
+        axis.text = element_text(family = "Oxygen", size = 9),
+        axis.text.y = element_blank())
+```
+
+```{r}
+top_5_violation <- agency %>% 
+  count(violation_desc, sort = TRUE) %>% 
+  top_n(5)
+
+parking_tickets <- agency %>% 
+  mutate(top_violation = case_when(
+    !violation_desc %in% top_5_violation$violation_desc ~ "Others",
+    violation_desc %in% top_5_violation$violation_desc ~as.character(violation_desc)
+  )) %>% 
+  group_by(top_violation, hour) %>% 
+  tally()
+
+p4 <- parking_tickets %>% 
+  ggplot(aes(hour, n, fill = top_violation)) +
+  geom_bar(stat = "identity",
+           position = "stack",
+           color = "white",
+           width = 1,
+           na.rm = TRUE) +
+  coord_polar(start = -0.15) +
+  scale_fill_paletteer_d("palettetown::rapidash",
+                         name = "Violation") +
+  labs(x = "",
+       y = "",
+       title = "Top 5 Parking violation by hour of day in Philadephia",
+       caption = "Source: Open Data Philly | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 6),
+        legend.text= element_text(size = 6),
+        legend.key.size = unit(.3, "cm"),
+        panel.background = element_blank(),
+        panel.grid = element_line(color = "#dedede", size = 0.1, 
+                                  linetype = "dotted"),
+        plot.title = element_text(family = "Lora", size = 12, hjust = 0.5),
+        plot.caption = element_text(family = "Oxygen", size = 8, hjust = 0.5, color = "gray45"),
+        axis.text = element_text(family = "Oxygen", size = 9),
+        axis.text.y = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank())
+```
+
+```{r}
+patchwork <- ((p1 / p2 + plot_layout(heights = c(1, 1))) | (p3 / p4 + plot_layout(heights = c(1, 1)))) + plot_layout(widths = c(1.5, 1))
+
+ggsave("W49_ParkingTickets.png", width = 35, height = 21, units = "cm")
+```

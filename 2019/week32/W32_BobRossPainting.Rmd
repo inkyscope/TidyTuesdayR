@@ -1,0 +1,94 @@
+---
+title: "W32 BobRoss Painting"
+author: "Sung In Kyung"
+date: '2019 8 13'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### sources:[data screencast by david robinson](https://youtu.be/sD993H5FBIY),                              [Understanding PCA by Julia Silge](https://juliasilge.com/blog/stack-overflow-pca/) 
+```{r}
+library(tidyverse)
+library(scales)
+library(widyr)
+library(ggraph)
+library(igraph)
+library(showtext)
+
+font_add_google("Rajdhani")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+theme_set(theme_minimal())
+```
+
+
+```{r}
+bob_ross <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-06/bob-ross.csv")
+```
+
+```{r}
+bob_ross_gathered <- bob_ross %>% 
+  janitor::clean_names() %>%
+  gather(element, present, -episode, -title) %>% 
+  filter(present == 1) %>% 
+  mutate(title = str_to_title(str_remove_all(title, '"')),
+         element = str_to_title(str_replace(element, "_", " "))) %>% 
+  select(-present) %>% 
+  extract(episode, c("season", "episode_number"), "S(.*)E(.*)", convert = TRUE, remove = FALSE) %>% 
+  arrange(season, episode_number)
+```
+
+### source:[data screencast by david robinson] (https://youtu.be/sD993H5FBIY)
+
+### Clustering
+What tends to appear together?
+correlated relation between elements based on whether they appear in the same episode
+
+```{r}
+br_cors <- bob_ross_gathered %>% 
+  add_count(element) %>% 
+  filter(n >= 5) %>% 
+  pairwise_cor(element, episode, sort = TRUE)
+```
+
+### source: https://www.data-to-viz.com/graph/arc.html
+```{r}
+plot <- br_cors %>% 
+  head(100) %>% 
+  graph_from_data_frame() %>% 
+  ggraph(layout = "linear") +
+  geom_edge_arc(aes(edge_colour="black", 
+                edge_alpha = correlation,
+                edge_width = correlation),
+                edge_color = "#05a334", 
+                fold = TRUE)+
+  geom_node_point(aes(color = "deeppink4",
+                      size = 1.1), 
+                  alpha = 0.7) +
+  scale_edge_width(range = c(0.9, 0))+
+  geom_node_text(aes(label = name), 
+                 family = "Rajdhani",
+                 size = 2.5,
+                 angle = 65, 
+                 hjust = 1,
+                 nudge_y = -0.9) +
+  labs(edge_width = "Correlation",
+       title = "Correlation Between Elements of Bob Ross Paintings",
+       caption = "Source: FiveThirtyEight | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position="none",
+        plot.title = element_text(family = "Rajdhani", size = 20, face = "bold", hjust = 0.5, 
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(family = "Rajdhani", size = 7, hjust = 0.95, 
+                                  margin = margin(t = 15)),
+        plot.margin = margin(10, 10, 10, 10),
+        panel.spacing=unit(c(0,0,3.4,0), "null")) +
+  expand_limits(x = c(-1.2, 1.2), y = c(-5.6, 1.2))
+
+ggsave("W32_BobRossPaintings_ArcDiagram.png", width = 24, height = 7, units = "cm")
+```
+

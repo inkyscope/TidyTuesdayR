@@ -1,0 +1,111 @@
+---
+title: "W30 Wildlife Strikes"
+author: "Sung Inkyung"
+date: '2019 9 6'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggalluvial)
+library(ggsci)
+library(patchwork)
+library(showtext)
+
+font_add_google("Teko")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+```{r}
+wildlife_impacts <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-07-23/wildlife_impacts.csv") %>% 
+  select(-c(5:11, 16:17, 19:21)) %>% 
+  mutate(airport = str_to_title(airport),
+         phase_of_flt = str_to_title(phase_of_flt)) %>% 
+  filter(!airport == "UNKNOWN") %>% 
+   drop_na() %>%  
+  rename(date = incident_date,
+         month = incident_month,
+         year = incident_year) %>% 
+  mutate(day = as.character(wday(date, label = TRUE)),
+         week = if_else(day %in% c("토", "일"), "Weekend", "Weekday"),
+          season = case_when(
+      month %in% 3:5 ~ 1,
+      month %in% 6:8 ~ 2,
+      month %in% 9:11 ~ 3,
+      month %in% c(12, 1, 2) ~ 4))
+```
+
+```{r}
+df_plot <- wildlife_impacts %>% 
+  filter(airport == c("Sacramento Intl", "Denver Intl Airport", "Dallas/Fort Worth Intl Arpt")) %>% 
+  mutate(season = factor(season, levels = 1:4, 
+                         labels = c("Spring", 
+                                    "Summer", 
+                                    "Autumn", 
+                                    "Winter"))) %>% 
+  mutate(sum = n()) %>% 
+  group_by(phase_of_flt) %>% 
+  mutate(n = n(),
+         group = if_else(n < 100, "Other", phase_of_flt)) %>% 
+  group_by(group, season, phase_of_flt, time_of_day, week) %>% 
+  summarise(n = n(),
+            pct = n() / unique(sum)) %>% 
+  group_by(group) %>% 
+  mutate(n_phase = sum(n)) %>% 
+  ungroup() %>% 
+  mutate(group = fct_reorder(group, -n_phase),
+         group = fct_relevel(group, "Other", after = 4))
+```
+
+
+```{r}
+plot <- df_plot %>% 
+  ggplot(aes(axis1 = phase_of_flt, 
+             axis2 = time_of_day, 
+             axis3 = season, 
+             y = round(pct, 2))) +
+  geom_alluvium(aes(fill = week)) +
+  geom_stratum(fill = "cadetblue3",
+               color = "gray35",
+               size = 0.1, 
+               width = 0.4) +
+  geom_text(stat = "stratum", 
+            aes(label = after_stat(stratum)),
+            color = "gray15",
+            size = 4, 
+            fontface = "bold") +
+  scale_x_discrete(limits = c("Phase of Flight", "Time of Day", "Season"), 
+                   expand = c(0, 0), 
+                   position = "top") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     expand = c(0, 0)) +
+  scale_fill_startrek(name = "Time Zone") +
+  guides(fill = guide_legend(title.position = "top", 
+                             title.hjust = 0.5, 
+                             label.position = "bottom")) +
+  labs(x = NULL, 
+       y = "Percentage of flight's phases (1990-2018)",
+       title = "Wildlife Impacts by Time Zone During Phase of Flight") +
+  theme(legend.position = "bottom",
+        legend.key.width = unit(6, "lines"),
+        legend.key.height = unit(0.75, "lines"),
+        legend.spacing.x = unit(0.5, 'cm'),
+        legend.title = element_text(family = "Poppins", size = 11),
+        legend.text = element_text(family = "Poppins", size = 11.5),
+        plot.title = element_text(family = "Teko", size = 32, hjust = 0.5, margin = margin(b = 25)),
+        axis.title.y = element_text(family = "Poppins", size = 8),
+        axis.text.x = element_text(color = "black", family = "Poppins", size = 13),
+        axis.text.y = element_text(family = "Poppins", size = 10),
+        axis.ticks = element_blank(),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W30_WildlifeStrikes.png", width = 30, height = 17, units = "cm")
+```

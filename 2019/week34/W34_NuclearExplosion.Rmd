@@ -1,0 +1,101 @@
+---
+title: "W34 Neuclear Explosions"
+author: "Sung Inkyung"
+date: '2020 4 7'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(showtext)
+
+font_add_google("Bebas Neue")
+font_add_google("Oxygen")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+nuclear_explosions <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-08-20/nuclear_explosions.csv") %>%
+  filter(!is.na(country))
+```
+### Source[tidytuesday by Cyranka] (https://github.com/Cyranka/rviz/blob/master/tidy_tuesday_nuclear_explosions/august_20_tidy_tuesday.R)
+
+```{r}
+nuclear <- nuclear_explosions %>% 
+  mutate(country = factor(country,
+                          levels = c("USA", "USSR", "FRANCE",
+                                     "CHINA", "UK", "INDIA",
+                                     "PAKIST"),
+         labels = c("United States", "Soviet Union","United Kingdom", "Pakistan", "France", "China", "India")),
+         atmospheric = ifelse(depth < 0, "Atmospheric", "Underground"))
+
+plot <- nuclear %>% 
+  group_by(country, year, atmospheric) %>% 
+  summarise(total = n()) %>% 
+  arrange(year) %>% 
+  mutate(total = ifelse(atmospheric == "Underground", total*-1, total)) %>% 
+  ggplot(aes(x = year, y = total, fill = country)) +
+  geom_col() +
+  scale_x_continuous(breaks = seq(1945, 2000, 5)) +
+  scale_y_continuous(limits = c(-180, 180),
+                     breaks = seq(-180, 180, 30)) +
+  scale_fill_manual(values = c("#d02090", "#00e5ee", "#4eee94",
+                               "#8a2be2", "#101010", "#800080",
+                               "#cbbeb5", "#cbbeb5"))+
+  labs(x = "",
+       y = "  Underground      Atmospheric",
+       title = "Timeline of Nuclear Explosions",
+       caption = "Source: SIPRI | Graphic: Sung Inkyung") +
+  guides(fill = guide_legend(nrow = 1,
+                             title = "",
+                             title.position = "top",
+                             title.hjust = .5,
+                             label.position = "bottom",
+                             keyheight = .3)) +
+  annotate("segment", x = 1985, xend = 1985, 
+           y = 0, yend = 100, color = "#ff6666") +
+  annotate("text", y = 130, x = 1980,
+           label = "1985:North Korea accedes to\nthe nuclear Nonproliferation Treaty(NPT)",
+           family = "Oxygen",
+           size = 3.5) +
+  annotate("segment", x = 1993, xend = 1993, 
+           y = 0, yend = 30, color = "#ff6666") +
+  annotate("text", y = 60, x = 1995,
+           label = "1993: North Korea\nwithdraws NPT",
+           family = "Oxygen",
+           size = 3.5) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.text = element_text(family = "Oxygen",
+                                    size = 8),
+        plot.background = element_rect(fill = "#4ca3dd",
+                                       color = NA),
+        plot.title = element_text(family = "Bebas Neue", size = 20,
+                                  face = "bold",
+                                  hjust = .5,
+                                  margin = margin(b = 7)),
+        plot.caption = element_text(family = "Oxygen", size = 6.5,
+                                    color = "gray35",
+                                    margin = margin(t = 15)),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(family = "Oxygen", size = 7.5,
+                                   color = "#faebd7"),
+        axis.text.y = element_text(family = "Oxygen", size = 7.5,
+                                   color = "#faebd7"),
+        axis.title = element_text(family = "Oxygen",
+                                  size = 8,
+                                  face = "bold"),
+        plot.margin = margin(10, 10, 10, 10))
+        
+ggsave("W34_NuclearExplosion.png", width = 20, height = 16, units = "cm")
+```
+

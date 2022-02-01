@@ -1,0 +1,107 @@
+---
+title: "wine_ratings"
+author: "sunginkyung"
+date: '2019 7 4 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggthemes)
+library(ggridges)
+library(GGally)
+library(cowplot)
+library(showtext)
+
+font_add_google("Oswald")
+font_add_google("Fira Sans Condensed")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+### source: https://github.com/dgrtwo/data-screencasts/blob/master/medium-datasci.Rmd
+```{r}
+wine_ratings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-05-28/winemag-data-130k-v2.csv") %>% 
+  select(-1) %>% 
+  extract(title, "year", "(20\\d\\d)", convert = TRUE, remove = FALSE) %>%
+  mutate(year = ifelse(year < 1900, NA, year)) %>%
+  filter(!is.na(price))
+```
+
+### source: Graphical Data Analysis with R by Antony Unwin
+### http://www.gradaanwr.net/content/ch06/
+
+```{r}
+variables <- c("country", "year", "variety", "price", "points")
+
+p1 <- wine_ratings %>% 
+  select(variables) %>% 
+  mutate(above_avg = points > mean(points)) %>% 
+  sample_n(30) %>% 
+  ggparcoord(
+    groupColumn = "above_avg",
+    showPoints = TRUE, 
+    alphaLine = 1,
+    scale = "std") +
+  scale_color_manual(values=c("#b8b8b8", "#780303"),
+                     name = "above_avg\n(88.4)") +
+  theme_half_open(12) + 
+  background_grid(minor = 'none') +
+  theme(axis.text.x = element_text(family = "Fira Sans Condensed",
+                                   size = 9),
+        axis.title.x = element_blank())
+
+
+n_wines <- wine_ratings %>% 
+  group_by(country) %>% 
+  summarise(n_wines = n()) %>% 
+  arrange(desc(n_wines)) %>% 
+  drop_na()
+
+
+p2 <- wine_ratings %>% 
+  filter(country %in% n_wines$country[1:10]) %>% 
+  left_join(n_wines, by = "country") %>% 
+  arrange(desc(n_wines)) %>% 
+  mutate(country = reorder(as.factor(country), n_wines)) %>% 
+  ggplot(aes(points, country)) +
+  geom_density_ridges(alpha = .25) +
+  geom_vline(xintercept = median(wine_ratings$points), 
+             color = "#780303",
+             lty = "dashed") +
+  scale_y_discrete(expand = c(.01, 0)) +
+  scale_x_continuous(expand = c(0.01,0)) +
+  scale_fill_brewer(palette = 4) +
+  theme_ridges() +
+  labs(x = "",
+       y = NULL) +
+  background_grid(minor = 'none') +
+  theme(legend.position = "none",
+        axis.text = element_text(family = "Fira Sans Condensed",
+                                   size = 10))
+
+
+plot_row <- plot_grid(p1, p2)
+
+
+title <- ggdraw() + 
+  draw_label("Features of Wine Rating",
+             fontface = 'bold',
+             x = 0,
+             hjust = 0) +
+  theme(plot.title = element_text(family = "Oswald",
+                                  size = 30,
+                                  margin = margin(b = 10)),
+        plot.margin = margin(0, 0, 0, 7))
+
+plot_grid(title, plot_row,
+          ncol = 1,
+          rel_heights = c(0.1, 1),
+          rel_widths = c(1, 1))
+
+ggsave("W22_WineRatings.png", width = 35, height = 14, units = "cm")
+```

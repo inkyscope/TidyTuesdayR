@@ -1,0 +1,104 @@
+---
+title: "W26 Global UFO Shapes"
+author: "Sung Inkyung"
+date: '2020 3 17'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(treemapify)
+library(igraph)
+library(ggraph)
+library(patchwork)
+library(showtext)
+
+font_add_google("Teko")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+ufo_sightings <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-06-25/ufo_sightings.csv")
+```
+
+```{r}
+shapes <- ufo_sightings %>% 
+  group_by(ufo_shape) %>% 
+  summarise(total = n()) %>% 
+  filter(ufo_shape != "NA") %>% 
+  ungroup()
+ 
+set.seed(2020)
+  
+shape_tree <- shapes %>% 
+  ggplot(aes(area = total, label = ufo_shape, fill = total)) +
+  geom_treemap(color = "cornsilk", start = "topleft") +
+  geom_treemap_text(min.size = 3, place = "center", 
+                    color = "#cdcdcd", start = "topleft") +
+  scale_fill_gradient(low = "darkorchid", high = "darkorchid4") +
+  labs(title = "Common UFO Shapes")+
+  theme(legend.position = "none",
+        plot.title = element_text(family = "Teko", size = 20, hjust = .5, vjust = .5, face = "bold", color = "chartreuse3",
+                                  margin = margin(b = 20)),
+        plot.margin = margin(10, 10, 10, 10))
+```
+
+
+```{r}
+shapes <- c("light", "triangle", "circle", "fireball", "shpere", "disk", "oval", "formation", "cigar", "changing", "cylinder", "rectangle", "flash", "diamond") # n > 10000
+  
+ufo <- ufo_sightings %>% 
+  filter(ufo_shape %in% shapes) %>% 
+  select(ufo_shape, description) %>% 
+  unnest_tokens(word, description) %>% 
+  anti_join(stop_words) %>% 
+  filter(!str_detect(word, "[0-9]")) %>% 
+  count(ufo_shape, word) %>% 
+  filter(n > 200) %>% 
+  ungroup() %>% 
+  mutate(word = fct_reorder(word, n))
+```
+
+```{r}
+set.seed(2020)
+
+ufo_graph <- 
+  graph_from_data_frame(ufo)
+
+ufo_plot <- ufo_graph %>% 
+  ggraph(layout = "kk") +
+  geom_edge_link(aes(edge_alpha = .7), 
+                 color = "darkorchid4",
+                 show.legend = FALSE) +
+  geom_node_point(color = "darkorchid") +
+  geom_node_text(aes(label = name),
+                 size = 4,
+                 color = "#cdcdcd",
+                 vjust = 0.5,
+                 check_overlap = TRUE) +
+  labs(title = "Words Describing Common UFO-Shapes",
+       caption = "Source:nuforc.org | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "black",
+                                       color = NA),
+        plot.title = element_text(family = "Teko", size = 20, hjust = .5, vjust = .5, face = "bold", color = "chartreuse3",
+                                  margin = margin(b = 20)),
+        plot.caption = element_text(family = "Poppins", color = "azure3", size = 9),
+        plot.margin = margin(10, 10, 10, 10))
+```
+
+```{r}
+patchwork <- shape_tree + ufo_plot
+
+ggsave("W26_UFO-Shapes.png", width = 38, height = 17, unit = "cm")
+```
+

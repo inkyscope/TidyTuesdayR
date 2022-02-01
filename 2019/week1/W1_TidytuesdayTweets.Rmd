@@ -1,0 +1,103 @@
+---
+title: "W1 Tidytuesday Tweets"
+author: "sung inkyung"
+date: '2019 7 12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(widyr)
+library(visNetwork)
+library(networkD3)
+library(lubridate)
+```
+
+```{r}
+tidytuesday_tweets <- read_rds(url("https://github.com/rfordatascience/tidytuesday/blob/master/data/2019/2019-01-01/tidytuesday_tweets.rds?raw=true")) %>%
+  mutate(week = as.Date(floor_date(created_at, "week", week_start = 1)))
+```
+
+```{r}
+tweet_words <- tidytuesday_tweets %>%
+  select(screen_name, text, retweet_count, favorite_count, created_at, week) %>% 
+  unnest_tokens(word, text, token = "tweets") %>% 
+  anti_join(stop_words, by = "word") %>% 
+  filter(!word %in% c("#tidytuesday", "#rstats", "#r4ds", "#tidyverse", "de", "|", 
+                      "#dataviz", "@r4dscommunity", "@thomasmock", "#ggplot2", "im"),
+         str_detect(word, "[a-z]"))
+
+tidytuesday_tweets_word_cors <- tweet_words %>% 
+  group_by(word) %>% 
+  filter(n() >= 50) %>% 
+  pairwise_cor(word, week, sort = TRUE)
+```
+
+### source: http://www.sthda.com/english/articles/33-social-network-analysis/135-network-visualization-essentials-in-r/
+```{r}
+# node list
+item1 <- tidytuesday_tweets_word_cors  %>% 
+  distinct(item1) %>% 
+  rename(label = item1)
+
+item2 <- tidytuesday_tweets_word_cors  %>% 
+  distinct(item2) %>% 
+  rename(label = item2)
+
+tweets_nodes <- full_join(item1, item2, by = "label") %>%   
+  rowid_to_column("id") 
+```
+
+```{r}
+# edge list
+tweets_route <- tidytuesday_tweets_word_cors %>% 
+  group_by(item1, item2) %>% 
+  summarise(weight = round(correlation, 2)) %>% 
+  ungroup() %>% 
+  filter(!is.na(weight)) %>% 
+  top_n(100)
+
+tweets_edges <- tweets_route %>% 
+  left_join(tweets_nodes, by = c("item1" = "label")) %>% 
+  rename(from = id)
+
+tweets_edges <- tweets_edges %>% 
+  left_join(tweets_nodes, by = c("item2" = "label")) %>% 
+  rename(to = id) %>% 
+  filter(!is.na(from),
+         !is.na(to)) %>% 
+  select(tweets_edges, from, to, weight)
+```
+
+
+```{r Interactive network graph}
+set.seed(2019)
+tweets_edges <- mutate(tweets_edges, width = weight/5 + 1)
+
+visNetwork(tweets_nodes, tweets_edges) %>% 
+  visIgraphLayout(layout = "layout_with_fr") %>% 
+  visEdges(arrows = "middle")
+
+tweets_nodes_d3 <- mutate(tweets_nodes, id = id - 1)
+tweets_edges_d3 <- mutate(tweets_edges, from = from - 1, to = to - 1)
+```
+
+
+```{r}
+set.seed(2019)
+forceNetwork(Links = tweets_edges_d3, 
+             Nodes = tweets_nodes_d3, 
+             Source = "from", 
+             Target = "to", 
+             NodeID = "label", 
+             Group = "id", 
+             Value = "weight", 
+             opacity = 1, 
+             fontSize = 16, 
+             zoom = TRUE)
+```

@@ -1,0 +1,91 @@
+---
+title: "W4 Incarceration Trends"
+author: "Sung Inkyung"
+date: '2020 4 19'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[tidytuesday by @othom] (https://otho.netlify.app/post/2-04-prison/)
+```{r}
+library(tidyverse)
+library(paletteer)
+library(ggtext)
+library(showtext)
+
+font_add_google("Anton")
+font_add_google("Antonio")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+prison_population<- read.csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-01-22/prison_population.csv")
+```
+
+
+```{r}
+by_cat <- prison_population %>% 
+  na.omit() %>% 
+  filter(!is.na(prison_population),
+         pop_category != "Other") %>%
+  filter(year >= 1990,
+         year != 2016) %>%
+  mutate(decade = year - (year %% 10)) %>% 
+  group_by(decade, state, pop_category) %>% 
+  summarise(prison_population = mean(prison_population)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = decade, values_from = prison_population)
+
+
+plot <- by_cat %>% 
+  ggplot(aes(pop_category, prison_population)) +
+  geom_bar(aes(y = `2010`, fill = '2010'), 
+           stat = 'identity', 
+           width = .2,
+           na.rm = T) +
+  geom_bar(aes(y = `2000`, fill = '2000'), 
+            stat = 'identity',
+           width = .4,
+           na.rm = T) +
+  geom_bar(aes(y = `1990`, 
+               fill = '1990'), 
+           stat = 'identity', 
+           width = .6,
+           na.rm = T) +
+    scale_fill_manual('', values = c('darkslategray', 'slategray', 'lightgray')) +
+    scale_y_continuous(expand = expansion(c(0, .05))) +
+    expand_limits(y = 0) +
+  labs(x = " ",
+       y = "Average of Prison Population",
+       title = "Prison Population by Category",
+       subtitle = "Average of prison population increased in **White, Latino, and Male** from 1990 to 2015 in USA",
+       caption = "Source: Vera Institute | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(family = "Anton",
+                                  size = 24,
+                                  face = "bold",
+                                  margin = margin(b = 10)),
+        plot.subtitle = element_markdown(family = "Antonio",
+                                         size = 15,
+                                         margin = margin(b = 5),
+                                         lineheight = 1.1),
+        plot.caption = element_text(family = "Antonio",
+                                    size = 9,
+                                    color = "darkslategray",
+                                    margin = margin(t = 10,
+                                                    b = 5)),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size = .5,
+                                          color = "gainsboro"),
+        panel.grid.minor = element_blank(),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W4_IncarcerationTrends.png", width = 25, height = 17, units = "cm")
+```
+

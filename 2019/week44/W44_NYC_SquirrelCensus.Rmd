@@ -1,0 +1,275 @@
+---
+title: "W44_NYC Squirrel Census"
+author: "Sung Inkyung"
+date: '2019 11 4'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggtext)
+library(lubridate)
+library(scales)
+library(gganimate)
+library(igraph)
+library(ggraph)
+library(paletteer)
+library(patchwork)
+library(showtext)
+
+font_add_google("Merriweather")
+font_add_google("Karla")
+
+showtext_opts(dpi = 320)
+showtext_auto(enable = TRUE)
+
+f1 = "Merriweather"
+f2 = "Karla"
+
+```
+
+```{r}
+nyc_squirrels <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-29/nyc_squirrels.csv")
+```
+
+
+```{r plot1}
+main_plot <- nyc_squirrels %>%
+  filter(primary_fur_color != FALSE) %>%
+  ggplot(aes(long, lat, color = as.factor(primary_fur_color))) +
+  geom_point(alpha = 0.8) +
+  scale_color_manual(values = c("Black" = "#000000", 
+                                "Gray" = "#b9bbb6", 
+                                "Cinnamon" = "#d2691e")) +
+  guides(colour = guide_legend(override.aes = list(size = 3))) +
+  annotate("text", x = -73.9628, y = 40.786, 
+           label = "Jacqueline Kennedy\nOnassis Reservoir",
+           color = "navajowhite1", size = 3.5) +
+  labs(x = "",
+       y = "",
+    title = "Location of squirrels by fur color in NYC Central Park",
+       caption = "Source: Squirrel Census | Graphic: Sung Inkyung")+
+  theme(legend.position = c(0.85, 0.3),
+        legend.background = element_rect(fill = "transparent",
+                                         size = 0.5,
+                                         linetype = "solid"),
+        legend.key = element_rect(fill = "transparent",
+                                  color = NA),
+        legend.title = element_blank(),
+        panel.background = element_rect(fill = "#009E73"),
+        plot.title = element_text(family = f1, size = 16, hjust = 0.5),
+        plot.caption = element_text(family = f2, size = 9, color = "gray45"),
+        panel.grid = element_blank())
+```
+
+```{r}
+shift_plot <- nyc_squirrels %>% 
+  filter(primary_fur_color != "NA") %>% 
+  filter(shift != "NA") %>% 
+  filter(age != "?",
+         age != "NA") %>% 
+  ggplot(aes(long, lat)) +
+  geom_point(aes(color = shift), alpha = 0.7, size = 0.1,
+             na.rm = TRUE,
+             show.legend = FALSE) +
+  coord_fixed() +
+  facet_grid(age ~ primary_fur_color) +
+  scale_color_manual(values = c("AM" = "#fcba03", 
+                                "PM" = "#7256ff")) +
+  labs(x = "",
+       y = "",
+       title = " Squirrels Traffic by Shift of <span style = 'color:#fcba03'> AM </span> and <span style = 'color: #7256ff'> PM </span>") +
+  theme_minimal()+
+  theme(legend.position = "none",
+        strip.text = element_text(size = 9),
+        panel.background = element_rect(fill = "#009E73"),
+        plot.title = element_markdown(family = f1, size = 10, hjust = 0.5),
+        panel.grid = element_blank(),
+        axis.text = element_blank())
+```
+
+```{r}
+squirrel_traffic <- main_plot +
+  annotation_custom(
+    ggplotGrob(shift_plot),
+    xmin = -73.985, xmax = -73.97, ymin = 40.779, ymax = 40.80)
+
+ggsave("W44_NYC-SquirrelCensus.png", width = 28, height = 16, units = "cm")
+```
+
+```{r plot2}
+squirrels <- nyc_squirrels %>% 
+  mutate(date = mdy(date),
+         year = year(date),
+         month = month(date),
+         day = day(date),
+         wday = wday(date, label = TRUE)) %>% 
+  pivot_longer(names_to = "activity", running:foraging) %>% 
+  mutate(value = as.numeric(value)) %>% 
+  group_by(shift, year, month, day, wday, activity) %>% 
+  summarize(n = sum(value)) %>% 
+  ungroup() %>% 
+  mutate(wday = case_when(
+    wday == "일" ~ "Sun",
+    wday == "월" ~ "Mon",
+    wday == "화" ~ "Tue",
+    wday == "수" ~ "Wed",
+    wday == "목" ~ "Thur",
+    wday == "금" ~ "Fri",
+    wday == "토" ~ "Sat",
+  ))
+```
+
+```{r animation}
+plot <- squirrels %>% 
+  ggplot(aes(activity, shift, fill = n)) +
+  #geom_tile(color = "white") + # not preferred
+  geom_point(aes(size = n),
+             shape = 21, color = "#b87624", stroke = 2.5) +
+  geom_text(aes(4.5, 2.5, label = paste0(wday, ", ", "Oct",day)),
+            family = f2, size = 7, color = "lightsalmon2") +
+  scale_y_discrete(expand = expand_scale(0, 0.8)) +
+  scale_fill_paletteer_c("pals::ocean.curl") +
+  scale_size_continuous(guide = F, range = c(1, 35)) +
+  labs(x = "Activities",
+       y = "Time of Day",
+       title = "Observation of Squirrels Activities in New York Central Park",
+       subtitle = "Data on Oct 11, Oct 15, and Oct 16 are missing",
+       caption = "Source: NYC Squirrel Census") +
+  guides(fill = guide_colorbar(barheight = unit(2.5, units = "mm"),
+                               barwidth =  unit(90, units = "mm"),
+                               direction = "horizontal",
+                               ticks.colour = "gray10",
+                               title.position = "top",
+                               title.hjust = 0.5,
+                               label.hjust = 0.5,
+                               title = "Frequency of Activities")) +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.background = element_blank(),
+        plot.background = element_rect(fill = "#009E73"),
+        panel.background = element_blank(),
+        plot.title = element_text(size = 15, hjust = 0),
+        plot.subtitle = element_text(size = 11, hjust = 0),
+        plot.caption = element_text(size = 9,
+                                    margin = margin(t = 20)),
+        text = element_text(color = "navajowhite1"),
+        axis.text = element_text(color = "lightsteelblue1",
+                                 size = 10),
+        axis.ticks = element_blank(),
+        axis.text.x = element_text(margin = margin(b = 10)),
+        plot.margin = margin(20, 20, 20, 20))
+
+squirrel_anim <- plot + 
+  transition_states(states = day,
+                    transition_length = 2,
+                    state_length = 1) 
+animate(squirrel_anim, fps = 30, duration = 10, width = 1200, height = 1000, end_pause = 30,
+        renderer = gifski_renderer("W44_NYCSsquirrelsCensus_anim.gif"))
+
+```
+
+### source[tidy tuesday by tacookson](https://github.com/tacookson/tidy-tuesday/blob/master/nyc-squirrels.Rmd)
+
+```{r plot3}
+activity <- nyc_squirrels %>%
+  add_count(primary_fur_color) %>%
+  group_by(primary_fur_color, n) %>%
+  summarise_at(vars(running:foraging), mean) %>%
+  ungroup() %>%
+  filter(!is.na(primary_fur_color)) %>%
+  pivot_longer(names_to = "activity", running:foraging) %>%
+  mutate(cases = n * value) %>% 
+  nest(-primary_fur_color, -activity) %>%
+  mutate(model = map(data, ~ prop.test(.$cases, .$n, correct = FALSE)),
+         tidied = map(model, tidy)) %>% #t.test: lack of x number
+  unnest(tidied) %>%
+  unnest(data) %>% 
+  mutate(activity = fct_reorder(str_to_title(activity), estimate))
+
+p <- activity %>% 
+  ggplot(aes(activity, estimate, col = primary_fur_color)) +
+  geom_point(size = 2, position = position_dodge(width = 0.8)) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high),
+                position = position_dodge(width = 0.8)) +
+  coord_flip() +
+  expand_limits(y = 0) +
+  scale_color_manual(values = c("#000000", "#d2691e", "#b9bbb6")) +
+  scale_y_continuous(labels = scales:: percent_format(),
+                     breaks = seq(0, 0.6, 0.1)) +
+  guides(col = guide_legend(reverse = TRUE,
+                            title = "Color")) +
+  labs(x = "",
+       y = "% of activity from squirrels",
+       title = "Reactions of squirrels in New York Central Park",
+       subtitle = "An estimated probability of relevant activities using 95% confidence intervals") +
+  theme(legend.position = c(0.85, 0.3),
+        legend.background = element_rect(fill = "transparent",
+                                         size = 0.5,
+                                         linetype = "solid"),
+        legend.key = element_rect(fill = "transparent",
+                                  color = NA),
+        legend.title = element_blank(),
+        plot.title = element_text(size = 16),
+        plot.subtitle = element_text(size = 13),
+        panel.background = element_rect(fill = "#009E73"),
+        panel.grid = element_blank())
+```
+
+
+```{r parsing description of "other interactions"}
+
+set.seed(2019)
+
+other_activity <- nyc_squirrels %>% 
+  filter(!is.na(other_interactions)) %>% 
+  unnest_tokens(word, other_interactions) %>% 
+  anti_join(stop_words) %>% 
+  filter(!str_detect(word, "[0-9]")) %>% 
+  count(primary_fur_color, word) %>% 
+  filter(!is.na(primary_fur_color)) %>% 
+  group_by(primary_fur_color) %>% 
+  top_n(10, n) %>% 
+  ungroup() %>% 
+  mutate(word = fct_reorder(word, n)) 
+
+a <- grid::arrow(type = "closed",
+                     length = unit(3, "mm"))
+
+graph <- 
+  graph_from_data_frame(other_activity)
+
+#V(graph)$color[Cinammon] <- "#d2691e"
+#V(graph)$color[Black] <- "#000000"
+#V(graph)$color[Gray] <- "#808080"
+
+k <- graph %>% 
+  ggraph(layout = "kk") +
+  geom_edge_link(aes(edge_alpha = n), 
+                 show.legend = FALSE,
+                 arrow = a, 
+                 end_cap = circle(15, "mm")) +
+  geom_node_point(aes(size = 1.5),
+                  color = "#009E73") +
+  geom_node_text(aes(label = name),
+                 vjust = 1, hjust = 0.5,
+                 check_overlap = TRUE) +
+  labs(title = "Other activities of squirrles in New York Central Park") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(color = "#009E73",
+                                       size = 1,
+                                       linetype = 1),
+        plot.title = element_text(family = f1, size = 16, hjust = 0.5))
+```
+
+
+```{r}
+p + k + plot_layout(nrow = 1)
+ggsave("W44_NYC_SquirrelsCensus_Activities.png", width = 38, height = 15, units = "cm")
+```
