@@ -1,0 +1,119 @@
+---
+title: "W4 Spotify Songs Features"
+author: "Sung Inkyung"
+date: '2022 2 9'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidytuesdayR)
+library(tidyverse)
+library(ggtext)
+library(lubridate)
+library(MetBrewer)
+library(patchwork)
+library(showtext)
+
+font_add_google("Teko")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2020-01-21') 
+
+spotify_songs <- tuesdata$spotify_songs
+```
+
+
+```{r}
+genre <- spotify_songs %>% 
+  distinct(track_id, .keep_all = TRUE) %>% 
+  group_by(playlist_genre) %>%
+  summarise(n_songs = length(unique(track_name)))
+
+
+popularity <- spotify_songs %>% 
+  distinct(track_id, .keep_all = TRUE) %>% 
+  group_by(playlist_genre) %>%
+  summarise_at(vars(popularity = track_popularity, danceability, tempo, loudness, 
+                    duration = duration_ms, speechiness, valence, instrumentalness), 
+               mean, na.rm = TRUE) %>%
+  mutate_at(vars(-playlist_genre), scale)
+
+df <- popularity %>% 
+  left_join(genre, by = "playlist_genre") %>% 
+  select(-n_songs) %>% 
+  pivot_longer(-playlist_genre, names_to = "feature") %>% 
+  rename(genre = playlist_genre) %>% 
+  mutate(id = rep(1:8, 6),
+         genre = str_to_upper(genre),
+         feature = str_to_title(feature),
+         angle = 90 - 360 * (id - 0.5)/max(id))
+```
+
+```{r}
+plot <- ggplot(data = df) +
+  geom_segment(data = data.frame(y = c(-2, 0, 2)),
+               aes(x = 0.5, xend = 8.5, y = y, yend = y),
+               color = met.brewer("Cross", 8)[6]) +
+  geom_bar(aes(x = id, y = value, fill = as.factor(id)),
+           stat = "identity") +
+  geom_text(data = data.frame(x = 0, y = c(-2, 0, 2)),
+            aes(x = x, y = y, label = y),
+            size = 5.5) + 
+  scale_fill_manual(values = met.brewer("Cross", 8),
+                    name = "",
+                    labels = c("1" = "Popularity", 
+                               "2" = "Danceability", 
+                               "3" = "Tempo", 
+                               "4" = "Loudness", 
+                               "5" = "Duration", 
+                               "6" = "Speechiness",
+                               "7" = "Valence",
+                               "8" = "Instrumentalness")) +
+  coord_polar() +
+  facet_wrap(~ genre, nrow = 2) +
+  ylim(-2.5, 2.5) +
+  xlim(0, 9) +
+  labs(x = "",
+       y = "",
+       title = "Features by Genre",
+       subtitle = "<span style = 'color:#c969a1'>Popularity</span> <span style = 'color:#ce4441'> Danceability</span> <span style = 'color:#ee8577'>Tempo</span> <span style = 'color:#eb7926'> Loudness</span><br><span style = 'color:#ffbb44'> Duration</span> <span style = 'color:#859b6c'> Speechiness</span> <span style = 'color:#62929a'> Valence</span> <span style = 'color:#004f63'> Instrumentalness</span>",
+       caption = "Source: Spotify | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_text(family = "Teko", size = 30, face = "bold", color = "#122451"),
+        plot.title = element_text(family = "Teko",
+                                  size = 70,
+                                  hjust = 0.5,
+                                  color = "#122451",
+                                  margin = margin(b = 10)),
+        plot.subtitle = element_markdown(family = "Poppins",
+                                         size = 30,
+                                         hjust = 0.5,
+                                         lineheight = 1.1,
+                                         margin = margin(b = 15)),
+        plot.caption = element_text(family = "Poppins",
+                                    size = 20,
+                                    hjust = 0.5,
+                                    color = "gray45"), 
+        panel.spacing.x = unit(3, "lines"),
+        panel.spacing.y = unit(3, "lines"),
+        panel.grid = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W4_SpotifySongsFeatures.png", width = 18, height = 18)
+```
+
+
