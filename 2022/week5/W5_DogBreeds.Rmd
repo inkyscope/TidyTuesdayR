@@ -1,0 +1,88 @@
+---
+title: "W5 Dog breeds"
+author: "Sung Inkyung"
+date: '2022 2 8'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(ggfx)
+library(ggimage)
+library(MetBrewer)
+library(showtext)
+
+font_add_google("Bodoni Moda")
+font_add_google("Quicksand")
+
+showtext_opts(dpi = 300)
+showtext_auto()
+```
+
+
+```{r}
+breed_rank_all <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-01/breed_rank.csv')
+```
+
+
+```{r}
+df <- breed_rank_all %>% 
+  clean_names() %>% 
+  select(breed, x2020_rank, image) %>% 
+  head(50) %>% 
+  mutate(breed = str_wrap(breed, 18),
+         breed = fct_reorder(breed, x2020_rank))
+```
+
+
+```{r}
+plot <- ggplot(df) +
+  as_reference(
+    geom_tile(aes(1, 1, fill = x2020_rank),
+              height = 2, width = 2, alpha = 0.7),
+    id = "tile"
+  ) +
+  with_blend(
+    geom_image(aes(x = 1, y = 1, image = image),
+               size = 0.95),
+    bg_layer = "tile",
+    blend_type = "hard_light",
+    alpha = "src"
+  ) +
+  geom_text(aes(x = 1.8, y = 1.8, label = x2020_rank, color = x2020_rank),
+            hjust = 1, vjust = 1, family = "Quicksand", fontface = "bold",
+            size = 6) +
+  scale_x_continuous(limits = c(0, 2)) +
+  scale_y_continuous(limits = c(0, 2)) +
+  scale_color_gradientn(colors = met.brewer("Isfahan1"),
+                        guide = "none", aesthetics = c("fill", "color")) +
+  facet_wrap(~breed, ncol = 10) +
+  coord_equal(expand = FALSE) +
+  labs(title = "Top 100 Dogs", 
+       caption = "Source: American Kennel Club | Graphic: Sung Inkyung") +
+  theme(legend.position = "none",
+        panel.background = element_blank(),
+        plot.title = element_text(family = "Bodoni Moda",
+                                  size = 36,
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(family = "Quicksand",
+                                    size = 9,
+                                    hjust = 0.5),
+        strip.text = element_text(family = "Quicksand",
+                                  face = "bold"),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        strip.background = element_rect(fill = "white", color = "white"),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("W5_DogBreeds.png", width = 35, height = 30, units = "cm")
+```
+

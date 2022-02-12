@@ -1,0 +1,75 @@
+---
+title: "W1 Moon Calendar 2022"
+author: "Sung Inkyung"
+date: '2022 2 8'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(gggibbous)
+library(suncalc)
+library(MetBrewer)
+library(showtext)
+
+font_add_google("Noto Sans")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+df_moon <- tibble(
+  date = seq(ymd("2022-01-01"), ymd("2022-12-31"), by = 1),
+  month = month(date, label = TRUE),
+  moon = getMoonIllumination(date)
+) 
+```
+
+
+```{r}
+plot <- df_moon %>% 
+  ggplot(aes(month, y = day(date))) +
+  geom_moon(
+    aes(ratio = moon$fraction, fill = moon$fraction, 
+        right = moon$phase < .5),
+    color = "white", alpha = .8, stroke = .01, size = 15
+  ) +
+  geom_text(aes(label = day(date)), size = 2, color = "#bababf") +
+  scale_fill_gradientn(colors = met.brewer("OKeeffe2")) +
+  scale_y_reverse() +
+  scale_x_discrete(label = month.abb) +
+  labs(x = "",
+       y = "",
+       title = "Lunar Calendar 2022",
+       caption = "Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#3a3a4a"),
+        panel.grid = element_blank(),
+        plot.title = element_text(color = "#bababf",
+                                  family = "Noto Sans",
+                                  size = 36,
+                                  face = "bold",
+                                  hjust = 0.5),
+        plot.caption = element_text(color = "#bababf",
+                                    family = "Poppins",
+                                     size = 11,
+                                    hjust = 0.5),
+        axis.text.x = element_text(color = "#f5f5f7",
+                                 family = "Poppins",
+                                 size = 12),
+        axis.text.y = element_blank(),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("W1_MoonCalendar2022.png", width = 22, height = 26, units = "cm")
+  
+```
+

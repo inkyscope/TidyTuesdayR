@@ -1,0 +1,79 @@
+---
+title: "W4 Boardgames"
+author: "Sung Inkyung"
+date: '2022 2 8'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggstream)
+library(colorspace)
+library(showtext)
+
+font_add_google("Merriweather")
+font_add_google("Karla")
+
+showtext_opts(dpi = 300)
+showtext_auto()
+```
+
+
+```{r}
+ratings <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-25/ratings.csv')
+
+top_game <- ratings %>% 
+  top_n(7, bayes_average) %>% 
+  pull(name)
+```
+
+
+```{r}
+pals <- c("#aa88aa", "#8c2155", "#5e6162", "#66a3a3", "#f3c99d", "#f05228", "#3399ff")
+
+plot <- ratings %>% 
+  filter(name %in% top_game) %>% 
+  ggplot(aes(year, bayes_average, fill = name)) +
+  geom_stream(extra_span = 0.013, 
+              type = "mirror",
+              n_grid = 3000,
+              bw = .78) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_x_continuous(limits = c(2015, 2020),
+                     breaks = seq(2015, 2020, 1),
+                     expand = c(0, 0)) +
+  scale_fill_manual(values = pals,
+                    name = "") +
+  labs(x = "",
+       y = "Bayes average",
+       title = "Top Board Games Over Last 5 Years",
+       caption = "Source: Kaggle | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.text = element_text(family = "Merriweather", size = 9, face = "bold"),
+        panel.background = element_blank(),
+        plot.title = element_text(family = "Merriweather",
+                                  size = 30,
+                                  face = "bold",
+                                  hjust = 0.5,
+                                  margin = margin(b = 15)),
+        plot.caption = element_text(family = "Karla",
+                                    size = 9,
+                                    hjust = 0.5,
+                                    margin = margin(t = 15)),
+        panel.grid.major.x = element_line(size = 0.5, color = "#dae0e5"),
+        axis.title.y = element_text(family = "Karla",
+                                 size = 15,
+                                 angle = 90),
+        axis.text.x = element_text(family = "Karla",
+                                   margin = margin(t = 10), size = 14),
+        axis.text.y = element_text(family = "Karla", size = 12, hjust = 0),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("W4_Boardgames.png", width = 30, height = 18, units = "cm")
+```
+
+

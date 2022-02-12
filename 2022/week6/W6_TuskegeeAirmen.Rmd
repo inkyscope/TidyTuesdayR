@@ -1,0 +1,102 @@
+---
+title: "W6 Tuskegee Airmen"
+author: "Sung Inkyung"
+date: '2022 2 9'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[TidyTuesday 2021 Week8 WEB DuBois Challenge]
+```{r}
+library(tidyverse)
+library(lubridate)
+library(colorspace)
+library(showtext)
+
+font_add_google("Rajdhani")
+
+showtext_opts(dpi = 300)
+showtext_auto()
+```
+
+
+```{r}
+airmen <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-02-08/airmen.csv')
+```
+
+
+```{r}
+df_rank <- airmen %>% 
+  select(date = graduation_date, rank = rank_at_graduation) %>%
+  filter(!is.na(date),
+         !is.na(rank)) %>% 
+  mutate(rank = fct_recode(rank, "Captain" = "Capt"),
+         rank = fct_lump(rank, 4),
+         rank = fct_relevel(rank,  "Flight Officer", "2nd Lt", "1st Lt", "Captain"),
+         year = floor_date(date, "month")) %>% 
+  filter(!rank %in% c("N/A", "Unk", "Other")) %>% 
+  group_by(rank, year) %>% 
+  summarise(total = n()) %>% 
+  arrange(year)
+
+  df_date <- tibble(expand.grid(year = seq(min(df_rank$year),
+                            max(df_rank$year), by = "month"),
+                            "rank" = unique(df_rank$rank)))
+
+  df <- left_join(df_date, df_rank, by = c("year", "rank")) %>% 
+    replace_na(list(total = 0)) %>% 
+    arrange(year) %>% 
+    group_by(rank) %>% 
+    mutate(cum = cumsum(total))
+```
+### yellow: "#F8BB12", blue: "#4774AD", green:"#3C6555"
+```{r}
+plot <- ggplot(data = df, aes(x = year, y = cum, fill = rank, group = rank)) +
+  geom_area() +
+  labs(x = "", y = "",
+       title = "Tuskegee Airmen",
+       subtitle = "The Tuskegee Airmen were a group of primarily African American\nmilitary pilots and airmen who fought in World War II.\nThis plot shows the cumulative number graduates of each rank\nbetween 1943 and 1948.\n\nThe two graduates with the rank of Captain are William H. Shannon\nand Benjamin O. Davis.Jr., shown in green at the bottom of plot.",
+       caption = "Source: Commemorative Airforce(CAF)\nGraphic: Sung Inkyung") +
+  scale_fill_manual(values = c("Flight Officer" = "black",
+                               "2nd Lt"  = "#af804f",
+                               "1st Lt" = "#f8bb12",
+                                "Captain" = "#3c6555")) +
+  annotate(geom = "text",
+           x = as.POSIXct("1947-10-31"), y = 850, 
+           label = "Flight Officer (314)",
+           color = "white", 
+           family = "Rajdhani",
+           fontface = "bold",
+           size = 5, lineheight = 0.7, hjust = 0.5) +
+  annotate(geom = "text",
+           x = as.POSIXct("1947-10-31"), y = 380, 
+           label = "2nd Lieutenant (686)",
+           color = "white", 
+           family = "Rajdhani",
+           fontface = "bold",
+           size = 5, lineheight = 0.7,  hjust = 0.5) +
+  annotate(geom = "text",
+           x = as.POSIXct("1947-10-31"), y = 14,
+           label = "1st Lieutenant (28)",
+           color = "black", 
+           family = "Rajdhani",
+           fontface = "bold",
+           size = 3.5, lineheight = 0.7, hjust = 0.5) +
+  coord_cartesian(expand = FALSE) +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = lighten("#EDE0D0", 0.7), color = NA),
+        panel.background = element_rect(fill = lighten("#EDE0D0", 0.7), color = NA),
+        plot.title = element_text(family = "Rajdhani", size = 38, face = "bold", hjust = 0, vjust = -10),
+        plot.subtitle = element_text(family = "Rajdhani", size = 14, hjust = 0, vjust = -30),
+        plot.caption = element_text(family = "Rajdhani", size = 11, hjust = 1),
+        axis.text.x = element_text(family = "Rajdhani", size = 10),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        plot.margin = margin(10, 10, 10, 30))
+
+ggsave("W6_TuskegeeAirmen.png", width = 30, height = 28, units = "cm")
+```
+
