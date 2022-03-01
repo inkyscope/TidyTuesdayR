@@ -1,0 +1,72 @@
+---
+title: "W7 DuBois Challenge
+author: "Sung Inkyung"
+date: '2022 2 16'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(colorspace)
+library(cowplot)
+library(showtext)
+
+
+font_add_google("Chakra Petch")
+font_add_google("Bai Jamjuree")
+showtext_opts(dpi = 300)
+showtext_auto()
+
+#plot for illiteracy
+f1 = "Chakra Petch"
+f2 = "Bai Jamjuree"
+```
+
+
+```{r Iliteracy}
+df_illiteracy <- tribble(~date, ~iliteracy_rate,
+              "1860", 99,
+              "1870", 92.1,
+              "1880", 81.6,
+              "1890", 67.2,
+              "1900", 50) %>% 
+  mutate(rate = iliteracy_rate * -1)
+
+# https://github.com/BlakeRMills/TidyTuesday/blob/main/2022/W.E.B.%20Du%20Bois%20(15%20Feb%202022)/WEB%20Du%20Bois%20(15%20Feb%202022).R
+
+plot1 <- ggplot(df_illiteracy) +
+  geom_bar(aes(x = rate, y = iliteracy_rate), stat = "identity", width = 1.7, fill = "gray15") +
+  geom_segment(aes(x = -100.03, xend = rate +  0.5, y = iliteracy_rate - 0.3, yend = iliteracy_rate - 0.3), size = 6.5, lineend = "round", color = "black") +
+  geom_segment(aes(x = -100.03, xend = rate +  0.5, y = iliteracy_rate - 0.3, yend = iliteracy_rate - 0.3), size = 6, lineend = "round", color = lighten("#ede0d0", 0.7)) +
+  geom_text(aes(label = date, x = -107, y = iliteracy_rate - 0.5), size = 15, family = f2) +
+  annotate(geom = "text",
+           label = "Percent of\nIlliteracy", 
+           x = -108, y = 0, lineheight = 0.7, size = 12, family = "Bai Jamjuree") +
+  scale_y_continuous(limits = c(0, 105)) +
+  scale_x_continuous(limits = c(-120, -45), 
+                     breaks = df_illiteracy$rate,
+                     labels = paste(df_illiteracy$iliteracy_rate, "%", sep = "")) +
+  labs(title = "Iliteracy.",
+       caption = "Source: DuBois Challenge | Graphic: Sung Inkyung")+
+  theme_void() +
+  theme(plot.background = element_rect(fill = lighten("#ede0d0", 0.7), color = NA),
+        plot.title = element_text(family = f1, 
+                                  size = 60,
+                                  face = "bold",
+                                  hjust = 0.5),
+        plot.caption = element_text(family = f1,
+                                    size = 20,
+                                    hjust = 0.5),
+        plot.margin = margin(20, 20, 20, 20),
+        axis.text.x = element_text(family = f2, 
+                                   size = 22,
+                                   vjust = 12))
+
+ggsave("W7_DuBoisChallenge_Illiteracy.png", width = 45, height = 55, units = "cm")
+    
+```

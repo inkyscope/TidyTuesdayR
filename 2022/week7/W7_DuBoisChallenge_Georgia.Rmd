@@ -1,0 +1,107 @@
+---
+title: "W7 DuBois Challenge"
+author: "Sung Inkyung"
+date: '2022 2 17'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggforce)
+library(scales)
+library(patchwork)
+library(showtext)
+
+font_add_google("Chakra Petch")
+font_add_google("Bai Jamjuree")
+
+showtext_opts(dpi = 300)
+showtext_auto()
+
+f1 = "Chakra Petch"
+f2 = "Bai Jamjuree"
+```
+
+```{r}
+df <- tribble(
+  ~year, ~value, ~color,
+  1875, 5393885, "#000000",
+  1880, 5764293, "#CCBCA3",
+  1885, 8153390, "#4774AD",
+  1890, 12322003, "#F8BB12",
+  1895, 12941230, "#D7D2CB",
+  1899, 13447423, "#D41735"
+) %>% 
+  mutate(radius = sqrt(value/pi) / 100)
+```
+
+```{r}
+p1 <- df %>%
+  mutate(year = factor(year)) %>% 
+  ggplot(aes(fill = fct_rev(year))) +
+  geom_circle(aes(x0 = 30, y0 = 25, r = radius), color = NA) +
+  annotate(geom = "text", x = 30, y = 25, label = "$5,393,885", family = f2, size = 4.5, vjust = 0, color = "white") +
+  annotate(geom = "text", x = 30, y = 12.7, label = "1875", family = f2, size = 4.5, vjust = 0, color = "white") +
+  annotate(geom = "text", x = 30, y = 7.5, label = "$12,322,003", family = f2, size = 4.5, vjust = 0, color = "black") +
+  annotate(geom = "text", x = 30, y = 5.7, label = "1890", family = f2, size = 4.5, vjust = 0, color = "black") +
+  scale_fill_manual(values = c("1875" = "#000000",
+  "1880" = "#968C83",
+  "1885" = "#4774AD",
+  "1890" = "#F8BB12",
+  "1895" = "#D7D2CB",
+  "1899" = "#D41735")) +
+  coord_fixed() +
+  theme_void() +
+  theme(legend.position = "none")
+```
+
+
+```{r}
+p2 <- ggplot(df, aes(fill = factor(year))) +
+  geom_circle(aes(x0 = 30, y0 = 30, r = radius)) +
+  scale_fill_manual(values = c("1875" = "#000000",
+  "1880" = "#CCBCA3",
+  "1885" = "#4774AD",
+  "1890" = "#F8BB12",
+  "1895" = "#D7D2CB",
+  "1899" = "#D41735")) +
+  facet_wrap(~year, ncol = 6) +
+  coord_fixed() +
+  theme_void() +
+  theme(legend.position = "none",
+        legend.text = element_text(family = f2, size = 15))
+```
+
+```{r}
+patchwork <- p1/p2 + plot_layout(heights = c(1, 0.1))
+
+plot <- patchwork + plot_annotation(
+  title = "ASSESSED VALUATION OF ALL TAXABLE PROPERTY\nOWNED BY GEORGIA NEGROS .",
+  subtitle = "Doubled in value in 15 years between 1875 and 1890 .",
+  caption = "Source: #TidyTuesday2022 | Graphic: Sung Inkyung") &
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#dfd3c2",
+                                       color = NA),
+        panel.background = element_rect(fill = "#dfd3c2",
+                                        color = NA),
+        plot.title = element_text(family = f1,
+                                  size = 18,
+                                  hjust = 0.5,
+                                  margin = margin(t = 15, b = 7)),
+        plot.subtitle = element_text(family = f1,
+                                    size = 16,
+                                    hjust = 0.5,
+                                    margin = margin(b = 15)),
+        plot.caption  = element_text(family = f2,
+                                     size = 11,
+                                     hjust = 0.5,
+                                     color = "#968C83",
+                                     margin = margin(t = 20)))
+
+ggsave("W7_DuBoisChallenge_Georgia.png", width = 25, height = 27, units = "cm")
+```
+
