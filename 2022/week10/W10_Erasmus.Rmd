@@ -1,0 +1,47 @@
+---
+title: "W10 Erasmus Student "
+output: html_document
+date: '2022-03-14'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(igraph)
+library(ggraph)
+library(countrycode)
+library(dplyr)
+```
+
+```{r}
+erasmus <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-08/erasmus.csv')
+
+df <- erasmus %>% 
+  filter(mobility_duration >= 7) %>% 
+  count(sending_country_code, receiving_country_code, wt = participants, name = "Counts") %>% 
+  filter(sending_country_code != receiving_country_code) %>% 
+  mutate(across(contains("country_code"), countrycode::countrycode,
+                origin = "eurostat", destination = "country.name")) %>% 
+  filter(Counts > 10) %>% 
+  graph_from_data_frame(directed = FALSE)
+
+plot <- df %>% 
+  ggraph(layout = "stress") +
+  geom_edge_link(aes(edge_width = Counts, edge_alpha = Counts), edge_color = "#aa77cc") +
+  geom_node_point(size = 4.5, fill = "#808000",  color = "#808000", shape = 21) +
+  geom_node_text(aes(label = name), family = "Lora", size = 3.5, hjust = 0.5, repel = TRUE) +
+  scale_edge_width(range = c(0.2, 6)) +
+  labs(title = "Erasmus Program Mobility between 2014 and 2019",
+       subtitle = "Countries where more than 10 students participated in the program are included",
+       caption = "Source: Data Europa.eu | Graphic: Sung Inkyung") +
+  theme_graph() +
+  theme(plot.background = element_rect(fill = "gray97"),
+        plot.title = element_text(family = "Anton", size = 18),
+        plot.subtitle = element_text(family = "Lora", size = 13),
+        plot.caption = element_text(family = "Lora", size = 9, face = "plain"))
+
+ggsave("W10_Erasmus.png", width = 20, height = 20, units = "cm")
+```
