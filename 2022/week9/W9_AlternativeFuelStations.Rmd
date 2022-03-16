@@ -1,0 +1,81 @@
+---
+title: "W9 Alternative Fuel Stations"
+author: "Sung Inkyung"
+date: '2022 3 2'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(sf)
+library(tmap)
+library(scico)
+library(showtext)
+
+font_add_google("Bai Jamjuree")
+font_add_google("Poppins")
+
+showtext_opts(dpi = 300)
+showtext_auto()
+
+f1 = "Bai Jamjuree"
+f2 = "Poppins"
+
+pals <- c("#8C0172", "#93384C","#996330", "#9B951B", "#7FC55F", "#5EE2BB", "#B2F2FD") #scico(7, palette = "hawaii")
+```
+
+
+```{r}
+stations <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-01/stations.csv') %>% 
+  clean_names()
+```
+
+```{r}
+### [stations shp file] (https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-03-01)
+
+df <- read_sf("data/Alternative_Fueling_Stations.shp") %>% 
+  st_transform(4326) %>% 
+  st_crop(st_bbox(c(xmin=-124.736342 , ymin=24.521208, xmax=-66.945392, ymax=49.382808))) %>% 
+  clean_names() %>% 
+  mutate(fuel_type = case_when(
+    fuel_type == "CNG" | fuel_type == "LNG" ~ "Natural Gas",
+    fuel_type == "BD" ~ "Biodiesel",
+    fuel_type == "ELEC" ~ "Electric",
+    fuel_type == "E85" ~ "Ethanol",
+    fuel_type == "HY" ~ "Hydrogen",
+    fuel_type == "LPG" ~ "LPG",
+    TRUE ~ fuel_type
+  )
+  )
+```
+
+```{r}
+plot <- tm_shape(df) +
+  tm_dots(col = "fuel_type", size = 0.07, alpha = 0.4,
+          legend.show = FALSE,
+          palette = pals) +
+  tm_facets(by="fuel_type", ncol = 2) +
+  tm_layout(frame = FALSE, frame.lwd = NA, panel.label.bg.color = NA,
+            panel.label.fontfamily = f1,
+            panel.label.fontface = "bold",
+            panel.label.size = 1.5,
+            main.title="Alternative Fuel Stations in USA",
+            main.title.fontfamily = f2,
+            main.title.fontface = "bold",
+            main.title.size = 1.8,
+            main.title.position = "center", 
+            inner.margins = c(top = 0.05, right = 0.03, bottom = 0.03, left = 0.03),
+            attr.outside = TRUE) +
+  tm_credits(text = "Source: U.S. Department of Transportation | Graphic: Sung Inkyung", 
+             size = 1,
+             fontfamily = f2,
+             position = "center")
+
+tmap_save(plot, "W9_AlternativeFuelStation.png", width = 20, height = 20, units = "cm")
+```
+
