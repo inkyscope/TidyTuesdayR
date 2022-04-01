@@ -1,0 +1,150 @@
+---
+title: "W13 Collegiate Sports Budgets"
+output: html_document
+date: '2022-03-31'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source[UC Business Analytics R Programming Guide](https://uc-r.github.io/cleveland-dot-plots)
+```{r}
+library(tidyverse)
+library(ggtext)
+library(showtext)
+
+font_add_google("Anton")
+font_add_google("Open Sans")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Anton"
+f2 = "Open Sans"
+
+theme_set(theme_minimal())
+```
+
+```{r}
+sports <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-29/sports.csv')
+
+range(sports$year)
+
+  df_rev <- sports %>% 
+    select(rev_men, rev_women, sports) %>% 
+    drop_na() %>% 
+    group_by(sports) %>% 
+    summarise(men = round(mean(rev_men), 0),
+              women = round(mean(rev_women), )) %>% 
+    pivot_longer(cols = c(men, women), names_to = "gender", revenues_to = "revenue")
+  
+  ## Comparing multiple points of information
+  ggplot(df_rev, aes(revenue, y = fct_reorder(sports, revenue), fill = gender)) +
+    geom_col()
+  
+  ggplot(df_rev, aes(revenue, y = fct_reorder(sports, revenue), fill = gender)) +
+    geom_col(position = "dodge")
+  
+  ggplot(df_rev, aes(revenue, y = fct_reorder(sports, revenue), fill = gender)) +
+    geom_col(position = "dodge") +
+    facet_wrap(~gender)
+  
+  ggplot(df_rev, aes(revenue, y = fct_reorder(sports, revenue),)) +
+    geom_line(aes(group = sports)) +
+    geom_point(aes(color = gender))
+```
+
+```{r}
+  ## Adding revenue markers
+  
+  right_label <- df_rev %>% 
+    group_by(sports) %>% 
+    arrange(desc(revenue)) %>% 
+    top_n(1)
+  
+  left_label <- df_rev %>% 
+    group_by(sports) %>% 
+    arrange(desc(revenue)) %>% 
+    slice(2)
+  
+ggplot(df_rev, aes(revenue, y = fct_reorder(sports, revenue))) +
+    geom_line(aes(group = sports)) +
+    geom_point(aes(color = gender), size = 1.5) +
+    geom_text(data = right_label, aes(color = gender, label = revenue), size = 3, hjust = -0.1) +
+    geom_text(data = left_label, aes(color = gender, label = revenue), size = 3, hjust = 1.2) +
+  scale_x_continuous(limits = c(0, 1200000),
+                     labels = scales::number_format(),
+                     expand = c(0.1, 0.1)) +
+  scale_color_manual(values = c("men" = "dodgerblue4", "women" = "firebrick3"))
+```
+
+```{r}
+## Create data fram that identifies mean revenue differences over 20%
+rev_diff <- df_rev %>% 
+  pivot_wider(names_from = gender, values_from = revenue) %>% 
+  group_by(sports) %>% 
+  mutate(max = max(women, men),
+         min = min(women, men),
+         diff = round(max / min - 1, 1)) %>% 
+  arrange(-diff) %>% 
+  filter(diff > .2)
+
+right_label <- filter(right_label, sports %in% rev_diff$sports)
+left_label <- filter(left_label, sports %in% rev_diff$sports)
+
+highlight <- filter(df_rev, sports %in% rev_diff$sports)
+
+ggplot(df_rev, aes(revenue, sports)) +
+  geom_line(aes(group = sports), alpha = 0.3) +
+  geom_point(aes(color = gender), size = 1.5, alpha = 0.3) +
+  geom_line(data = highlight, aes(group = sports)) +
+  geom_point(data = highlight, aes(color = gender), size = 2) +
+  geom_text(data = right_label, aes(color = gender, label = revenue), size = 3, hjust = -0.1) +
+  geom_text(data = left_label, aes(color = gender, label = revenue), size = 3, hjust = 1.2) +
+  scale_x_continuous(limits = c(0, 1200000),
+                     labels = scales::number_format(),
+                     expand = c(0.1, 0.1)) +
+  scale_color_manual(values = c("men" = "dodgerblue4", "women" = "firebrick3")) +
+  labs(x = "Average of Revenue",
+       y = "")
+```
+
+```{r}
+## Create a new label data frame
+plot_label <- rev_diff %>% 
+  select(sports, revenue = max, diff) %>% 
+  right_join(right_label)
+
+plot <- ggplot(df_rev, aes(revenue, sports)) +
+  geom_line(aes(group = sports), alpha = 0.3) +
+  geom_point(aes(color = gender), size = 1.5, alpha = 0.3) +
+  geom_line(data = highlight, aes(group = sports)) +
+  geom_point(data = highlight, aes(color = gender), size = 2) +
+  geom_text(data = plot_label, aes(color = gender, 
+                                   label = paste0("+", scales::percent(round(diff, 2)))), 
+            size = 3, hjust = -0.2, na.rm = T) +
+  scale_x_continuous(limits = c(0, 1200000),
+                     labels = scales::label_number_si(),
+                     expand = c(0.01, 0.01)) +
+  scale_color_manual(values = c("men" = "dodgerblue4", "women" = "firebrick3"),
+                     name = "") +
+  labs(x = "Average of Revenue",
+       y = "",
+       title = "Average Revenue by Sports and Gender in US (2015 - 2019)",
+       subtitle = "9 out of 31 sports have an average difference in earings between <span style = 'color : dodgerblue4'>**men**</span> and<span style = 'color : firebrick3'>**women**</span>of 20% or more.<br>Equestrian shows the greatest difference with women generating 2910% more revenue than men.<br>In basketball, on the other hand, men earn 130% more than women.",
+       caption = "Source: Equity in Athletics Data Analysis | Graphic: Sung Inkyung") +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "floralwhite", color = NA),
+        plot.title = element_text(family = f1, size = 20, hjust = 0.5, margin = margin(b = 9)),
+        plot.subtitle = element_markdown(family = f2, size = 14, hjust = 0.5, margin = margin(b = 15)),
+        plot.caption = element_text(family = f2, size = 8, margin = margin(t = 25)),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size = 0.3, color = "lightgray"),
+        panel.grid.minor = element_blank(),
+        axis.text.y = element_text(family = f2, size = 10),
+        axis.text.x = element_text(family = f2, size = 9),
+        plot.margin = margin(20, 30, 20, 20))
+
+ggsave("W13_USCollegiateSportsBudgets.png", width = 30, height = 26, units = "cm")
+```
+
