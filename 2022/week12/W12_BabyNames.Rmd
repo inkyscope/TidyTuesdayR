@@ -1,0 +1,77 @@
+---
+title: "W12 Baby names"
+output: html_document
+date: '2022-03-29'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(showtext)
+
+font_add_google("IBM Plex Sans Arabic")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+```
+
+
+```{r}
+babynames <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-22/babynames.csv')
+
+range(babynames$year)
+
+```
+
+```{r}
+df <- babynames %>% 
+  filter(sex == "M") %>% 
+  mutate(endletter = str_sub(name, -1)) %>% 
+  group_by(year, endletter) %>% 
+  summarise(count = n()) %>% 
+  mutate(prc = count/sum(count),
+         bigletter = case_when(
+           endletter == "n" ~ "N",
+           endletter == "e" ~ "E",
+           TRUE ~ "Other letters"
+         ),
+         bigletter = factor(bigletter,
+                            levels = c("E", "N", "Other letters"),
+                            ordered = TRUE))
+
+plot <- df %>% 
+  ggplot(aes(year, prc, group = endletter, color = bigletter)) +
+  geom_line(size = 0.3) +
+  scale_x_continuous(limits = c(1880, 2017),
+                     expand = c(0, 0)) +
+  scale_y_continuous(labels = scales::percent_format(),
+                     expand = c(0, 0)) +
+  scale_color_manual(values = c("#1a50b6", "#0e2763", "#88bad8"),
+                     name = "") +
+  guides(color = guide_legend(nrow = 1)) +
+  labs(x = "",
+       y = "Percent of boys' names by ending letters",
+       title = "Ending Letters of Boy Names 1880 - 2017",
+       subtitle = "Top 10 boys' names ending with n : John, Steven, Kevin,\nBrian, Jason, Ryan, Stephen, Jonathan, Justin, Brandon",
+       caption =  "Data: United States Social Security Administration\nGraphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "top",
+        plot.background = element_rect(fill = NA, color = NA),
+        plot.title = element_text(family = "IBM Plex Sans Arabic",
+                                  size = 22, face = "bold",
+                                  hjust = 0.5),
+        plot.subtitle = element_text(family = "IBM Plex Sans Arabic",
+                                  size = 16, hjust = 0.5),
+        plot.caption = element_text(family = "IBM Plex Sans Arabic",
+                                    size = 7, lineheight = 0.9),
+        axis.title = element_text(family = "IBM Plex Sans Arabic",
+                                  size = 10),
+        panel.grid = element_blank(),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("W12_BabyNames.png", width = 30, height = 16, units = "cm")
+
+```

@@ -1,0 +1,113 @@
+---
+title: "W12 Baby Names"
+output: html_document
+date: '2022-03-30'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggridges)
+library(patchwork)
+library(showtext)
+
+font_add_google("Lora")
+font_add_google("Fira Sans")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Lora"
+f2 = "Fira Sans"
+```
+
+
+```{r}
+#loading data
+babynames <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-22/babynames.csv')
+
+range(babynames$year)
+
+# 50 most popular girls names 1880 - 2017
+top_girls <- babynames %>% 
+  filter(sex == "F") %>% 
+  group_by(name) %>% 
+  summarise(total = sum(n)) %>% 
+  slice_max(n = 50, order_by = total) %>% 
+  mutate(rank = 1:50, name = fct_reorder(name, -total)) %>% 
+  pull(name)
+
+top_boys <- babynames %>% 
+  filter(sex == "M") %>% 
+  group_by(name) %>% 
+  summarise(total = sum(n)) %>% 
+  slice_max(n = 50, order_by = total) %>% 
+  mutate(rank = 1:50, name = fct_reorder(name, -total)) %>% 
+  pull(name)
+
+df_girls <- babynames %>% 
+  filter(sex == "F",
+         name %in% top_girls) %>% 
+  mutate(name = factor(name, levels = levels(top_girls))) %>% 
+  group_by(year, name) %>% 
+  summarise(n = sum(n))
+
+df_boys <- babynames %>% 
+  filter(sex == "M",
+         name %in% top_boys) %>% 
+  mutate(name = factor(name, levels = levels(top_boys))) %>% 
+  group_by(year, name) %>% 
+  summarise(n = sum(n))
+
+# plot (#abd7e6)
+plot_girls <- ggplot(df_girls, 
+                     aes(x = year, y = fct_reorder(name, n), height = n / 50000, group = name)) +
+  geom_ridgeline(alpha = 0.7, scale = 4.5, size = 0.3, fill = "#e44c62", color = "white") +
+  scale_x_continuous(limits = c(1880, 2017), expand = c(0, 0)) +
+  labs(x = "",
+       y = "") +
+  ggtitle("Girls") +
+  theme(panel.background = element_rect(fill = "#edecdf", color = NA),
+        plot.background = element_rect(fill = "#edecdf", color = NA),
+        plot.title = element_text(family = f2, size = 16, face = "bold"),
+        axis.text.x = element_text(family = f2, size = 10),
+        axis.text.y = element_text(family = f2, size = 10),
+        panel.grid.major.y = element_line(size = 0.3),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank())
+
+plot_boys <- ggplot(df_boys, 
+                     aes(x = year, y = fct_reorder(name, n), height = n / 50000, group = name)) +
+  geom_ridgeline(alpha = 0.7, scale = 4.5, size = 0.3, fill = "#41a0aa", color = "white") +
+  scale_x_continuous(limits = c(1880, 2017), expand = c(0, 0)) +
+  labs(x = "",
+       y = "") +
+  ggtitle("Boys") +
+  theme(panel.background = element_rect(fill = "#edecdf", color = NA),
+        plot.background = element_rect(fill = "#edecdf", color = NA),
+        plot.title = element_text(family = f2, size = 16, face = "bold"),
+        axis.text.x = element_text(family = f2, size = 10),
+        axis.text.y = element_text(family = f2, size = 10),
+        panel.grid.major.y = element_line(size = 0.3),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank())
+
+patchwork <- plot_girls + plot_boys
+patchwork + plot_annotation(
+  title = "Top 50 Baby Names 1887 - 2017",
+  caption = "Source: United States Social Security Administration | Graphic: Sung Inkyung",
+  theme = theme(plot.title = element_text(family = f1, size = 28, face = "bold", hjust = 0.5, margin = margin(b = 15)),
+                plot.caption = element_text(family = f2, size = 8))
+) &
+  theme(plot.margin = margin(20, 20, 20, 20))
+
+ggsave("W12_BabyNames1.png", width = 36, height = 28, units = "cm")
+
+  
+```
+
