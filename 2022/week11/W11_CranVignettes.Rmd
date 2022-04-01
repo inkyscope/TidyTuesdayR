@@ -1,0 +1,69 @@
+---
+title: "week11 CRAN Vignettes"
+output: html_document
+date: '2022-03-16'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(MetBrewer)
+library(showtext)
+
+font_add_google("Oswald")
+font_add_google("Saira")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Oswald"
+f2 = "Saira"
+```
+
+```{r}
+cran <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-03-15/cran.csv') 
+ 
+df <- cran %>% 
+  mutate(date = as.Date(date)) %>% 
+  filter(!is.na(date)) %>% 
+  filter(date >= ymd("2016-01-01")) %>% 
+  count(date, sort = T) %>% 
+  mutate(year = year(date))
+```
+
+```{r}
+plot <- df %>% 
+  ggplot(aes(x = date, y = n, color = factor(year))) +
+  geom_jitter(show.legend = FALSE, alpha = .75) +
+  annotate("text", x = as.Date("2020-01-15"), y = 116.5,
+           label = "123 packages\n Uploads & Updates\n(Jan 7th, 2020)",
+           family = f2, size = 2.5, lineheight = 0.9) +
+  labs(x = "",
+       y = "",
+       title = "Frequency of Contributed R Packages since 2016",
+       caption = "Source: Robert Flight Github | Graphic: Sung Inkyung") +
+  scale_color_manual(values = met.brewer("Signac")) +
+  scale_x_date(breaks = "1 year",
+               labels = scales::date_format("%Y"),
+               expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 130), 
+                     expand = c(0, 0)) +
+  theme_light() +
+  theme(plot.background = element_rect(fill = "#d7d2cb", color = NA),
+        panel.background = element_rect(fill = "#d7d2cb", color = NA),
+        plot.title = element_text(family = f1, size = 20, hjust = 0.5, margin = margin(b = 15)),
+        plot.caption = element_text(family = f2, size = 6.5),
+        panel.grid.major.x = element_line(size = .4, color = "gray75"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text = element_text(family = f2, size = 7),
+        plot.margin = margin(20, 20, 10, 20))
+
+ggsave("W11_CranVignettes.png", width = 20, height = 14, units = "cm")
+```
