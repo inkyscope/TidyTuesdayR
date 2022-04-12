@@ -1,0 +1,150 @@
+---
+title: "W14 Digital Publications"
+output: html_document
+date: '2022-04-10'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+## https://juliasilge.com/blog/cocktail-recipes-umap/
+library(tidyverse)
+library(tidytext)
+library(ggtext)
+library(showtext)
+
+font_add_google("Anton")
+font_add_google("Fira Sans")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Anton"
+f2 = "Fira Sans"
+
+theme_set(theme_minimal())
+theme_update <- theme(legend.position = "none",
+        plot.background = element_rect(fill = "floralwhite", color = NA),
+        plot.title = element_text(family = f1, size = 20, hjust = 0.5, margin = margin(b = 9)),
+        plot.subtitle = element_markdown(family = f2, size = 14, hjust = 0.5, margin = margin(b = 15)),
+        plot.caption = element_text(family = f2, size = 8, margin = margin(t = 25)),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(size = 0.3, color = "lightgray"),
+        panel.grid.minor = element_blank(),
+        axis.text.y = element_text(family = f2, size = 10),
+        axis.text.x = element_text(family = f2, size = 9),
+        plot.margin = margin(20, 30, 20, 20))
+```
+
+```{r}
+news_orgs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-05/news_orgs.csv')
+
+news_orgs %>% 
+  select(year = year_founded, topic = coverage_topics) %>% 
+  drop_na() %>% 
+  mutate(decade = (year %/% 10) * 10) %>% 
+  ggplot(aes(year)) +
+  geom_histogram(bin = 10, alpha = 0.8, fill = "firebrick3")
+
+news_orgs %>% 
+  select(year = year_founded, topic = coverage_topics) %>% 
+  na.omit() %>% 
+  mutate(decade = (year %/% 10) * 10) %>% 
+  arrange(decade) %>% 
+  select(-year) %>% 
+  unnest_tokens(word, topic) %>% 
+  count(word, sort = T)
+  
+```
+
+
+```{r}
+## Build a model
+library(tidymodels)
+library(MetBrewer)
+
+df_news <- news_orgs %>% 
+  select(year = year_founded, publication = publication_name, topics = coverage_topics) %>% 
+  mutate(decade = (year %/% 10) * 10,
+         ) %>% 
+  drop_na() %>% 
+  unnest_tokens(word, topics) %>% 
+  filter(word != "in") %>% 
+  select(-year) %>% 
+  count(publication, decade, word) %>% 
+  pivot_wider(names_from = word, values_from = n, values_fill = 0) %>% 
+  drop_na() %>% 
+  mutate(decade = factor(decade))
+  
+pca_rec <- recipe(~., data = df_news) %>% 
+  update_role(publication, decade, new_role = "id" ) %>% 
+  step_normalize(all_predictors()) %>% 
+  step_pca(all_predictors())
+
+pca_prep <- prep(pca_rec)
+
+tidied_pca <- tidy(pca_prep, 2)
+
+tidied_pca %>% 
+  filter(component %in% paste0("PC", 1:5)) %>% 
+  mutate(component = fct_inorder(component)) %>% 
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component, nrow = 1) +
+  labs(y = "")
+
+tidied_pca %>% 
+  filter(component %in% paste0("PC", 1:4)) %>% 
+  group_by(component) %>% 
+  slice_max(abs(value), n = 8, with_ties = FALSE) %>% 
+  ungroup() %>% 
+  mutate(terms = reorder_within(terms, abs(value), component)) %>% 
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  scale_y_reordered() +
+  facet_wrap(~component, scales = "free") +
+  labs(x = "Absolute value of contribution",
+       y = "",
+       fill = "value>0")
+
+juice(pca_prep) %>% 
+  ggplot(aes(PC1, PC2, label = publication)) +
+  geom_point(aes(color = decade), size = 2) +
+  geom_text(hjust = "inward", check_overlap = TRUE) +
+  scale_color_manual(values = met.brewer("Lakota")) +
+  labs(title = "Publication Featuring Social Inequality(PC1) vs Entertainment & Arts(PC2)",
+       color = "Decade")
+
+library(embed)
+
+umap_rec <- recipe(~., data = df_news) %>% 
+  update_role(publication, decade, new_role = "id") %>% 
+  step_normalize(all_predictors()) %>% 
+  step_umap(all_predictors())
+
+umap_prep <- prep(umap_rec)
+
+juice(umap_prep) %>%
+  ggplot(aes(UMAP1, UMAP2, label = publication)) +
+  geom_point(aes(color = decade),size = 2) +
+  geom_text(check_overlap = TRUE, hjust = "inward") +
+  scale_color_manual(values = met.brewer("Lakota"),
+                     guide = guide_legend(override.aes = list(size = 3.5))) +
+  labs(title = "Digital Publications by Decade",
+       caption = "Source: Project Oasis | Graphic: Sung Inkyung",  
+       color = "") +
+  theme(legend.position = "bottom",
+        legend.text = element_text(family = f2, size = 9),
+        plot.background = element_rect(fill = "floralwhite", color = NA),
+        plot.title = element_text(family = f1, size = 32, hjust = 0.5, margin = margin(b = 15)),
+        plot.caption = element_text(family = f2, size = 12, margin = margin(t = 25)),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.title = element_text(family = f2, size = 14),
+        axis.text = element_text(family = f2, size = 12),
+        plot.margin = margin(20, 30, 20, 20))
+
+ggsave("W14_DigitalPublication.png", width = 30, height = 30, units = "cm")
+```
