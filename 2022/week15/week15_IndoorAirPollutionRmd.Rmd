@@ -1,0 +1,92 @@
+---
+title: "Week 15 Indoor Air Pollution"
+output: html_document
+date: '2022-04-19'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(GGally)
+library(ggrepel)
+library(showtext)
+
+font_add_google("Teko")
+font_add_google("Arvo")
+font_add_google("Cairo")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Teko"
+f2 = "Arvo"
+f3 = "Cairo"
+```
+
+
+```{r}
+indoor_pollution <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-12/indoor_pollution.csv') %>% 
+  rename(value = "Deaths - Cause: All causes - Risk: Household air pollution from solid fuels - Sex: Both - Age: Age-standardized (Percent)") %>% 
+  janitor::clean_names() 
+
+colnames(indoor_pollution[4])
+
+indoor_pollution %>% 
+  count(entity, sort = T)
+```
+
+```{r}
+# out of 205 countries
+country <- c("Andorra", "Antigua and Barbuda", "Barbados", "Belize", "Botswana", "Burkina Faso", "Chad", "Comoros", "Cook Islands", "Djibouti", "Eritrea", "Eswatini", "Gambia", "Guyana", "Kiribati", "Lesotho", "Mauritania", "Namibia", "Nauru", "Niue", "Seychelles", "Tokelau", "Tuvalu", "Vanuatu", "World", "World Bank High Income", "World Bank Low Income")
+
+df <- indoor_pollution %>% 
+  filter(entity %in% country) %>% 
+  mutate(group = case_when(entity == "World" ~ 1,
+                           entity == "World Bank High Income" | entity == "World Bank Low Income" ~ 2,
+                           TRUE ~ 3),
+         group = as.factor(group)) %>% 
+  mutate(entity = str_remove(entity, "World Bank"))
+```
+
+
+```{r}
+ggplot(df, aes(x = year, y = value, color = group,  group = entity)) +
+  geom_step() +
+  geom_text_repel(data = df %>% filter(year == max(year)),
+                  aes(label = entity, color = group),
+                  direction = "y", 
+                  xlim = c(2019.5, NA), size = 3.5, family = f3, fontface = "bold",  max.overlaps = 25,
+                  segment.linetype = "dotted", min.segment.length = .3, segment.color = "#6D647E") +
+  scale_x_continuous(limits = c(1990, 2025),
+                     breaks = c(1990, 2000, 2010, 2019),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 20),
+                     expand = c(0.01, 0.01),
+                     labels = scales::percent_format(accuracy = 1, scale = 1)) +
+  scale_color_manual(values = c("1" = "#000194", "2" = "#FF6000", "3" = "#818f72")) +
+  labs(x = "",
+       y = "",
+       title = "Death Rates from Indoor Air Pollution",
+       subtitle = "25 countries unfamiliar with me are sampled from 205 countries",
+       caption = "Source: Our World in Data | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "#C9E3CC", color = NA),
+        panel.background = element_rect(fill = "#C9E3CC", color = NA),
+        plot.title = element_text(family = f1,size = 38, face = "bold", hjust = 0.5,  color = "#263318", margin = margin(b = 9)),
+        plot.subtitle = element_text(family = f2, size = 16, hjust = 0.5,  lineheight = 1.1, color = "#263318", margin = margin(b = 10)),
+        plot.caption = element_text(family = f3,size = 12, hjust = 0.5, color = "#263318"),
+        axis.text.x = element_text(family = f2, size = 13, face = "bold", margin = margin(t = 10)),
+        axis.text.y = element_text(family = f2, size = 13, face = "bold"),
+        panel.grid.major.x = element_line(size = 0.4, color = "gray65"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.ticks = element_blank(),
+        plot.margin = margin(10, 0, 10, 0))
+
+ggsave("week15_IndoorAirPollution.png", width = 38, height = 30, units = "cm")
+```
+
