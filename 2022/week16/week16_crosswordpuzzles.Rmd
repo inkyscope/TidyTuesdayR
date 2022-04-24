@@ -1,0 +1,96 @@
+---
+title: "week16 Crossword Puzzles"
+output: html_document
+date: '2022-04-23'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggraph)
+library(igraph)
+library(ggtext)
+library(patchwork)
+library(showtext)
+
+font_add_google("Titillium Web")
+font_add_google("Inter")
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Titillium Web"
+f2 = "Inter"
+```
+
+```{r}
+big_dave <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-19/big_dave.csv')
+
+times <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-19/times.csv')
+```
+
+```{r}
+df_dave <- big_dave %>% 
+  mutate(answer = tolower(answer)) %>% 
+  filter(answer != "NA",
+         nchar(as.character(answer)) >= 4,
+         str_detect(answer, "[[a-z]]")) %>% 
+  unnest_tokens(word, clue) %>% 
+  anti_join(stop_words) %>% 
+  filter(str_detect(word, "[[a-z]]"),
+         nchar(as.character(word)) >= 4) %>% 
+  count(word, answer, name = "counts") 
+
+plot_dave <- df_dave %>% 
+  slice_max(counts, n = 20, with_ties = FALSE) %>% 
+  graph_from_data_frame(directed = FALSE) %>% 
+  ggraph(layout = "linear", circular = T) +
+  geom_edge_arc(aes(edge_alpha = counts, edge_width = counts), color = "peru") +
+  geom_node_point(size = 5, color = "blueviolet", alpha = 0.6) +
+  geom_node_text(aes(label = name), family = f2, repel = TRUE, size = 4, hjust = 0.5, vjust = 0.5) +
+  theme_void() +
+  theme(legend.position = "top", 
+        plot.background = element_rect(fill = "seashell2", color = NA))
+```
+
+```{r}
+df_times <- times %>% 
+  mutate(answer = tolower(answer)) %>% 
+  filter(answer != "NA",
+         nchar(as.character(answer)) >= 4,
+         str_detect(answer, "[[a-z]]")) %>% 
+  unnest_tokens(word, clue) %>% 
+  anti_join(stop_words) %>% 
+  filter(str_detect(word, "[[a-z]]"),
+         nchar(as.character(word)) >= 4) %>% 
+  count(word, answer, name = "counts") %>% 
+  arrange(-counts)
+
+plot_times <- df_times %>% 
+  slice_max(counts, n = 20, with_ties = FALSE) %>% 
+  graph_from_data_frame(directed = FALSE) %>% 
+  ggraph(layout = "linear", circular = T) +
+  geom_edge_arc(aes(edge_alpha = counts, edge_width = counts), color = "blueviolet") +
+  geom_node_point(size = 5, color = "peru", alpha = 0.6) +
+  geom_node_text(aes(label = name), family = f2, repel = TRUE, size = 4, hjust = 0.5, vjust = 0.5) +
+  theme_void() +
+  theme(legend.position = "top",
+        plot.background = element_rect(fill = "seashell2", color = NA))
+```
+
+```{r}
+patchword <- plot_dave + plot_times 
+
+patchword + plot_annotation(title = "Correlation of Clues and Answers of Crossword Puzzles in <span style = 'color: peru'>**Big Dave**</span> and <span style = 'color:blueviolet'>**TIMES**</span>",
+                            caption = "Source: Cryptics.georgeho.org | Graphic: Sung Inkyung") & theme(plot.background = element_rect(fill = "seashell2", color = NA),
+                                                                                                       panel.background = element_rect(fill = "seashell2", color = NA),
+                                                                                                       plot.title = element_markdown(family = f1, size = 28, hjust = 0.5, margin = margin(b = 15)),
+                                                                                                       plot.caption = element_text(family = f1, size = 11, color = "lightyellow4", hjust = 0.5, margin = margin(t = 15)),
+                       plot.margin = margin(10, 10, 10, 10)) 
+  
+
+ggsave("week16_crosswordpuzzles.png", width = 50, height = 20, units = "cm")
+```
