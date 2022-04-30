@@ -1,0 +1,69 @@
+---
+title: "Week17 Kaggel Hidden Gems"
+output: html_document
+date: '2022-04-29'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggtext)
+library(showtext)
+
+font_add_google("Staatliches")
+font_add_google("Fira Sans Condensed")
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Staatliches"
+f2 = "Fira Sans Condensed"
+```
+
+```{r}
+hidden_gems <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-04-26/hidden_gems.csv')
+
+df_authors <- hidden_gems %>% 
+  select(author = author_name, title) %>% 
+  unnest_tokens(word, title) %>% 
+  anti_join(stop_words) %>% 
+  add_count(word) %>% 
+  arrange(-n) %>% 
+  filter(word %in% c("visualization", "visualizations")) %>% 
+  pull(author)
+
+visualization <- hidden_gems %>% 
+  filter(author_name %in% df_authors) %>% 
+  select(vol, author = author_name, title, review) %>% 
+  filter(!vol %in% c(1, 11, 19, 32, 41, 50, 57, 59, 61, 75, 100)) %>% 
+  pull(title)
+```
+
+```{r}
+## https://github.com/doehm/tidyTuesday/blob/master/2022/week17-kaggle/kaggle.R
+
+df <- hidden_gems %>% 
+  select(title) %>% 
+  mutate(group = ifelse(title %in% visualization, "viz", "other"),
+         x = row_number(), 
+         angle = c(seq(90, 0, length = 75), seq(360, 270, length = 75), seq(90, 0, length = 75), seq(360, 270, length = 75)),
+         just = ifelse(x > 150, 1, 0))
+
+plot_gems <- ggplot(df) +
+  geom_text(aes(x = x, y = 0, label = title, color = group, angle = angle, hjust = just), family = f2, size = 2.5,  show.legend = FALSE) +
+  annotate("richtext", x = 1, y = -10, label = "3 0 0<br>Kaggle<br>Hidden<br>G e m s", family = f1, size = 26, lineheight = 0.9, color = "seashell4", fill = NA, label.color = NA) +
+  scale_color_manual(values = c("black", "indianred")) +
+  xlim(c(0.5, 300.5)) +
+  ylim(c(-10, 10)) +
+  labs(caption = "Source: Kaggle Hidden Gems | Graphic: Sung Inkyung") +
+  coord_polar(clip = "off") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "seashell1", color = NA),
+        plot.caption = element_text(family = f2, size = 11, hjust = 0.5),
+        plot.margin = margin(5, 5, 10, 5))
+
+ggsave("week17_KaggleHiddenGems.png", width = 32, height = 32, units = "cm")
+```
