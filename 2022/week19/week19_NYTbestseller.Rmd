@@ -1,0 +1,197 @@
+---
+title: "week19 NYTimes best sellers"
+output: html_document
+date: '2022-05-10'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Source: Post45 Data
+```{r}
+library(tidyverse)
+library(gt)
+library(gtExtras)
+library(showtext)
+#remotes::install_github("jthomasmock/gtExtras")
+
+font_add_google("Roboto Slab")
+font_add_google("Arimo")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Roboto Slab"
+f2 = "Arimo"
+
+nyt_titles <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-10/nyt_titles.tsv')
+
+nyt_full <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-10/nyt_full.tsv')
+```
+##paletteer::scale_colour_paletteer_d("basetheme::dark")
+
+```{r}
+library(paletteer)
+
+paletteer_d("basetheme::dark")
+```
+```{r}
+pals <- c("Herman Wouk" = "#3870C2",
+          "John Grisham" = "#8AC1D4",
+          "Leon Uris" = "#F2A83B",
+          "Lloyd C. Douglas" = "#66C84D",
+          "A. J. Cronin" = "#DA2E20",
+          "Dan Brown" = "#FFFD55",
+          "Dr. Seuss" = "#EB8677",
+          "J. K. Rowling" = "#A6EB99",
+          "Richard Bach" = "#DF89E8",
+          "Tom Clancy" = "#8A6842")
+
+top_authors <- nyt_titles %>% 
+  group_by(year) %>% 
+  arrange(-total_weeks) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  count(author, sort = T) %>% 
+  filter(n > 1) %>% 
+  pull(author)
+
+df_plot <- nyt_titles %>% 
+  group_by(year) %>% 
+  mutate(num = n()) %>% 
+  arrange(-total_weeks) %>% 
+  slice(1) %>% 
+  ungroup() %>% 
+  mutate(group = ifelse(author %in% top_authors, 1, 0),
+         cols = case_when(author == "Herman Wouk" ~ "#3870C2",
+                          author == "John Grisham" ~ "#8AC1D4",
+                          author == "Leon Uris" ~ "#F2A83B",
+                          author == "Lloyd C. Douglas" ~ "#66C84D",
+                          author == "A. J. Cronin" ~ "#DA2E20",
+                          author == "Dan Brown" ~ "#FFFD55",
+                          author == "Dr. Seuss" ~ "#EB8677",
+                          author == "J. K. Rowling" ~ "#A6EB99",
+                          author == "Richard Bach" ~ "#DF89E8",
+                          author == "Tom Clancy" ~ "#8A6842",
+                          TRUE ~ "#000000"))
+  
+p1 <- ggplot(df_plot) +
+  geom_col(aes(x = year, y = num, fill = author), color = "white", size = 0.3, width = 1, show.legend = F) +
+  geom_text(aes(x = year, y = num, label = author, color = factor(group)), family = f2, size = 3, hjust = 1.1, vjust = 0.5, angle = 90) +
+  annotate("text", x = 1960, y = 160, label = "New York Times Bestsellers", family = f1, size = 21, color = "gray97") +
+  annotate("text", x = 1960, y = 145, label = "The name in the bar is the author with the most weeks on the list for the year.\nColored authors are featured in the multiple years.", family = f2, size = 9, lineheight = 0.9, color = "gray97") +
+  scale_color_manual(values = c("white", "black")) +
+  scale_fill_manual(values = pals) +
+  scale_x_continuous(breaks = seq(1931, 2021, 1), expand = c(0.01, 0.01)) +
+  scale_y_continuous(position = "right") +
+  labs(x = "", y = "number of books",
+       caption = "Source: Post45 Data | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "black", color = NA),
+        plot.caption = element_text(family = f2, size = 9, color = "gray95", hjust = 1.01, margin = margin(b = 10)),
+        axis.text.y = element_text(family = f2, size = 10, color = "gray95"),
+        axis.text.x = element_text(family = f2, size = 9, color = "gray95", angle = 60, hjust = 5.8, vjust = 8.2, margin = margin(t = 6)),
+        axis.title = element_text(family = f2, size = 15, color = "gray95"),
+        panel.grid = element_blank())
+
+ggsave("week19_NYTbestseller.png", width = 60, height = 45, units = "cm")
+```
+
+```{r}
+most_books <- nyt_titles %>% 
+  group_by(author) %>% 
+  summarise(total_books = n()) %>% 
+  slice_max(total_books, n = 10) %>% 
+  mutate(author = fct_relevel(author)) %>% 
+  pull(author)
+
+most_books <- factor(most_books, levels = most_books)
+
+plot_data <- nyt_titles %>% 
+  select(author, title, year) %>% 
+  filter(author %in% most_books) %>% 
+  arrange(author, year) %>% 
+  group_by(author) %>% 
+  mutate(n = row_number(),
+         author = factor(author, levels = levels(most_books))) %>% 
+  select(-year)
+
+total_books <- plot_data %>% 
+  select(-title) %>% 
+  group_by(author) %>% 
+  slice_max(n, n = 1) %>% 
+  arrange(-n)
+
+p2 <- ggplot() +
+  geom_text(data = plot_data,
+            aes(author, n, label = title), family = f2, size = 3) +
+  geom_text(data = total_books,
+            aes(author, y = n + 3, label = n), family = f2, size = 5.5) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+  labs(x = "", y = "",
+       title = "The New York Times\nBestseller List",
+       caption = "Source: Post45 Data | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white", color = NA),
+        plot.title = element_text(family = f1, size = 62, hjust = 0.5, vjust = -8, color = "gray5", face = "bold"),
+        plot.caption = element_text(family = f2, size = 11, color = "gray5", hjust = 0.97, margin = margin(b = 10)),
+        axis.text.x = element_text(family = f2, size = 15, color = "gray5", margin = margin(t = -17)),
+        axis.text.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid = element_blank(),
+        plot.margin = margin(-20, 5, 10, 5))
+
+ggsave("week19_NYTbestseller_titles.png", width = 50, height = 45, units = "cm")
+```
+
+```{r}
+p3 <- nyt_full %>% 
+  filter(title_id %in% c(381)) %>% #All the light we can not see
+  ggplot(aes(week, rank))+
+  geom_step(color = "firebrick3") +
+  scale_y_reverse(breaks = seq(1, 16, 3)) +
+  labs(x = "",
+       y = "rank") +
+  theme_minimal()
+
+```
+
+```{r}
+df_nyt <- nyt_titles %>% 
+  slice_max(total_weeks, n = 20) %>% 
+  mutate(title = str_to_title(title))
+
+df_full <- nyt_full %>% 
+  filter(title_id %in% df_nyt$id) %>% 
+  group_by(id = title_id) %>% 
+  arrange(week) %>% 
+  summarise(timeline = list(rank), .groups = "drop")
+
+df <- df_nyt %>% 
+  left_join(df_full, by = "id")
+
+p4 <- df %>% 
+  select(-id) %>% 
+  mutate(wk = total_weeks) %>% 
+  relocate(wk, .after = total_weeks) %>% 
+  gt() %>% 
+  gt_theme_nytimes() %>% 
+  gt_sparkline(timeline, label = F, range_colors = c("#E85B51", "#FFA07A")) %>% 
+  gt_plt_bar_pct(wk, fill = "#FA8072") %>% 
+  cols_width(wk ~ px(100),
+             first_week ~ px(100)) %>% 
+  cols_align(align = "right", columns = first_week) %>% 
+  cols_label(total_weeks = "total weeks",
+             first_week = "first week",
+             debut_rank = "debut rank",
+             best_rank = "best rank",
+             wk = "") %>% 
+  tab_header(title = "NY Times Bestsellers",
+             md("List of titles with more than 80 total weeks on the fiction bestseller list of ***The New York Times*** between the years of 1931 and 2020, arranged in descending order of total weeks.")) %>% 
+  tab_source_note("Source: Post45 Data | Graphic: Sung Inkyung") %>% 
+  tab_style(style = list(cell_text(style = "italic", color = "black")),
+            locations = cells_body(columns = title))
+```
+
