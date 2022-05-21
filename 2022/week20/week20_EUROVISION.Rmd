@@ -1,0 +1,154 @@
+---
+title: "week20 EUROVISION"
+output: html_document
+date: '2022-05-18'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(ggforce)
+library(patchwork)
+library(showtext)
+
+#font_add_google("Roboto Flex")
+#font_add_google("Akshar")
+
+font_add_google("Dosis")
+font_add_google("Arimo")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+#f1 = "Roboto Flex"
+#f2 = "Akshar"
+f1 = "Dosis"
+f2 = "Arimo"
+```
+
+
+```{r}
+eurovision <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-17/eurovision.csv')
+
+range(eurovision$year)
+
+plot <- eurovision %>% 
+  count(year) %>% 
+  ggplot(aes(year, n, color = year >= 2003)) +
+  annotate("text", x = 1988, y = 42, label = "EUROVISION", family = f1, size = 88, fontface = "bold", color = "gray85") +
+  geom_line(size = 2, show.legend = F) +
+  scale_color_manual(values = c("gray75", "midnightblue")) +
+  scale_x_continuous(limits = c(1956, 2022),
+                     breaks = seq(1960, 2020, 20)) +
+  labs(x = "", y = "",
+       caption = "Source: EUROVISION | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white", color = NA),
+        plot.caption = element_text(family = f2, size = 9),
+        panel.grid.minor = element_blank(),
+        axis.text = element_text(family = f2, size = 10))
+
+ggsave("week20_EUROVISION.png", width = 50, height = 20, units = "cm")
+```
+
+```{r}
+plot_winner <- eurovision %>% 
+  filter(winner, section == "final") %>% 
+  count(artist_country, sort = T) %>% 
+  ungroup() %>% 
+  mutate(artist_country = fct_reorder(artist_country, n),
+         label = paste0(artist_country, " (", n, ")")) %>% 
+  ggplot(aes(n, artist_country, fill = artist_country == "Ireland")) +
+  geom_col(show.legend = F) +
+  geom_text(aes(x = 0, label = label), family = f2, face = "bold", hjust = 0, nudge_x = 0.075) +
+  scale_fill_manual(values = c("gray75", "#08A04B")) +
+  labs(x = " ", y = "", 
+       title = "Number of First Place in Final") +
+  theme(plot.background = element_rect(fill = "gray97", color = NA),
+        panel.background = element_rect(fill = "gray97", color = NA),
+        plot.title = element_text(family = f2, size = 16, hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank())
+
+plot_last <- eurovision %>% 
+  group_by(year) %>% 
+  filter(rank == max(rank)) %>% 
+  ungroup() %>% 
+  distinct(year, artist_country) %>% 
+  count(artist_country, sort = T) %>% 
+  mutate(artist_country = fct_reorder(artist_country, n),
+         label = paste0(artist_country, " (", n, ")"),
+         n = -n) %>% 
+  ggplot(aes(n, artist_country, fill = artist_country == "Norway")) +
+  geom_col(show.legend = F) +
+  geom_text(aes(x = 0, label = label), family = f2, face = "bold", hjust = 1, nudge_x = -0.1) +
+  scale_fill_manual(values = c("gray75", "#BA0C2F")) +
+  labs(x = " ", y = "", 
+       title = "Number of Last Finishes") +
+  theme(plot.background = element_rect(fill = "gray97", color = NA),
+        panel.background = element_rect(fill = "gray97", color = NA),
+        plot.title = element_text(family = f2, size = 16,  hjust = 0.5),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank())
+
+patchwork <- plot_last + plot_winner 
+
+final <- patchwork + plot_annotation(title = "EUROVISION 1956 - 2022",
+                                     caption = "Source: Eurovision | Graphic: Sung Inkyung",
+                                     theme = theme(plot.background = element_rect(fill = "gray97", color = NA),
+                                                   panel.background = element_rect(fill = "gray97", color = NA),
+                                                   plot.title = element_text(family = f1, size = 60, face = "bold", hjust = 0.5, margin = margin(t = 10, b = 15))))
+
+ggsave("week20_EUROVISION1.png", width = 36, height = 28, units = "cm")
+```
+
+```{r}
+df <- eurovision %>% 
+  filter(year >= 2005, section == "grand-final")
+
+df_rank <- df %>% 
+  filter(rank <= 3) %>% 
+  group_by(rank) %>% 
+  slice_max(total_points, n = 1) %>% 
+  ungroup() %>% 
+  select(year, artist_country, artist, song, total_points, rank)
+```
+
+```{r}
+label <- "Country: Portugal\nArtist: Salvador Sobral\nSong: Amar Pelos Dois\nTotal Points: 758\n"
+
+plot_rank <- df %>% 
+  ggplot(aes(year, total_points, group = rank, color = rank)) +
+  geom_line(data = df %>% filter(rank > 3), color = "grey75", size = .25, alpha = .5) +
+  geom_line(data = df %>%  filter(rank == 1), color = "#841283", size = 1.2) +
+  geom_line(data = df %>%  filter(rank == 2), color = "#1E88F7", size = 1) +
+  geom_line(data = df %>%  filter(rank == 3), color = "#695F6E", size = 0.9) +
+  geom_point(data = df %>% filter(year == 2017, rank == 1), shape = 21, color = "white", fill = "#841283", size = 5, show.legend = F) +
+  annotate("text", x = 2010, y = 580, label = "EUROVISION", family = f1, size = 42, fontface = "bold", color = "#E2E8D9") +
+  annotate("richtext", x = 2010, y = 500, label = "**Portugal** won the contest for the first time ever in 2017 with highest record points", family = f2, size = 5.7, label.size = NA, fill = "gray97") +
+  annotate("richtext", x = 2010, y = 465, label = "RANK: <span style = 'color:#841283'>first rank</span> <span style = 'color:#1E88F7'>sencond rank</span> <span style = 'color:#695F6E'>third rank</span>", family = f2, size = 5.5, label.size = NA, fill = "gray97") +
+  geom_mark_circle(data = df %>% 
+                      filter(year == 2017, rank == 1), aes(fill = artist_country, label = label), label.family = f2, label.fontsize = 12, expand = unit(0.1, "mm"), show.legend = F) +
+  coord_cartesian(expand = c(0.01, 0.01), 
+                  ylim = c(0, 800)) +
+  labs(x = "", y = "Total points", 
+       caption = "Source: EUROVISION | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "gray97", color = NA),
+        panel.background = element_rect(fill = "gray97", color = NA),
+        plot.caption = element_text(family = f2, size = 11, hjust = 0.95, margin = margin(t = 20, b = 10)),
+        axis.title.y = element_text(hjust = 0.95, size = 10),
+        panel.grid = element_blank())
+
+ggsave("week20_EUROVISION2.png", width = 40, height = 28, units = "cm")
+```
+

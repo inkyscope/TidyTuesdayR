@@ -1,0 +1,75 @@
+---
+title: "Untitled"
+output: html_document
+date: '2022-05-19'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(gt)
+library(gtExtras)
+library(showtext)
+
+font_add_google("Russo One")
+font_add_google("Arimo")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Russo One"
+f2 = "Arimo"
+
+eurovision <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-17/eurovision.csv')
+```
+ 
+```{r}
+eurovision <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-17/eurovision.csv') %>% 
+  select(-c(event, event_url, artist_url, country_emoji, rank_ordinal, running_order, qualified))
+
+df <- eurovision %>% 
+  filter(winner, section %in% c("final", "grand-final")) %>% 
+  select(-c(section, rank, winner)) %>% 
+  group_by(artist_country) %>% 
+  #mutate(winnings = n()) %>% 
+  select(year, everything())
+
+plot_table <- df %>% 
+  gt() %>% 
+  gt_theme_538() %>% 
+  gt_color_rows(columns = total_points:total_points,
+                type = "discrete",
+                palette = "ggsci::green_material") %>% 
+  gt_img_rows(columns = image_url,
+              img_source = "web",
+              height = 30) %>%
+  cols_label(year = "year",
+             host_city = "host city",
+             artist = "artist",
+             image_url = "image",
+             total_points = "points") %>%
+  cols_width(cols = year ~ px(150),
+             cols = host_city ~ px(180),
+             cols = artist ~ px(200),
+             cols = image_url ~ px(150),
+             cols = total_points ~ px(110)) %>% 
+  gt_merge_stack(col1 = host_city, col2 = host_country) %>% 
+  gt_merge_stack(col1 = artist, col2 = song) %>% 
+  tab_header(title = "EUROVISION SONG CONTEST WINNERS 1956 - 2022") %>% 
+  opt_align_table_header(align = "center") %>% 
+  tab_source_note(source_note = md("Source: EUROVISION | Graphic: Sung Inkyung")) %>%
+  tab_style(locations = cells_title(groups = "title"),
+            style = list(cell_text(font = f1, size = 24))) %>% 
+  tab_footnote(footnote = "First ever winner with record high points",
+               locations = cells_row_groups(groups = "Portugal")) %>% 
+  tab_options(table.background.color = "#F1EBDA",
+              column_labels.background.color = "#F1EBDA") 
+
+library(webshot)
+webshot::install_phantomjs()
+gtsave(plot_table, "week20_EUROVISION_table.png", zoom = 2, expand = 5)
+```
