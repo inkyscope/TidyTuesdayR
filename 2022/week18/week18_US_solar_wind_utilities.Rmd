@@ -1,0 +1,191 @@
+---
+title: "Week 18 US Solar_Wind"
+output: html_document
+date: '2022-05-10'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(prophet)
+library(scales)
+library(patchwork)
+library(showtext)
+
+font_add_google("Roboto Slab")
+font_add_google("Arimo")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Roboto Slab"
+f2 = "Arimo"
+```
+
+```{r}
+capacity <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/capacity.csv')
+wind <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/wind.csv')
+solar <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/solar.csv')
+average_cost <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-03/average_cost.csv')
+
+```
+
+```{r}
+df_solar <- solar %>% 
+  pivot_longer(-date) %>% 
+  mutate(type = "Solar")
+
+df_wind <- wind %>% 
+  pivot_longer(-date) %>% 
+  mutate(type = "Wind")
+
+df <- rbind(df_solar, df_wind)
+```
+
+
+```{r}
+plot_power = df %>%
+  ggplot(aes(x = date, y = value, color = name, fill = name)) +
+  geom_point(shape=21, size=.7, key_glyph = draw_key_rect, alpha=.75) +
+  geom_smooth(show.legend=F) +
+  scale_color_manual("",
+                     values = c("#F4BF3A", "#BF8A06","#4677C7", "#074BBA"),
+                     labels = c("Solar projected capacity in gigawatts", "Solar projected price $/MWh", "Wind projected capacity in gigawatts", "Wind projected price $/MWh")) +
+  scale_fill_manual("",
+                    values = c("#F4BF3A", "#BF8A06", "#4677C7", "#074BBA"),
+                    labels = c("Solar projected capacity in gigawatts", "Solar projected price $/MWh", "Wind projected capacity in gigawatts", "Wind projected price $/MWh")) +
+  scale_x_date(expand = c(0,0)) +
+  facet_wrap(~ type, ncol = 2) +
+  guides(color = guide_legend(nrow = 2)) +
+  labs(x = "", y = "") +
+  theme_minimal() +
+  theme(legend.position = "top",
+        legend.text = element_text(family = f2, size = 7),
+        legend.key.height = unit(0.3, "cm"),
+        legend.key.width = unit(0.3, "cm"),
+        strip.text = element_text(family = f1, size = 12, face = "bold"),
+        panel.spacing = unit(1.5, "cm"),
+        plot.background = element_rect(fill = "white", color = NA),
+        axis.text = element_text(family = f2, size = 9),
+        plot.margin = margin(20, 20, 20, 20))
+```
+
+```{r}
+# price & capacity trend
+df_power <- solar %>%
+  transmute(date, type = "Solar",
+            price = solar_mwh,
+            capacity = solar_capacity) %>%
+  bind_rows(wind %>%
+              transmute(date, type = "Wind",
+                        price = wind_mwh,
+                        capacity = wind_capacity)) %>%
+  pivot_longer(cols = c(price, capacity), names_to = "metrics", values_to = "value")
+
+# price
+plot_price <- df_power %>% 
+  filter(metrics == "price") %>% 
+  ggplot(aes(x = date, y = value, color = type)) +
+  geom_step() +
+  scale_color_manual(values = cols) +
+  scale_y_continuous(labels = dollar) +
+  labs(x = "",
+       y = "",
+       title = "US <span style = 'color:#F4BF3A'>**Solar**</span> and <span style = 'color:#4677C7'>**Wind**</span> Power",
+       subtitle = "Projected average price trend($/MWh)",
+       caption = "**Source**: Berkeley Lab | **Graphic**: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_markdown(family = f1, size = 28),
+        plot.subtitle = element_text(family = f2, size = 17),
+        plot.caption = element_markdown(family = f2, size = 8, hjust = 0.5, color = "gray45"),
+        axis.text = element_text(family = f2, size = 9))
+
+P <- plot_price + inset_element(plot_power, left = 0.45, bottom = 0.45, right = 1, top = 1)
+
+ggsave("week18_US_solar_wind_power.png", width = 30, height = 20, units = "cm")
+
+```
+
+```{r}
+# solar price forecast
+solar_price <- df_power %>% 
+  filter(metrics == "price",
+         type == "Solar") %>% 
+  group_by(ds = date) %>% 
+  summarise(y = mean(value)) %>% 
+  ungroup()
+
+fit_solar_price <- prophet(solar_price)
+future_solar_price <- make_future_dataframe(fit_solar_price, periods = 24, freq = 'month')
+fcast_solar_price <- predict(fit_solar_price, future_solar_price)
+
+solar_price_forecast <- solar_price %>% 
+  full_join(fcast_solar_price, by = "ds") %>% 
+  mutate(price = coalesce(y, yhat),
+         color = ifelse(is.na(y), "Forecast", "Actual"))
+
+p1 <- solar_price_forecast %>% 
+  ggplot(aes(ds, price, color = color)) +
+  geom_ribbon(data = solar_price_forecast %>% filter(color == "Forecast"),
+              aes(x = ds, ymin = ifelse(yhat_lower < 0, 0, yhat_lower), ymax = yhat_upper),
+              fill = "gray85", color = NA, size = 0, alpha = 0.8) +
+  geom_point(alpha = 0.25) +
+  geom_smooth(method = "loess", se = FALSE) +
+  scale_y_continuous(labels = dollar) +
+  scale_color_manual(values = c("#F4BF3A", "#BF8A06")) +
+  expand_limits(y = 300) +
+  labs(x = "", y = "Solar energy price($/MWH") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# wind price forecast
+wind_price <- df_power %>% 
+  filter(metrics == "price",
+         type == "Wind") %>% 
+  group_by(ds = date) %>% 
+  summarise(y = mean(value)) %>% 
+  ungroup()
+
+fit_wind_price <- prophet(wind_price)
+future_wind_price <- make_future_dataframe(fit_wind_price, periods = 24, freq = 'month')
+fcast_wind_price <- predict(fit_wind_price, future_wind_price)
+
+wind_price_forecast <- wind_price %>% 
+  full_join(fcast_wind_price, by = "ds") %>% 
+  mutate(price = coalesce(y, yhat),
+         color = ifelse(is.na(y), "Forecast", "Actual"))
+
+p2 <- wind_price_forecast %>% 
+  ggplot(aes(ds, price, color = color)) +
+  geom_ribbon(data = wind_price_forecast %>% filter(color == "Forecast"),
+              aes(x = ds, ymin = ifelse(yhat_lower < 0, 0, yhat_lower), ymax = yhat_upper),
+              fill = "gray85", color = NA, size = 0, alpha = 0.8) +
+  geom_point(alpha = 0.25) +
+  geom_smooth(method = "loess", se = FALSE) +
+  scale_y_continuous(labels = dollar) +
+  scale_color_manual(values = c("#4677C7", "#074BBA")) +
+  expand_limits(y = 300) +
+  labs(x = "", y = "Wind energy price($/MWH") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+patchwork <- p1 + p2
+patchwork + plot_annotation(
+  title = "US <span style = 'color:#F4BF3A'>**Solar**</span> and <span style = 'color:#4677C7'>**Wind**</span> Power Price Forecast",
+  caption = "**Source**: Berkeley Lab | **Graphic**: Sung Inkyung",
+  theme = theme(plot.title = element_markdown(family = f1, size = 28, face = "bold", hjust = 0.5),
+                plot.caption = element_markdown(family = f2, size = 9, color = "gray45", hjust = 0.5)))
+ 
+
+ggsave("week18_US_solar_wind_utilities.png", width = 30, height = 16, units = "cm")
+```
+
+
+
