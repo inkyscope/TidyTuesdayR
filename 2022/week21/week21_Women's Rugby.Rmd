@@ -1,0 +1,84 @@
+---
+title: "week21 Women's Rugby"
+output: html_document
+date: '2022-05-31'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggtext)
+library(ggforce)
+library(showtext)
+
+font_add_google("Roboto Slab")
+font_add_google("Source Sans Pro")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Roboto Slab"
+f2 = "Source Sans Pro"
+```
+
+```{r}
+sevens <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-24/sevens.csv')
+
+fifteens <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-24/fifteens.csv')
+
+fifteens %>% 
+  count(team_1, sort = T)
+fifteens %>% 
+  count(tournament, sort = T)
+
+df_plot <- fifteens %>% 
+  filter(tournament == "Friendly") %>% 
+  filter(team_1 == "England" | team_2 == "England") %>% 
+  select(date, team_1, team_2, margin_of_victory, winner) %>% 
+  mutate(new_margin = if_else(winner != "England", margin_of_victory * -1, margin_of_victory)) %>% 
+  mutate(win = if_else(new_margin > 0, "Yes", "No"),
+         win = if_else(new_margin == 0, "Draw", win),
+         id = row_number())
+
+df_plot %>% 
+  filter(new_margin == min(new_margin))
+
+## breaks for years
+## https://github.com/nrennie/tidytuesday/blob/main/2022/2022-05-24/20220524.R
+breaks_yr <- df_plot %>% 
+  mutate(year = year(date)) %>% 
+  filter(year %in% c(1990, 2001, 2011, 2021)) %>% 
+  group_by(year) %>% 
+  slice(n = 1) %>% 
+  pull(id)
+
+plot <- ggplot(df_plot) +
+  geom_segment(aes(x = id, xend = id, y = new_margin, yend = 0), size = 2, color = alpha("#00643F", 0.3)) +
+  geom_point(aes(x = id, y = new_margin, colour = win, fill = win), pch = 21, size = 3, alpha = 0.8, show.legend = FALSE) +
+  geom_hline(yintercept = 0, size = 0.5, colour = "#25292A") +
+  annotate("text", x = 31.9, y = 101.1, label = "South Africa (+101)", size = 2.5) +
+  annotate("text", x = 20.7, y = -66.9, label = "New Zealand(-67)", size = 2.5) +
+  scale_colour_manual(values = c("#25292A",  "#E52E33", "#00643F")) +
+  scale_fill_manual(values = c("#25292A",  "#E52E33", "#00643F")) +
+  scale_x_continuous(breaks = breaks_yr,
+                     labels = c(1997, 2000, 2011, 2021)) +
+  labs(x = "", y = "Margin of victory",
+       title = "England Women's Rugby Friendly Game April 5, 1987 to Nov 21, 2021",
+       subtitle = "60 <span style = 'color: #00643F'>**Wins**</span> | 12 <span style = 'color: #E52E33'>**Loses**</span> | 2 <span style = 'color: #25292A'>**Draws**</span>",
+       caption = "Source: ScrumQueens | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(plot.background = element_rect(fill = "white", color = NA),
+        plot.title = element_text(family = f1, size = 24, face = "bold", hjust = 0.5),
+        plot.subtitle = element_markdown(family = f2, size = 14, hjust = 0.5),
+        plot.caption = element_text(family = f2, size = 9),
+        axis.text.x = element_text(family = f2, size = 11),
+        panel.grid = element_blank(),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("week21_Women's Rugby.png", width = 32, height = 22, units = "cm")
+```
+
