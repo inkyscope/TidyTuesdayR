@@ -1,0 +1,90 @@
+---
+title: "week22 Company reputation poll"
+output: html_document
+date: '2022-05-31'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(packcircles)
+library(nord)
+library(showtext)
+
+font_add_google("Titillium Web")
+font_add_google("Source Sans Pro")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Titillium Web"
+f2 = "Source Sans Pro"
+```
+
+```{r}
+poll <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-31/poll.csv')
+
+reputation <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-31/reputation.csv') %>% 
+  mutate(name = case_when(name == "P&S" ~ "PRODUCT & SERVICE",
+                          TRUE ~ name))
+
+df_poll <- left_join(poll, reputation) %>% 
+  drop_na()
+```
+
+```{r}
+## https://rpubs.com/leeolney/scooby_doo
+
+df1 <- df_poll %>% 
+  slice_max(score, n = 20) %>% 
+  select(name, industry, score)
+
+range(df1$score)
+```
+
+```{r}
+df2 <- df_poll %>% 
+  group_by(name) %>% 
+  count(wt = score) %>% 
+  ungroup()
+
+df3 <- df2 %>% 
+  pmap_df(
+    .f = ~circleProgressiveLayout(rep(0.5, ..2))) %>% 
+  slice(1:1669) %>% 
+  mutate(name = rep(df1$name, df1$score),
+         industry = rep(df1$industry, df1$score)
+  ) 
+
+
+plot <- df3 %>% 
+  ggplot(aes(x, y, fill = industry)) +
+  geom_point(size = 2.75, pch = 21, color = "white") +
+  scale_fill_nord(palette = "algoma_forest", name = "") +
+  scale_y_continuous(expand = c(0.1, 0.1)) +
+  scale_x_continuous(expand = c(0.2, 0.2)) +
+  facet_wrap(~name) +
+  guides(fill = guide_legend(nrow = 1, override.aes = list(size = 5))) +
+  labs(name = "",
+       title = "Axios-Harris Poll 100",
+       subtitle = "Seven key reputation attributes, the public's top-of-mind awareness of top 15 scored companies by the cporresponding industries from 2017 to 2021.<br> Score range of selected companies are from 76.56 to 84.13, which belongs to **Excellent**(80 & above), and **Very good**(75-79). <br><br>**Automotive** : Toyota Motor Corporation <br>**Consumer Goods** : PepsiCo, Unilever<br>**Ecommerce** : Amazon<br>**Groceries** : Publix Supermarkets, Wegmans<br>**Logistics** : UPS<br>**Retail** : Kohl's, Nike, Patagonia, The Home Depot<br>**Tech** : Apple, Netflix, Micorsoft, Sony",
+       caption = "Source: Axios and Harris Poll  | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "top",
+        legend.text = element_text(family = f2, size = 10),
+        legend.margin = margin(t = 15, b = 0),
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.title = element_text(family = f1, size = 32, hjust = 0.5, face = "bold"),
+        plot.subtitle = element_markdown(family = f2, size = 13,lineheight = 1.1),
+        plot.caption = element_text(family = f2, size = 9, hjust = 0.5),
+        strip.text = element_text(family = f1, size = 15, face = "bold", margin = margin(t = 20, b = 2)),
+        plot.margin = margin(10, 10, 10, 10))
+
+
+ggsave("week22_companyreputationpoll.png", width = 32, height = 26, units = "cm")
+```
+
