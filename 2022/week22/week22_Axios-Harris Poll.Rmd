@@ -57,9 +57,7 @@ df3 <- df2 %>%
     .f = ~circleProgressiveLayout(rep(0.5, ..2))) %>% 
   slice(1:1669) %>% 
   mutate(name = rep(df1$name, df1$score),
-         industry = rep(df1$industry, df1$score)
-  ) 
-
+         industry = rep(df1$industry, df1$score))
 
 plot <- df3 %>% 
   ggplot(aes(x, y, fill = industry)) +
@@ -82,9 +80,7 @@ plot <- df3 %>%
         plot.subtitle = element_markdown(family = f2, size = 13,lineheight = 1.1),
         plot.caption = element_text(family = f2, size = 9, hjust = 0.5),
         strip.text = element_text(family = f1, size = 15, face = "bold", margin = margin(t = 20, b = 2)),
-        plot.margin = margin(10, 10, 10, 10))
+        plot.margin = margin(20, 25, 20, 25))
 
-
-ggsave("week22_companyreputationpoll.png", width = 32, height = 26, units = "cm")
+ggsave("week22_Axios-HarrisPoll.png", width = 32, height = 26, units = "cm")
 ```
-

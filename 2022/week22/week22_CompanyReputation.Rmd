@@ -1,0 +1,162 @@
+---
+title: "week22 Company reputation1"
+output: html_document
+date: '2022-06-02'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggbump)
+library(ggtext)
+library(paletteer)
+library(showtext)
+
+font_add_google("Titillium Web")
+font_add_google("Source Sans Pro")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Titillium Web"
+f2 = "Source Sans Pro"
+```
+
+```{r}
+poll <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-31/poll.csv')
+
+reputation <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-05-31/reputation.csv')
+
+poll %>% 
+  filter(industry == "Tech") %>% 
+  count(company, sort = T)
+```
+### https://github.com/bydata/tidytuesday/blob/main/2022/22/R/faang.R
+geom_text(
+    data = ~subset(., year == max(year) | year == min(year)),
+    aes(x = ifelse(year == max(year), year + 0.15, year - 0.15),
+        # move Netflix a bit
+        y = ifelse(company == "Netflix" & year == max(year), rank + 2, rank),
+      label = company, hjust = ifelse(year == max(year), 0, 1)),
+    size = 3.5, family = "Barlow SemiBold"
+  ) 
+```{r}
+df_poll <- poll %>% 
+  mutate(year = 2022) %>% 
+  distinct(company, industry, year, rank = `2022_rank`, rq = `2022_rq`) %>% 
+  bind_rows(select(poll, company, industry, year, rank, rq)) %>% 
+  arrange(company, year) %>% 
+  group_by(company) %>% 
+  mutate(change = rank - lag(rank, default = NA)) %>% 
+  ungroup() %>% 
+  filter(industry == "Tech",
+         year >= 2019,
+         !is.na(rank)) %>% 
+  filter(!company %in% c("Dell", "Electronic Arts, Inc.", "LG Corporation", "Robinhood", "TikTok"))
+
+plot_bump <- df_poll %>% 
+  ggplot(aes(year, rank, color = company)) +
+  geom_bump(size = 5) +
+  geom_point(shape = 21, size = 8, stroke = 1.25, fill = "white") +
+  geom_text(aes(label = rank), size = 4.5) +
+  geom_text(data = df_poll %>% filter(year == 2019),
+            aes(label = company, x = year - 0.01, y = rank), size = 4.5, hjust = 1.2) +
+  geom_text(data = df_poll %>% filter(year == 2022),
+            aes(label = company, x = year + 0.01, y = rank), size = 4.5, hjust = -0.2) +
+  scale_x_continuous(position = "top") +
+  scale_y_reverse() +
+  scale_color_paletteer_d("ggthemes::Classic_10_Medium") +
+  labs(x = "", y = "", 
+       title = "Tech Company Reputation Rank by Axios-Harris Poll 100",
+       subtitle = "7 key attributes(citizenship, culture, ethics, growth, product & service, turst, vision) are rated to determin rank from 2019 to 2022",
+       caption = "Source: Axios and Harris Poll 100 | Graphic: Sung Inkyung") +
+  coord_cartesian(clip = "off", expand = TRUE) +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.title = element_text(family = f1, size = 38, hjust = 0.5, face = "bold"),
+        plot.subtitle = element_text(family = f2, size = 18, hjust = 0.5, margin = margin(t = 7, b = 15)),
+        plot.caption = element_text(family = f2, size = 15, hjust = 0.5, color = "gray45"),
+        panel.grid.major.x = element_line(size = 0.3, color = "gray75"),
+        axis.text.x.top = element_text(family = f2, size = 21, margin = margin(t = 15, b = 5)),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("week22_TechcomapnyReputation.png", width = 55, height = 45, units = "cm")
+```
+
+```{r}
+## https://github.com/leeolney3/TidyTuesday/blob/main/2022/week_22/2022_22.R
+
+df_name <- reputation %>% 
+  mutate(name = str_to_title(name),
+         name = case_when(name == "P&S" ~ "Product and\nService",
+                          TRUE ~ name))
+
+selected <- df_name %>% 
+  group_by(company) %>% 
+  summarize(sd = sd(score)) %>% 
+  arrange(desc(sd)) %>% 
+  slice_max(sd, n = 3, with_ties = F) %>% 
+  pull(company)
+
+plot_line <- df_name %>% 
+  ggplot(aes(fct_rev(name), score, group = company)) +
+  geom_line(alpha = 0.2, size = 0.3) +
+  geom_point(size = 0.3, alpha = 0.5) +
+  geom_line(data = df_name %>% filter(company %in% selected), aes(color = company), size = 0.6) +
+  geom_point(data = df_name %>% filter(company %in% selected), aes(color = company), size = 0.6) +
+  geom_text(data = df_name %>% 
+              filter(name == "Citizenship") %>% 
+              filter(company %in% selected),
+            aes(color = company, label = company), vjust = 0.8, fontface = "bold", size = 3.5) +
+  scale_y_continuous(limits = c(50, 90), expand = c(0, 0)) +
+  labs(x = "Reputation category", y = "Score",
+       title = "Axios-Harris Poll 2017 - 2021",
+       subtitle = "Three companies with the largest difference in scores between reputation categories. Based on the\nAxios Harris Poll 100 survey of 33,096 Americans in a nationally representative sample conducted\nMarch 11-April 3, 2022.",
+       caption = "Source: Axios-Harris Poll | Graphic: Sung Inkyung") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+library(gt)
+library(gtExtras)
+
+companies = c("Google","IBM","The Home Depot","Samsung","Sony","Starbucks Corporation","Microsoft", "General Electric", "Pfizer","The Walt Disney Company","PepsiCo","Chick-fil-A","Unilever", "Costco","Citigroup","eBay")
+
+df1 <- poll %>% 
+  filter(company %in% companies) %>% 
+  group_by(change, company, industry) %>% 
+  summarise(spark_rank = list(rank),
+            spark_rq = list(rq)) %>% 
+  ungroup()
+
+df2 <- reputation %>% 
+  filter(company %in% companies) %>% 
+  select(-score, -industry) %>% 
+  mutate(name = str_to_title(name)) %>% 
+  pivot_wider(names_from = name, values_from = rank)
+
+plot_table <- df1 %>% 
+  left_join(df2, by = "company") %>% 
+  select(-spark_rank) %>% 
+  arrange(desc(change)) %>% 
+  gt() %>% 
+  gt_theme_538() %>% 
+  gt_sparkline(spark_rq) %>% 
+  gt_fa_rank_change(change) %>% 
+  cols_label(change = "Change in Rank",
+             spark_rq = "2017-2021 RQ Score") %>% 
+  tab_spanner(label = "2022 Reputation Category Rank", column = Trust:Culture) %>% 
+  opt_table_font(font = list(google_font(name = f2))) %>% 
+  tab_options(table.font.size = px(13.5),
+              table.font.color = "black") %>% 
+  tab_source_note(source_note = "Source: Axios-Harris Poll | Graphic: Sung Inkyung") %>% 
+  tab_header(title = "2022 Axios-Harris Poll", "16 Companies with the largest rank changes from 2021 to 2022 and RQ score from 2017 to 2022") %>% 
+  tab_footnote(footnote = "Product and Services", location = cells_column_labels(columns = "P&S")) %>% 
+  cols_width(Trust:Culture ~ px(50))
+```
+
