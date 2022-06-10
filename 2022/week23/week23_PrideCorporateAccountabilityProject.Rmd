@@ -1,0 +1,71 @@
+---
+title: "week23 Pride Corporate Accountability Project"
+output: html_document
+date: '2022-06-09'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(packcircles)
+library(showtext)
+
+font_add_google("Titillium Web")
+font_add_google("Fira Sans")
+
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Titillium Web"
+f2 = "Fira Sans"
+```
+
+```{r}
+pride_aggregates <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-07/pride_aggregates.csv') %>% 
+  filter(Company != "Grand Total") %>% 
+  mutate(#Company  = str_wrap(Company, 14),
+         Company = case_when(Company == "Jack Daniel's (Brown-Forman)" ~ "Jack Daniel's",
+         TRUE ~ Company)) %>% 
+  slice_max(`Total Contributed`, n = 10) %>% 
+  arrange(desc('Total Contributed'))
+
+pals <- c(
+  "1" = "#EB0A1E",
+  "2" = "#00A8E0",
+  "3" = "#00B345",
+  "4" = "#FF9900", 
+  "5" = "#472F91",
+  "6" = "#F01716",
+  "7" = "#1F3F97",
+  "8" = "#B1B3B3",  #red: "#C8102E"
+  "9" = "#231F20",
+  "10" = "#A94007")
+```
+
+```{r}
+packing <- circleProgressiveLayout(pride_aggregates$`Total Contributed`, sizetype = "area")
+data <- cbind(pride_aggregates, packing)
+dat.gg <- circleLayoutVertices(packing, npoints = 50)
+
+plto <- ggplot() +
+  geom_polygon(data = dat.gg, 
+               aes(x, y, group = as.factor(id), fill = as.factor(id)), color = "black") +
+  geom_text(data = data, aes(x, y + 10, label = Company), size = 6, color = "white") +
+  geom_text(data = data, aes(x, y - 45, label = scales::dollar(round(`Total Contributed`))), size = 5.5, color = "white") +
+  scale_fill_manual(values = pals) +
+  labs(x = "", y = "",
+       title = "Top 10 Companies Funding <span style = 'color:#13294B;'>*ANTI* -</span><span style = 'color:#FF0018;'>L</span><span style = 'color:#FFA52C;'>G</span><span style = 'color:#FFFF41;'>B</span><span style = 'color:#008018;'>T</span><span style = 'color:#0000F9;'>Q</span><span style = 'color:#86007D;'>+</span> Campaigns",
+       caption = "Source : Data for Progress | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.title = element_markdown(family = f1, size = 40, face = "bold", hjust = 0.5, margin = margin(b = 15)),
+        plot.caption = element_text(family = f2, size = 11, hjust = 0.5, margin = margin(b = 15)),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("week23_PrideCorporateAccountabilityProject.png", width = 40, height = 30, unit = "cm")
+```
