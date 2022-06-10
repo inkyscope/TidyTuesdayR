@@ -51,7 +51,7 @@ packing <- circleProgressiveLayout(pride_aggregates$`Total Contributed`, sizetyp
 data <- cbind(pride_aggregates, packing)
 dat.gg <- circleLayoutVertices(packing, npoints = 50)
 
-plto <- ggplot() +
+p1 <- ggplot() +
   geom_polygon(data = dat.gg, 
                aes(x, y, group = as.factor(id), fill = as.factor(id)), color = "black") +
   geom_text(data = data, aes(x, y + 10, label = Company), size = 6, color = "white") +
@@ -64,8 +64,58 @@ plto <- ggplot() +
   theme(legend.position = "none",
         plot.background = element_rect(fill = "white", color = NA),
         plot.title = element_markdown(family = f1, size = 40, face = "bold", hjust = 0.5, margin = margin(b = 15)),
-        plot.caption = element_text(family = f2, size = 11, hjust = 0.5, margin = margin(b = 15)),
-        plot.margin = margin(20, 20, 20, 20))
+        plot.caption = element_text(family = f2, size = 13, hjust = 0.5, margin = margin(b = 15)),
+        plot.margin = margin(20, 20, 15, 20))
 
 ggsave("week23_PrideCorporateAccountabilityProject.png", width = 40, height = 30, unit = "cm")
 ```
+
+```{r}
+##https://github.com/nrennie/tidytuesday/blob/main/2022/2022-06-07/20220607.R
+
+pride_aggregates <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-07/pride_aggregates.csv') 
+
+df1 <- pride_aggregates %>% 
+  filter(Company != "Grand Total") %>% 
+  mutate(Company = str_extract(Company, pattern = "[^(]+"),
+         Company = str_trim(Company)) %>% 
+  arrange(-`Total Contributed`) %>% 
+  slice_head(n = 6) %>% 
+  select(-'# of States Where Contributions Made')
+
+df2 <- df1 %>% 
+  mutate(Company = factor(Company, levels = df1$Company)) %>% 
+  rename("Contribution" = `Total Contributed`,
+         "Politicians" = '# of Politicians Contributed to') %>% 
+  pivot_longer(-Company) %>% 
+  mutate(x = ifelse(name == "Contribution", 0, 1))
+
+txt <- str_wrap("These companies themselves as LGBTQ+ allies,\nbut new research from Data for Progress finds that in between their yearly parade appearances, they are giving to state politicians behind some of the most bigoted and harmful policies in over a decade.", width = 55)
+
+p2 <- ggplot() +
+  geom_area(data = df2,
+            aes(x = x, y = value, fill = Company),
+            position = "fill") +
+  geom_text(data = data.frame(x = rep(0.03, 6),
+                              y = c(0.8, 0.42, 0.26, 0.17, 0.1, 0.04),
+                              label = df1$Company),
+            aes(x = x, y = y, label = label),
+            hjust = 0, family = f1, size = 5.3, fontface = "bold", color = "gray95") +  
+  annotate("text", x = 0.45, y = 0.81, label = "Top 6 Corporates\nFunding and \nNumber of Politicians\nContributed to anti-LGBTQ+",
+           family = f1, size = 8.5, fontface = "bold", hjust = 0, lineheight = 0.8) +
+  annotate("text", x = 0.45, y = 0.51, label = "Toyota: $601,500 (7)\nAT&T: $307,137 (67)\nComcast: $121,350 (40)\nAmazon: $87,900 (17)\nFedEx: $79,700 (24)\nState Farm: $79,550 (32)", family = f2, size = 6.5, hjust = 0) +
+  annotate("text", x = 0.45, y = 0.18, label = txt,  family = f2, size = 3.5, fontface = "italic", hjust = 0, color = "gray65") +
+  xlim(-0.1, 1.1) +
+  scale_fill_manual(values = c("#FF0018", "#FFA52C", "#FFFF41", "#008018", "#0000F9", "#86007D")) +
+  labs(caption = "Source: Data for Progress | Graphic: Sung Inkyung") +
+  theme_void() +
+  theme(legend.position = "none",
+        plot.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white", color = NA),
+        plot.caption = element_text(family = f2, size = 11, hjust = 0.5, margin = margin(t = 7)),
+        plot.margin = margin(20, 20, 20, 20))
+  
+ggsave("week23_CorporateFundingPride.png", width = 30, height = 20, units = "cm")
+```
+
+
