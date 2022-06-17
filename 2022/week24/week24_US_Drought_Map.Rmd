@@ -1,0 +1,105 @@
+---
+title: "week24 US Drought"
+output: html_document
+date: '2022-06-17'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(lubridate)
+library(janitor)
+library(showtext)
+
+font_add_google("Anton")
+font_add_google("Oxygen")
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Anton"
+f2 = "Oxygen"
+```
+
+```{r}
+drought_fips <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-14/drought-fips.csv')
+```
+
+```{r}
+## Shapefile from https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html
+
+county_us <- read_sf("data/cb_2018_us_county_20m.shp") %>% 
+  clean_names() %>% 
+  filter(!statefp %in% c("02", "15", "72")) %>% 
+  mutate(fips = paste0(statefp, countyfp)) %>% 
+  sf::st_transform(crs = 2163) %>% 
+  select(fips, geometry)
+
+## https://stackoverflow.com/questions/32398127/writing-an-rda-to-csv-in-r
+df_fips <- load("data/fips_codes.rda")
+write.csv(get(df_fips), file = "data/fips_codes.csv", sep = ",")
+
+fips_codes <- read_csv("fips_codes.csv")
+
+drought_fips <- drought_fips %>% 
+  clean_names() %>% 
+  mutate(state_code = substr(fips, 1, 2),
+         county_code = substr(fips, 3, 5)) %>% 
+  filter(date == "2022-06-07") %>% 
+  left_join(fips_codes, by = c("state", "state_code", "county_code")) %>% 
+  select(state, fips, dsci, date, state_code, county_code, county)
+
+df_drought <- drought_fips %>% 
+  left_join(county_us, by = "fips") %>% 
+  filter(!is.na(geometry))
+
+df_plot <- df_drought %>% 
+  mutate(score = case_when(dsci == 0 ~ "Zero",
+                           dsci > 0 & dsci < 100 ~ "Abnormally Dry (D0)",
+                           dsci >= 100 & dsci < 200 ~ "Moderate drought (D1)",
+                           dsci >= 200 & dsci < 300 ~ "Severe Drought (D2)",
+                           dsci >= 300 & dsci < 400 ~ "Extreme Drought (D3)",
+                           dsci >= 400 & dsci <= 500 ~ "Exceptional Drought(D4)",
+                           TRUE ~ "Others"))
+```
+
+```{r}
+## https://github.com/gkaramanis/tidytuesday/blob/master/2022/2022-week_24/drought.R
+## https://github.com/JuanmaMN/TidyTuesday/blob/master/2022/June/TidyTuesday_14th_June_2022.R
+
+ym <- df_plot %>% 
+  distinct(date)
+
+us_outline <- st_union(county_us) %>% 
+  as.data.frame() %>% 
+  bind_cols(ym)
+
+plot <- ggplot(df_plot) +
+  geom_sf(aes(fill = score, geometry = geometry), color = NA) +
+  geom_sf(data = us_outline, aes(geometry = geometry), fill = NA, size = 0.25) +
+  scale_fill_manual(values = c("Abnormally Dry (D0)" = "#F6BDC0",
+                               "Moderate drought (D1)" = "#F1959B",
+                               "Severe Drought (D2)" = "#F07470",
+                               "Extreme Drought (D3)" = "#EA4C46",
+                               "Exceptional Drought(D4)" = "#BA3030",
+                               "Zero" = "#CCCDC6")) +
+  coord_sf(crs = 2163) +
+  labs(title = "Drought Severity and Coverage Index (DSCI)",
+       subtitle = "As of June 7th, 2022",
+       caption = "Source: Drought.gov | Graphic: Sung Inkyung",
+       fill = "DSCI") +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        plot.background = element_rect(fill = "white", color = NA),
+        plot.title = element_text(family = f1, size = 32, hjust = 0.5, margin = margin(b = 9)),
+        plot.subtitle = element_text(family = f2, size = 25, hjust = 0.5, margin = margin(b = 15)),
+        plot.caption = element_text(family = f2, size = 9, color = "gray45"),
+        plot.margin = margin(10, 10, 10, 10))
+
+ggsave("week24_US_Drought_June.png", width = 35, height = 26, units = "cm")
+```

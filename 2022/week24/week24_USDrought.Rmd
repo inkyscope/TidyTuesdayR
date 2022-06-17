@@ -1,0 +1,101 @@
+---
+title: "W24 US Drought"
+output: html_document
+date: '2022-06-16'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(janitor)
+library(ggsci)
+library(gganimate)
+## Hex bin map
+library(statebins)
+library(geojsonio)
+library(rgeos)
+library(broom)
+library(usdata)
+library(transformr) ## new on me
+library(showtext)
+
+font_add_google("Play")
+font_add_google("Amatic SC")
+font_add_google("Patrick Hand")
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Play"
+f2 = "Amatic SC"
+f3 = "Patrick Hand"
+```
+
+```{r}
+drought <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-14/drought.csv')
+drought_fips <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-14/drought-fips.csv')
+
+df_drought <- drought_fips %>% 
+  clean_names() %>% 
+  mutate(date = ymd(date),
+         year = year(date),
+         month = month(date),
+         state = abbr2state(state)) %>%  ## {usdata}
+  group_by(year, state) %>% 
+  summarise(avg = mean(dsci))
+```
+
+```{r}
+## hex bin map: https://github.com/delabj/tidyTues/blob/master/2020/Month%2003/2020-03-31/beer.R
+map_hex <- geojson_read("https://raw.githubusercontent.com/inkyscope/TidyTuesdayR/master/2021/week43/us_states_hexgrid.geojson",  what = "sp")
+
+map_hex@data <-
+  map_hex@data %>%
+  mutate(state = gsub(" \\(United States\\)", "", google_name),
+         google_name = gsub(" \\(United States\\)", "", google_name))
+
+## fortify
+map_hex_fortified <- tidy(map_hex, region = "google_name")
+
+## centroids for labels
+centroids <- cbind.data.frame(data.frame(gCentroid(map_hex, byid = T), id = map_hex@data$iso3166_2))
+
+## combine data
+df_drought_hex <- map_hex_fortified %>% 
+  left_join(df_drought, by = c("id" = "state"))
+```
+
+```{r}
+plot_hexbinmap <- df_drought_hex %>% 
+  ggplot() +
+  geom_polygon(aes(long, lat, fill = avg, group = group)) +
+  geom_text(data = centroids, aes(x = x, y = y, label = id), color = "gray15", size = 3, family = f1) +
+  scale_fill_material("red",  limits = c(0, 500), breaks = seq(0, 500, 100)) +
+  guides(fill = guide_colorbar(title.position = "top", title.hjust = 0.5)) +
+  labs(title = "US Drought 2000 - 2022",
+       subtitle = "Drought Severity and Coverage Index (DSCI) score (0 to 500) Zero means that none of the area is\nabnormally dry or in drought, and 500 means that all of the area is in D4, exceptional drought.\n \nYear: {closest_state}",
+       caption = "Source: National Integrated Drought Information System | Graphic: Sung Inkyung",
+       fill = "DSCI Score") +
+  coord_map() +
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_text(size = 9),
+        legend.key.width = unit(1.4, "cm"),
+        legend.key.height = unit(0.3, "cm"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.title = element_text(family = f1, size = 34, face = "bold",  hjust = 0.5, margin = margin(t = 15, b = 9)),
+        plot.subtitle = element_text(family = f2, size = 13, face = "bold", hjust = 0.5, margin = margin(b = 15)),
+        plot.caption = element_text(family = f3, size = 8, color = "gray45",  margin = margin(t = 20, b = 10)))
+
+## https://stackoverflow.com/questions/60827140/error-provided-file-does-not-exist-when-using-gganimate-with-lines
+anim <- plot_hexbinmap +
+  transition_states(year, transition_length = 1,
+                    state_length = 2)
+animate(anim, width = 20, height = 17, units = "cm", res = 150, end_pause = 10)
+anim_save("week24_USDrought.gif")
+```
