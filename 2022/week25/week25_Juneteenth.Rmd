@@ -1,0 +1,65 @@
+---
+title: "week25 Juneteenth"
+output: html_document
+date: '2022-06-25'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(scales)
+library(colorspace)
+library(showtext)
+
+font_add_google("Rajdhani")
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Rajdhani"
+```
+
+### yellow:"#FBBA00" text:"#22194E"
+```{r}
+census <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-06-16/census.csv') 
+
+df_census <- census %>% 
+  filter(region != "USA Total") %>% 
+  group_by(region, year) %>% 
+  summarise(total_free = sum(black_free),
+            total_slaves = sum(black_slaves), 
+            total = total_free + total_slaves, .groups = 'drop') %>% 
+  mutate(Free = round(total_free / total, 2),
+         Enslaved = round(total_slaves / total, 2)) %>% 
+  pivot_longer(cols = c("Free", "Enslaved"), names_to = "status")
+
+
+df_plot <- df_census %>% 
+  select(region, year, status, value) %>% 
+  ggplot() +
+  geom_area(aes(year, value, fill = status)) +
+  scale_x_continuous(limits = c(1790, 1870),
+                     breaks = seq(1790, 1870, 10)) +
+  scale_y_continuous(labels = percent_format()) +
+  scale_fill_manual(values = c("black", "#FBBA00")) +
+  labs(x = "", y = "",
+       title = "<span style = 'color:#D41735'>Progression of</span> <span style = 'color:black'>**Enslaved**</span> and <span style = 'color: #FBBA00'>**Free**</span> <span style = 'color:#D41735'>by US Region</span>",
+       caption = "Source = WEB DuBois Style by Anthony Starks | Graphic: Sung Inkyung") +
+  facet_wrap(~region, nrow = 1) +
+  theme_light() +
+  theme(legend.position = "none",
+        strip.text = element_text(family = f1, size = 17, face = "bold", color = "white"),
+        strip.background = element_rect(fill = "#D41735"),
+        panel.spacing = unit(2, "lines"),
+        plot.background = element_rect(fill = lighten("#EDE0D0", 0.7), color = NA),
+        panel.background = element_rect(fill = lighten("#EDE0D0", 0.7), color = NA),
+        plot.title = element_markdown(family = f1, size = 38, face = "bold",  hjust = 0.5, margin = margin(b = 20)),
+        plot.caption = element_text(family = f1, size = 11, color = "#22194E",  margin = margin(t = 20, b = 10)),
+        panel.grid = element_blank(),
+        plot.margin = margin(10, 20, 20, 20))
+
+ggsave("week25_Juneteenth.png", width = 47, height = 16, units = 'cm')
+```
