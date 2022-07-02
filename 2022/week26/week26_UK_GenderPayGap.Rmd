@@ -1,0 +1,66 @@
+---
+title: 'week26 UK Gender Pay Gap'
+output: html_document
+date: '2022-07-01'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggtext)
+library(lubridate)
+library(showtext)
+
+font_add_google("Lora")
+font_add_google("Barlow")
+showtext_opts(dpi = 320)
+showtext_auto()
+
+f1 = "Lora"
+f2 = "Barlow"
+```
+
+
+```{r}
+paygap <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-06-28/paygap.csv') 
+
+df_plot <- paygap %>% 
+  mutate(year = as.factor(year(date_submitted))) %>% 
+  filter(employer_size != "Not Provided") %>% 
+  select(year, employer_size, male = male_bonus_percent, female = female_bonus_percent) %>% 
+  pivot_longer(cols = c(male, female)) %>% 
+  mutate(value = round(value/100, 2),
+         employer_size = fct_relevel(employer_size, c("Less than 250", "250 to 499", "500 to 999", "1000 to 4999", "5000 to 19,999", "20,000 or more"))) %>% 
+  group_by(year, name, employer_size) %>% 
+  summarise(value = round(mean(value), 2)) %>% 
+  ungroup()
+```
+
+```{r}
+plot <- df_plot %>% 
+  ggplot() +
+  geom_line(aes(year, value,  color = name, group = name)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_color_manual(values = c(female = "#EB4034", male = "#4287F5")) +
+  labs(x = "",
+       y = "Bonus Difference",
+       title = "UK's <span style = 'color:#EB4034'>**Female**</span> and <span style = 'color:#4287F5'>**Male**</span> Average Bonus Gap by Company Size",
+       caption = "Source: gender-pay-gap.service.gov.uk | Graphic: Sung Inkyung") +
+  facet_wrap(~employer_size, scales = "free") +
+  theme_minimal() +
+  theme(legend.position = "none",
+        strip.text = element_text(family = f2, size = 13, face = "bold"),
+        panel.spacing = unit(1.7, "lines"),
+        plot.background = element_rect(fill = "gray97", color = NA),
+        plot.title = element_markdown(family = f1, size = 30, hjust = 0.5, margin = margin(b = 17)),
+        plot.caption = element_text(family = f2, size = 9, hjust = 0.974),
+        panel.grid.major.x = element_line(size = 0.4),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.margin = margin(20, 20, 20, 20))
+
+ggsave("week26_UK_GenderPayGap.png", width = 45, height = 20, units = "cm")
+```
